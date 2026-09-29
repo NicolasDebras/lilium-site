@@ -1,18 +1,23 @@
-import { Component, OnInit, inject, input, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, input, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
 import { ApiService, errorMessage } from '../../core/api.service';
-import { BuildInput, RoleInfo } from '../../core/models';
+import { ItemsService } from '../../core/items.service';
+import { BuildInput, RoleInfo, Slot } from '../../core/models';
+import { ItemPicker } from '../../shared/item-picker';
 
 function emptyBuild(): BuildInput {
-  return { name: '', role: '', type_acti: 'PVP', weapon: '', notes: '', image: '' };
+  return { name: '', role: '', type_acti: 'PVP', weapon: '', notes: '', image: '', items: {} };
 }
+
+/** Disposition de l'inventaire du jeu (null = case vide). */
+const PAPER_DOLL: (Slot | null)[] = [null, 'head', 'cape', 'mainhand', 'armor', 'offhand', null, 'shoes', null];
 
 @Component({
   selector: 'app-build-form',
-  imports: [FormsModule, RouterLink],
+  imports: [FormsModule, RouterLink, ItemPicker],
   template: `
     <div class="page-head">
       <h1>{{ buildId() ? 'Modifier le build' : 'Nouveau build' }}</h1>
@@ -47,9 +52,29 @@ function emptyBuild(): BuildInput {
         </div>
       </div>
 
+      <fieldset class="equipment">
+        <legend>Équipement</legend>
+        <div class="doll">
+          @for (slot of doll; track $index) {
+            @if (slot) {
+              <app-item-picker [slot]="slot" [value]="model().items[slot]"
+                               [disabled]="slot === 'offhand' && twoHanded()"
+                               [disabledReason]="slot === 'offhand' && twoHanded() ? 'Arme à deux mains : pas de main gauche' : ''"
+                               (valueChange)="setItem(slot, $event)" />
+            } @else {
+              <span></span>
+            }
+          }
+        </div>
+        @if (itemsError()) {
+          <p class="error-text">{{ itemsError() }}</p>
+        }
+      </fieldset>
+
       <div class="field">
-        <label for="weapon">Arme / stuff</label>
-        <input id="weapon" name="weapon" class="input" maxlength="200" placeholder="ex : 1H Masse, casque Gardien…"
+        <label for="weapon">Précisions sur le stuff (optionnel)</label>
+        <input id="weapon" name="weapon" class="input" maxlength="200"
+               placeholder="ex : tier 8.1 minimum, bouffe, potion, monture…"
                [(ngModel)]="model().weapon" />
       </div>
 
@@ -74,11 +99,16 @@ function emptyBuild(): BuildInput {
   styles: `
     .two { align-items: start; }
     .two .field { flex: 1 1 200px; }
+    .equipment { border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; margin: 0; }
+    legend { padding: 0 6px; font-weight: 600; color: var(--lilac); }
+    .doll { display: grid; grid-template-columns: repeat(3, 100px); gap: 12px 16px; justify-content: center; }
   `,
 })
 export class BuildForm implements OnInit {
   private readonly api = inject(ApiService);
   private readonly router = inject(Router);
+  private readonly items = inject(ItemsService);
+  protected readonly doll = PAPER_DOLL;
 
   readonly guildId = input.required<string>();
   /** Présent en édition (/builds/:buildId/edit), absent en création. */
@@ -90,14 +120,29 @@ export class BuildForm implements OnInit {
   protected readonly roles = signal<RoleInfo[]>([]);
   protected readonly saving = signal(false);
   protected readonly error = signal('');
+  protected readonly itemsError = signal('');
+
+  /** L'arme choisie est à deux mains → la main gauche est bloquée. */
+  readonly twoHanded = computed(() => !!this.items.get(this.model().items.mainhand)?.two_handed);
+
+  setItem(slot: Slot, itemId: string | null): void {
+    this.model.update((m) => {
+      const items = { ...m.items };
+      if (itemId) items[slot] = itemId;
+      else delete items[slot];
+      if (slot === 'mainhand' && this.items.get(itemId)?.two_handed) delete items.offhand;
+      return { ...m, items };
+    });
+  }
 
   async ngOnInit(): Promise<void> {
     this.api.roles(this.guildId()).subscribe({ next: (r) => this.roles.set(r), error: () => {} });
+    this.items.load().catch(() => this.itemsError.set("Impossible de charger le catalogue d'objets."));
     const id = this.buildId();
     if (id) {
       try {
         const { id: _id, created_by_name: _by, ...rest } = await firstValueFrom(this.api.build(this.guildId(), +id));
-        this.model.set(rest);
+        this.model.set({ ...rest, items: rest.items ?? {} });
       } catch (err) {
         this.error.set(errorMessage(err));
       }

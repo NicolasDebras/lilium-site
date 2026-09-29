@@ -152,3 +152,40 @@ def test_permission_check_is_cached_between_requests(login, fake_db):
     c.get(f"/api/guilds/{GUILD}/compos")
     c.get(f"/api/guilds/{GUILD}/roles")
     assert fake_db.access_queries == 1
+
+
+# ── Équipement (objets Albion) ───────────────────────────────────────────────
+
+def test_items_catalog_requires_login(client):
+    assert client.get("/api/items").status_code == 401
+
+
+def test_items_catalog(login):
+    items = login(MEMBER_ID).get("/api/items").json()
+    assert any(i["id"] == "MAIN_SWORD" and i["slot"] == "mainhand" for i in items)
+
+
+def test_build_with_items_roundtrip(login):
+    c = login(STAFF_ID)
+    items = {"head": "HEAD_PLATE_SET1", "mainhand": "MAIN_SWORD", "offhand": "OFF_SHIELD"}
+    build_id = c.post(f"/api/guilds/{GUILD}/builds", json={**BUILD, "items": items}).json()["id"]
+    got = c.get(f"/api/guilds/{GUILD}/builds/{build_id}").json()["items"]
+    assert got == {"mainhand": "MAIN_SWORD", "offhand": "OFF_SHIELD", "head": "HEAD_PLATE_SET1"}
+
+
+def test_build_without_items_defaults_to_empty(login):
+    c = login(STAFF_ID)
+    build_id = c.post(f"/api/guilds/{GUILD}/builds", json=BUILD).json()["id"]
+    assert c.get(f"/api/guilds/{GUILD}/builds/{build_id}").json()["items"] == {}
+
+
+def test_build_rejects_offhand_with_two_handed(login):
+    r = login(STAFF_ID).post(f"/api/guilds/{GUILD}/builds",
+                             json={**BUILD, "items": {"mainhand": "2H_HOLYSTAFF", "offhand": "OFF_SHIELD"}})
+    assert r.status_code == 422
+    assert "deux mains" in r.json()["detail"]
+
+
+def test_build_rejects_unknown_item(login):
+    r = login(STAFF_ID).post(f"/api/guilds/{GUILD}/builds", json={**BUILD, "items": {"head": "PAS_UN_OBJET"}})
+    assert r.status_code == 422

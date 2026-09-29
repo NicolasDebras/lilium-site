@@ -27,6 +27,33 @@ export interface Me {
 
 export type TypeActi = 'PVP' | 'PVE';
 
+// ── Équipement Albion (catalogue /api/items) ──────────────────────────────────
+export const SLOTS = ['mainhand', 'offhand', 'head', 'armor', 'shoes', 'cape'] as const;
+export type Slot = (typeof SLOTS)[number];
+
+export const SLOT_LABELS: Record<Slot, string> = {
+  mainhand: 'Arme',
+  offhand: 'Main gauche',
+  head: 'Tête',
+  armor: 'Armure',
+  shoes: 'Bottes',
+  cape: 'Cape',
+};
+
+export interface Item {
+  id: string;
+  slot: Slot;
+  name: string;
+  name_en: string;
+  /** Identifiant d'objet du jeu (tier max) pour l'image du CDN Albion. */
+  icon: string;
+  tiers: number[];
+  two_handed: boolean;
+  category: string;
+}
+
+export type BuildItems = Partial<Record<Slot, string>>;
+
 export interface Build {
   id: number;
   name: string;
@@ -35,6 +62,7 @@ export interface Build {
   weapon: string;
   notes: string;
   image: string;
+  items: BuildItems;
   created_by_name: string;
 }
 

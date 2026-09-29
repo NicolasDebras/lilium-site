@@ -111,12 +111,31 @@ Toutes sous `/api`. `{gid}` = id du serveur Discord.
 | GET | `/health` | — |
 | GET | `/auth/login`, `/auth/callback` · POST `/auth/logout` | — |
 | GET | `/me` (utilisateur + serveurs avec niveau) | connecté |
+| GET | `/items` (catalogue des objets d'équipement Albion) | connecté |
 | GET | `/guilds/{gid}/builds[?role=&type_acti=]`, `/guilds/{gid}/builds/{id}` | membre |
 | POST · PUT · DELETE | `/guilds/{gid}/builds[/{id}]` | staff |
 | GET | `/guilds/{gid}/compos`, `/guilds/{gid}/compos/{nom}` | membre |
 | POST · PUT · DELETE | `/guilds/{gid}/compos[/{nom}]` | staff |
 | GET | `/guilds/{gid}/bal/me`, `/guilds/{gid}/roles` | membre |
 | GET | `/guilds/{gid}/admin/overview` | admin |
+
+### Builds et équipement
+
+Un build choisit son équipement parmi les **vrais objets du jeu**, avec leur image, dans une disposition identique à l'inventaire in-game :
+arme, main gauche, tête, armure, bottes, cape. Le sélecteur propose une recherche (FR, EN ou famille, accents ignorés) et des filtres par famille (Épées, Bâtons sacrés, Plaque, Cuir…).
+
+- Stocké dans `builds.items` (JSON `{"mainhand": "2H_HOLYSTAFF", "head": "HEAD_CLOTH_SET2", …}`) : une entrée par **type** d'objet, tous tiers confondus.
+- L'API refuse un objet inconnu, un objet au mauvais emplacement, ou une main gauche avec une arme à deux mains. Le site bloque aussi la case main gauche dans ce cas.
+- Images : CDN officiel `https://render.albiononline.com/v1/item/{id}.png`. Si une image manque (objet trop récent), une icône « ? » s'affiche à la place.
+- Le champ texte « Précisions sur le stuff » reste disponible pour le reste (tier minimum, bouffe, potion, monture…).
+
+**Catalogue** : `api/app/data/items.json` (~250 objets), généré depuis les dumps officiels du jeu ([ao-bin-dumps](https://github.com/ao-data/ao-bin-dumps)).
+Après un patch d'Albion qui ajoute des objets :
+
+```powershell
+cd api
+.venv\Scripts\python -m scripts.update_items
+```
 
 Les compos sont écrites dans `custom_templates` (même format que `/addtemplate`) ; le bot recharge ce cache toutes les 2 minutes, elles apparaissent donc dans `/acti` sans redémarrage.
 
@@ -136,19 +155,23 @@ lilium-site/
 │   │   ├── discord_rest.py  # membres/serveurs via l'API Discord (cache 60 s)
 │   │   ├── permissions.py   # niveaux member / staff / admin
 │   │   ├── compos.py        # conversion lignes du site <-> format template du bot
+│   │   ├── catalog.py       # catalogue d'objets Albion (génération + validation de l'équipement)
+│   │   ├── data/items.json  # catalogue généré (versionné)
 │   │   ├── constants.py     # ROLES + DEFAULT_TEMPLATES (copie de botDiscord/config.py, à garder synchro)
-│   │   └── routes/          # auth, me, builds, compos, guild (bal, rôles, admin)
+│   │   └── routes/          # auth, me, items, builds, compos, guild (bal, rôles, admin)
+│   ├── scripts/update_items.py  # régénère data/items.json depuis ao-bin-dumps
 │   └── tests/
 └── frontend/
     ├── proxy.conf.json      # /api → localhost:8000
     └── src/
         ├── styles.scss      # thème noir & lilas (toutes les couleurs sont ici)
         └── app/
-            ├── core/        # AuthService, ApiService, guards, intercepteur 401, modèles
+            ├── core/        # AuthService, ApiService, ItemsService, guards, intercepteur 401, modèles
+            ├── shared/      # item-picker (case d'équipement + sélecteur d'objets)
             └── pages/       # login, guilds, shell (nav), builds, compos, bal, admin
 ```
 
 ## Pistes pour la suite
 - Page Admin : ajouter des outils (historique BAL, activité des membres…) — route `admin/…` + garde `require_admin`
-- Builds : catalogue d'objets Albion avec images (`https://render.albiononline.com/v1/item/{id}.png`)
+- Builds : bouffe / potion / monture dans l'équipement, lien entre les compos et les builds
 - Déploiement (Railway) puis retrait du site embarqué dans le bot (`web/`, `ENABLE_WEB`)

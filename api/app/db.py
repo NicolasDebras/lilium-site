@@ -13,6 +13,12 @@ def _jloads(value):
     return json.loads(value) if isinstance(value, str) else value
 
 
+def _build_row(row) -> dict:
+    build = dict(row)
+    build["items"] = _jloads(build.get("items")) or {}
+    return build
+
+
 class Database:
     def __init__(self, dsn: str):
         self._dsn = dsn
@@ -85,30 +91,31 @@ class Database:
         query += " ORDER BY role, name"
         async with self._pool.acquire() as conn:
             rows = await conn.fetch(query, *params)
-        return [dict(r) for r in rows]
+        return [_build_row(r) for r in rows]
 
     async def get_build(self, guild_id: int, build_id: int) -> dict | None:
         async with self._pool.acquire() as conn:
             row = await conn.fetchrow("SELECT * FROM builds WHERE id = $1 AND guild_id = $2", build_id, guild_id)
-        return dict(row) if row else None
+        return _build_row(row) if row else None
 
     async def add_build(self, guild_id: int, data: dict, created_by: str, created_by_name: str) -> int:
         async with self._pool.acquire() as conn:
             row = await conn.fetchrow("""
-                INSERT INTO builds (guild_id, name, role, type_acti, weapon, notes, image, created_by, created_by_name)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+                INSERT INTO builds (guild_id, name, role, type_acti, weapon, notes, image, items, created_by, created_by_name)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9, $10)
                 RETURNING id
             """, guild_id, data["name"], data["role"], data["type_acti"], data["weapon"], data["notes"],
-                data["image"], created_by, created_by_name)
+                data["image"], json.dumps(data["items"]), created_by, created_by_name)
         return row["id"]
 
     async def update_build(self, guild_id: int, build_id: int, data: dict) -> bool:
         async with self._pool.acquire() as conn:
             result = await conn.execute("""
-                UPDATE builds SET name = $3, role = $4, type_acti = $5, weapon = $6, notes = $7, image = $8
+                UPDATE builds SET name = $3, role = $4, type_acti = $5, weapon = $6, notes = $7, image = $8,
+                                  items = $9::jsonb
                 WHERE id = $1 AND guild_id = $2
             """, build_id, guild_id, data["name"], data["role"], data["type_acti"], data["weapon"],
-                data["notes"], data["image"])
+                data["notes"], data["image"], json.dumps(data["items"]))
         return result != "UPDATE 0"
 
     async def delete_build(self, guild_id: int, build_id: int) -> bool:

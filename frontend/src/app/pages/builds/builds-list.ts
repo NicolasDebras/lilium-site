@@ -5,7 +5,8 @@ import { firstValueFrom } from 'rxjs';
 
 import { ApiService, errorMessage } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
-import { Build, RoleInfo, hasLevel } from '../../core/models';
+import { ItemsService, itemIconUrl, useFallbackIcon } from '../../core/items.service';
+import { Build, Item, RoleInfo, SLOTS, SLOT_LABELS, hasLevel } from '../../core/models';
 
 @Component({
   selector: 'app-builds-list',
@@ -50,8 +51,19 @@ import { Build, RoleInfo, hasLevel } from '../../core/models';
               <span class="badge badge-outline">{{ b.type_acti }}</span>
             </div>
             <h2>{{ b.name }}</h2>
+            @if (equipment(b); as eq) {
+              @if (eq.length) {
+                <div class="gear">
+                  @for (e of eq; track e.slot) {
+                    <img [src]="icon(e.item)" [alt]="e.item.name" [title]="e.label + ' : ' + e.item.name"
+                         width="48" height="48" loading="lazy" (error)="fallback($event)" />
+                  }
+                </div>
+                <p class="gear-names muted">{{ names(eq) }}</p>
+              }
+            }
             @if (b.weapon) {
-              <p class="weapon">⚔️ {{ b.weapon }}</p>
+              <p class="weapon">{{ b.weapon }}</p>
             }
             @if (b.notes) {
               <p class="muted notes">{{ b.notes }}</p>
@@ -76,7 +88,10 @@ import { Build, RoleInfo, hasLevel } from '../../core/models';
     .build { display: grid; gap: 8px; align-content: start; }
     .build h2 { margin: 0; }
     .thumb { width: 100%; max-height: 160px; object-fit: cover; border-radius: 8px; }
-    .weapon, .notes, .by { margin: 0; }
+    .weapon, .notes, .by, .gear-names { margin: 0; }
+    .gear { display: flex; flex-wrap: wrap; gap: 4px; }
+    .gear img { width: 48px; height: 48px; border-radius: 8px; background: var(--surface-2); }
+    .gear-names { font-size: .8rem; }
     .notes { white-space: pre-line; }
     .by { font-size: .8rem; }
     .actions { margin-top: 4px; }
@@ -85,6 +100,7 @@ import { Build, RoleInfo, hasLevel } from '../../core/models';
 export class BuildsList implements OnInit {
   private readonly api = inject(ApiService);
   private readonly auth = inject(AuthService);
+  private readonly items = inject(ItemsService);
 
   readonly guildId = input.required<string>();
 
@@ -97,6 +113,7 @@ export class BuildsList implements OnInit {
   protected readonly canEdit = computed(() => hasLevel(this.auth.levelFor(this.guildId()), 'staff'));
 
   async ngOnInit(): Promise<void> {
+    this.items.load().catch(() => {});
     this.api.roles(this.guildId()).subscribe({ next: (r) => this.roles.set(r), error: () => {} });
     await this.load();
   }
@@ -113,6 +130,26 @@ export class BuildsList implements OnInit {
     } finally {
       this.loading.set(false);
     }
+  }
+
+  /** Objets du build dans l'ordre des emplacements (inconnus du catalogue ignorés). */
+  equipment(build: Build): { slot: string; label: string; item: Item }[] {
+    return SLOTS.flatMap((slot) => {
+      const item = this.items.get(build.items?.[slot]);
+      return item ? [{ slot, label: SLOT_LABELS[slot], item }] : [];
+    });
+  }
+
+  names(eq: { item: Item }[]): string {
+    return eq.map((e) => e.item.name).join(' · ');
+  }
+
+  icon(item: Item): string {
+    return itemIconUrl(item.icon);
+  }
+
+  fallback(event: Event): void {
+    useFallbackIcon(event);
   }
 
   emoji(role: string): string {

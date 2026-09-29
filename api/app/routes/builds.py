@@ -3,6 +3,7 @@ from typing import Literal
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field, field_validator
 
+from app.catalog import InvalidItems, validate_build_items
 from app.permissions import require_member, require_staff
 
 router = APIRouter(prefix="/guilds/{guild_id}/builds", tags=["builds"])
@@ -15,6 +16,8 @@ class BuildIn(BaseModel):
     weapon: str = Field(default="", max_length=200)
     notes: str = Field(default="", max_length=4000)
     image: str = Field(default="", max_length=500)
+    # Équipement : {"mainhand": "2H_HOLYSTAFF", "head": "HEAD_CLOTH_SET2", ...} (ids de /api/items)
+    items: dict[str, str] = {}
 
     @field_validator("name", "weapon", "notes", "image")
     @classmethod
@@ -27,6 +30,15 @@ class BuildIn(BaseModel):
         return v.strip().upper()
 
 
+def _data(body: BuildIn) -> dict:
+    data = body.model_dump()
+    try:
+        data["items"] = validate_build_items(body.items)
+    except InvalidItems as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    return data
+
+
 def _out(build: dict) -> dict:
     return {
         "id":              build["id"],
@@ -36,6 +48,7 @@ def _out(build: dict) -> dict:
         "weapon":          build["weapon"],
         "notes":           build["notes"],
         "image":           build["image"],
+        "items":           build.get("items") or {},
         "created_by_name": build["created_by_name"],
     }
 
@@ -57,14 +70,14 @@ async def get_build(guild_id: int, build_id: int, request: Request, user: dict =
 
 @router.post("", status_code=201)
 async def create_build(guild_id: int, body: BuildIn, request: Request, user: dict = Depends(require_staff)):
-    build_id = await request.app.state.db.add_build(guild_id, body.model_dump(), user["id"], user["username"])
+    build_id = await request.app.state.db.add_build(guild_id, _data(body), user["id"], user["username"])
     return {"id": build_id}
 
 
 @router.put("/{build_id}")
 async def update_build(guild_id: int, build_id: int, body: BuildIn, request: Request,
                        user: dict = Depends(require_staff)):
-    if not await request.app.state.db.update_build(guild_id, build_id, body.model_dump()):
+    if not await request.app.state.db.update_build(guild_id, build_id, _data(body)):
         raise HTTPException(status_code=404, detail="Build introuvable.")
     return {"id": build_id}
 

@@ -4,12 +4,15 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 
 import { fakeAuth } from '../../../testing/fake-auth';
+import { TEST_ITEMS } from '../../../testing/items';
 import { Build, Level } from '../../core/models';
 import { BuildsList } from './builds-list';
 
 const BUILDS: Build[] = [
-  { id: 1, name: 'Tank Masse', role: 'TANK', type_acti: 'PVP', weapon: '1H Masse', notes: '', image: '', created_by_name: 'Lily' },
-  { id: 2, name: 'Heal Sancti', role: 'HEAL', type_acti: 'PVE', weapon: '', notes: 'Note', image: '', created_by_name: 'Lily' },
+  { id: 1, name: 'Tank Masse', role: 'TANK', type_acti: 'PVP', weapon: '1H Masse', notes: '', image: '',
+    items: { mainhand: 'MAIN_SWORD', offhand: 'OFF_SHIELD', head: 'HEAD_PLATE_SET1' }, created_by_name: 'Lily' },
+  { id: 2, name: 'Heal Sancti', role: 'HEAL', type_acti: 'PVE', weapon: '', notes: 'Note', image: '',
+    items: {}, created_by_name: 'Lily' },
 ];
 
 async function render(level: Level) {
@@ -22,6 +25,7 @@ async function render(level: Level) {
   fixture.detectChanges();
 
   const http = TestBed.inject(HttpTestingController);
+  http.expectOne('/api/items').flush(TEST_ITEMS);
   http.expectOne('/api/guilds/111/roles').flush([{ name: 'TANK', emoji: '🛡️' }, { name: 'HEAL', emoji: '💚' }]);
   http.expectOne((r) => r.url === '/api/guilds/111/builds').flush(BUILDS);
   await fixture.whenStable();
@@ -35,6 +39,15 @@ describe('BuildsList', () => {
     expect(cards.length).toBe(2);
     expect(cards[0].textContent).toContain('Tank Masse');
     expect(cards[0].textContent).toContain('🛡️ TANK');
+  });
+
+  it('affiche les icônes d’équipement du build, dans l’ordre des emplacements', async () => {
+    const { el } = await render('member');
+    const [first, second] = el.querySelectorAll('article.build');
+    const icons = [...first.querySelectorAll<HTMLImageElement>('.gear img')].map((i) => i.alt);
+    expect(icons).toEqual(['Épée large', 'Bouclier', 'Casque de soldat']);
+    expect(first.querySelector('.gear img')?.getAttribute('src')).toContain('render.albiononline.com');
+    expect(second.querySelector('.gear')).toBeNull();
   });
 
   it('un membre ne voit pas les boutons d’édition', async () => {
