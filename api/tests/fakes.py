@@ -34,6 +34,7 @@ class FakeDB:
         self.builds: dict[int, dict] = {}
         self.templates: dict[int, dict[str, dict]] = {}
         self._next_id = 1
+        self.access_queries = 0
 
     async def ping(self):
         return True
@@ -41,17 +42,16 @@ class FakeDB:
     async def get_user_guild_ids(self, user_id):
         return sorted(g for g, u in self.profiles if u == user_id)
 
-    async def has_profile(self, guild_id, user_id):
-        return (guild_id, user_id) in self.profiles
+    async def get_access_info(self, guild_id, user_id):
+        self.access_queries += 1
+        return {
+            "has_profile":   (guild_id, user_id) in self.profiles,
+            "staff_role_id": self.staff_roles.get(guild_id),
+            "is_admin":      self.admin_table_exists and (guild_id, user_id) in self.admins,
+        }
 
     async def get_profile(self, guild_id, user_id):
         return {"ig_name": f"Joueur{user_id}"} if (guild_id, user_id) in self.profiles else None
-
-    async def get_web_staff_role(self, guild_id):
-        return self.staff_roles.get(guild_id)
-
-    async def is_web_admin(self, guild_id, user_id):
-        return self.admin_table_exists and (guild_id, user_id) in self.admins
 
     async def get_bal(self, guild_id, user_id):
         return self.bal.get((guild_id, user_id), 0)

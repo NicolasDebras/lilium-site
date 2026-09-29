@@ -12,6 +12,7 @@ from fastapi.responses import JSONResponse
 from app import auth
 from app.db import Database
 from app.discord_rest import DiscordRest, DiscordUnavailable
+from app.permissions import LevelCache
 from app.routes import auth as auth_routes, builds, compos, guild, me
 from app.settings import Settings, load_settings
 
@@ -34,6 +35,7 @@ def create_app(settings: Settings | None = None, *, db=None, discord=None, oauth
     app.state.settings = settings
     app.state.db = db
     app.state.discord = discord or DiscordRest(settings.discord_token)
+    app.state.levels = LevelCache()
     app.state.oauth = oauth or SimpleNamespace(
         exchange_code=auth.exchange_code, fetch_discord_user=auth.fetch_discord_user,
     )

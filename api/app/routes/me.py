@@ -24,7 +24,7 @@ async def me(request: Request, user: dict = Depends(require_user)):
 
     async def describe(guild_id: int) -> dict | None:
         try:
-            level = await access_level(db, discord, guild_id, user_id)
+            level = await access_level(db, discord, guild_id, user_id, request.app.state.levels)
             if level == Level.NONE:
                 return None
             guild = await discord.get_guild(guild_id) or {}

@@ -6,7 +6,10 @@
 - staff  : member + rôle configuré via /config → 🌐 Rôle staff du site web
 - admin  : member + nommé via /webadmin (table web_admins) — inclut les droits staff
 """
+import asyncio
+import time
 from enum import IntEnum
+from typing import Callable
 
 from fastapi import Depends, HTTPException, Request
 
@@ -35,23 +38,54 @@ def compute_level(*, has_profile: bool, member: dict | None, staff_role_id: int 
     return Level.MEMBER
 
 
-async def access_level(db, discord, guild_id: int, user_id: int) -> Level:
-    if not await db.has_profile(guild_id, user_id):
-        return Level.NONE
-    member = await discord.get_member(guild_id, user_id)
-    if member is None:
-        return Level.NONE
-    return compute_level(
-        has_profile=True,
-        member=member,
-        staff_role_id=await db.get_web_staff_role(guild_id),
-        is_admin=await db.is_web_admin(guild_id, user_id),
+class LevelCache:
+    """Niveau d'accès mémorisé par (serveur, utilisateur) pendant `ttl` secondes.
+
+    Chaque vérification coûte un aller-retour base (~300 ms en local vers
+    Railway) : sans cache, chaque clic du site le repayait. Contrepartie : un
+    /webadmin ou un changement de rôle met jusqu'à `ttl` secondes à s'appliquer.
+    """
+
+    def __init__(self, ttl: float = 60.0, clock: Callable[[], float] = time.monotonic):
+        self._ttl = ttl
+        self._clock = clock
+        self._data: dict[tuple[int, int], tuple[float, Level]] = {}
+
+    def get(self, guild_id: int, user_id: int) -> Level | None:
+        hit = self._data.get((guild_id, user_id))
+        if hit and self._clock() - hit[0] < self._ttl:
+            return hit[1]
+        return None
+
+    def set(self, guild_id: int, user_id: int, level: Level) -> None:
+        self._data[(guild_id, user_id)] = (self._clock(), level)
+
+
+async def access_level(db, discord, guild_id: int, user_id: int, cache: LevelCache | None = None) -> Level:
+    if cache and (cached := cache.get(guild_id, user_id)) is not None:
+        return cached
+
+    # Base et Discord interrogés en parallèle : une seule requête SQL pour
+    # profil + rôle staff + admin, et l'appel Discord a son propre cache.
+    info, member = await asyncio.gather(
+        db.get_access_info(guild_id, user_id),
+        discord.get_member(guild_id, user_id),
     )
+    level = compute_level(
+        has_profile=info["has_profile"],
+        member=member,
+        staff_role_id=info["staff_role_id"],
+        is_admin=info["is_admin"],
+    )
+    if cache:
+        cache.set(guild_id, user_id, level)
+    return level
 
 
 def _require(minimum: Level):
     async def dependency(guild_id: int, request: Request, user: dict = Depends(require_user)) -> dict:
-        level = await access_level(request.app.state.db, request.app.state.discord, guild_id, int(user["id"]))
+        state = request.app.state
+        level = await access_level(state.db, state.discord, guild_id, int(user["id"]), state.levels)
         if level < minimum:
             detail = {
                 Level.MEMBER: "Tu n'es pas membre de ce serveur (ou tu n'as pas fait /register).",

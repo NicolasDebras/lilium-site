@@ -27,7 +27,7 @@ Tout se joue **par serveur Discord** :
 
 `/webadmin add|remove|list` est une commande du bot, réservée aux administrateurs du serveur et au **Maitre de guilde**.
 
-Les rôles Discord sont vérifiés via l'API REST Discord avec le token du bot (résultats gardés 60 s en cache).
+Les rôles Discord sont vérifiés via l'API REST Discord avec le token du bot. Le niveau d'accès calculé est gardé **60 s en cache** (par serveur et par utilisateur) : un `/webadmin add` ou un changement de rôle peut mettre jusqu'à une minute à apparaître sur le site.
 
 ---
 
@@ -52,6 +52,8 @@ Copy-Item api\.env.example api\.env
 | `SESSION_SECRET` | n'importe quelle longue chaîne aléatoire |
 
 > ⚠️ En local tu es branché sur la **vraie base** : un build ou une compo créé/supprimé sur ton site local l'est aussi pour le bot.
+
+> En local, chaque requête vers la base Railway prend ~300 ms (base distante, via le proxy public) : c'est le délai minimum d'une page qui charge des données. Une fois l'API hébergée sur Railway à côté de la base, ce délai disparaît.
 
 ### 3. Démarrer
 

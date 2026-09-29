@@ -1,4 +1,4 @@
-from app.permissions import Level, access_level, compute_level
+from app.permissions import Level, LevelCache, access_level, compute_level
 from tests.fakes import (
     ADMIN_ID, GHOST_ID, GUILD, MEMBER_ID, OTHER_GUILD, STAFF_ID, STAFF_ROLE, STRANGER_ID, FakeDB, FakeDiscord,
 )
@@ -55,3 +55,44 @@ async def test_missing_web_admins_table_means_no_admin():
     db, discord = FakeDB(), FakeDiscord()
     db.admin_table_exists = False
     assert await access_level(db, discord, GUILD, ADMIN_ID) == Level.MEMBER
+
+
+# ── LevelCache ───────────────────────────────────────────────────────────────
+
+class Clock:
+    def __init__(self):
+        self.now = 0.0
+
+    def __call__(self):
+        return self.now
+
+
+def test_level_cache_expires_after_ttl():
+    clock = Clock()
+    cache = LevelCache(ttl=60, clock=clock)
+    cache.set(GUILD, MEMBER_ID, Level.STAFF)
+    clock.now = 59
+    assert cache.get(GUILD, MEMBER_ID) == Level.STAFF
+    clock.now = 61
+    assert cache.get(GUILD, MEMBER_ID) is None
+
+
+def test_level_cache_is_per_guild_and_user():
+    cache = LevelCache()
+    cache.set(GUILD, MEMBER_ID, Level.ADMIN)
+    assert cache.get(OTHER_GUILD, MEMBER_ID) is None
+    assert cache.get(GUILD, STAFF_ID) is None
+
+
+async def test_access_level_uses_one_db_query_then_cache():
+    db, discord, cache = FakeDB(), FakeDiscord(), LevelCache()
+    assert await access_level(db, discord, GUILD, ADMIN_ID, cache) == Level.ADMIN
+    assert await access_level(db, discord, GUILD, ADMIN_ID, cache) == Level.ADMIN
+    assert db.access_queries == 1
+
+
+async def test_none_level_is_cached_too():
+    db, discord, cache = FakeDB(), FakeDiscord(), LevelCache()
+    await access_level(db, discord, GUILD, STRANGER_ID, cache)
+    await access_level(db, discord, GUILD, STRANGER_ID, cache)
+    assert db.access_queries == 1

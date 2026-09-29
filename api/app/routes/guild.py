@@ -1,4 +1,6 @@
 """Routes « divers » d'un serveur : sa BAL, la liste des rôles, la page Admin."""
+import asyncio
+
 from fastapi import APIRouter, Depends, Request
 
 from app.constants import ROLES
@@ -9,12 +11,9 @@ router = APIRouter(prefix="/guilds/{guild_id}", tags=["guild"])
 
 @router.get("/bal/me")
 async def my_bal(guild_id: int, request: Request, user: dict = Depends(require_member)):
-    db = request.app.state.db
-    profile = await db.get_profile(guild_id, int(user["id"]))
-    return {
-        "amount":  await db.get_bal(guild_id, int(user["id"])),
-        "ig_name": (profile or {}).get("ig_name", ""),
-    }
+    db, user_id = request.app.state.db, int(user["id"])
+    profile, amount = await asyncio.gather(db.get_profile(guild_id, user_id), db.get_bal(guild_id, user_id))
+    return {"amount": amount, "ig_name": (profile or {}).get("ig_name", "")}
 
 
 @router.get("/roles")

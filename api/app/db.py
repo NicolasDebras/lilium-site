@@ -19,7 +19,10 @@ class Database:
         self._pool: asyncpg.Pool | None = None
 
     async def connect(self) -> None:
-        self._pool = await asyncpg.create_pool(self._dsn, min_size=1, max_size=5)
+        # min_size=3 : connexions ouvertes dès le démarrage. En local la base
+        # Railway est loin (~300 ms par aller-retour) et ouvrir une connexion
+        # à la volée (TLS) coûte bien plus cher qu'une requête.
+        self._pool = await asyncpg.create_pool(self._dsn, min_size=3, max_size=10)
 
     async def close(self) -> None:
         if self._pool:
@@ -38,13 +41,6 @@ class Database:
             )
         return [r["guild_id"] for r in rows]
 
-    async def has_profile(self, guild_id: int, user_id: int) -> bool:
-        async with self._pool.acquire() as conn:
-            row = await conn.fetchrow(
-                "SELECT 1 FROM player_profiles WHERE user_id = $1 AND guild_id = $2", str(user_id), guild_id
-            )
-        return row is not None
-
     async def get_profile(self, guild_id: int, user_id: int) -> dict | None:
         async with self._pool.acquire() as conn:
             row = await conn.fetchrow(
@@ -53,21 +49,21 @@ class Database:
         return dict(row) if row else None
 
     # ── Rôle staff / admins du site ──────────────────────────────────────────
-    async def get_web_staff_role(self, guild_id: int) -> int | None:
+    async def get_access_info(self, guild_id: int, user_id: int) -> dict:
+        """Tout ce qu'il faut pour calculer le niveau d'accès, en UN aller-retour
+        (profil /register, rôle staff du serveur, admin /webadmin)."""
+        base = """
+            SELECT EXISTS (SELECT 1 FROM player_profiles WHERE user_id = $1 AND guild_id = $2) AS has_profile,
+                   (SELECT staff_role_id FROM web_staff_config WHERE guild_id = $2)          AS staff_role_id,
+                   {admin}                                                                    AS is_admin
+        """
+        with_admin = "EXISTS (SELECT 1 FROM web_admins WHERE guild_id = $2 AND user_id = $3)"
         async with self._pool.acquire() as conn:
-            row = await conn.fetchrow("SELECT staff_role_id FROM web_staff_config WHERE guild_id = $1", guild_id)
-        return row["staff_role_id"] if row else None
-
-    async def is_web_admin(self, guild_id: int, user_id: int) -> bool:
-        """False si la table web_admins n'existe pas encore (bot pas encore redéployé)."""
-        try:
-            async with self._pool.acquire() as conn:
-                row = await conn.fetchrow(
-                    "SELECT 1 FROM web_admins WHERE guild_id = $1 AND user_id = $2", guild_id, user_id
-                )
-        except asyncpg.UndefinedTableError:
-            return False
-        return row is not None
+            try:
+                row = await conn.fetchrow(base.format(admin=with_admin), str(user_id), guild_id, user_id)
+            except asyncpg.UndefinedTableError:  # bot pas encore redéployé avec web_admins
+                row = await conn.fetchrow(base.format(admin="FALSE"), str(user_id), guild_id)
+        return dict(row)
 
     # ── BAL ──────────────────────────────────────────────────────────────────
     async def get_bal(self, guild_id: int, user_id: int) -> int:
@@ -145,10 +141,10 @@ class Database:
     # ── Admin ────────────────────────────────────────────────────────────────
     async def get_admin_overview(self, guild_id: int) -> dict:
         async with self._pool.acquire() as conn:
-            builds   = await conn.fetchval("SELECT COUNT(*) FROM builds WHERE guild_id = $1", guild_id)
-            compos   = await conn.fetchval("SELECT COUNT(*) FROM custom_templates WHERE guild_id = $1", guild_id)
-            profiles = await conn.fetchval("SELECT COUNT(*) FROM player_profiles WHERE guild_id = $1", guild_id)
-            bal      = await conn.fetchval(
-                "SELECT COALESCE(SUM(amount), 0) FROM bal WHERE guild_id = $1 AND amount > 0", guild_id
-            )
-        return {"builds": builds, "compos": compos, "profiles": profiles, "total_bal": int(bal)}
+            row = await conn.fetchrow("""
+                SELECT (SELECT COUNT(*) FROM builds           WHERE guild_id = $1)                AS builds,
+                       (SELECT COUNT(*) FROM custom_templates WHERE guild_id = $1)                AS compos,
+                       (SELECT COUNT(*) FROM player_profiles  WHERE guild_id = $1)                AS profiles,
+                       (SELECT COALESCE(SUM(amount), 0) FROM bal WHERE guild_id = $1 AND amount > 0) AS total_bal
+            """, guild_id)
+        return {k: int(v) for k, v in dict(row).items()}

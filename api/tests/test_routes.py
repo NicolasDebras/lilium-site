@@ -144,3 +144,11 @@ def test_admin_overview_for_admin(login):
     r = login(ADMIN_ID).get(f"/api/guilds/{GUILD}/admin/overview")
     assert r.status_code == 200
     assert r.json()["profiles"] == 4
+
+
+def test_permission_check_is_cached_between_requests(login, fake_db):
+    c = login(MEMBER_ID)
+    c.get(f"/api/guilds/{GUILD}/builds")
+    c.get(f"/api/guilds/{GUILD}/compos")
+    c.get(f"/api/guilds/{GUILD}/roles")
+    assert fake_db.access_queries == 1
