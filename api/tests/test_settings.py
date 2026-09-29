@@ -31,3 +31,15 @@ def test_frontend_url_trailing_slash_removed_and_cookie_secure_parsed():
     s = load_settings({**FULL, "FRONTEND_URL": "https://lilium.fr/", "COOKIE_SECURE": "TRUE"})
     assert s.frontend_url == "https://lilium.fr"
     assert s.cookie_secure is True
+
+
+def test_env_file_wins_over_system_variable(tmp_path, monkeypatch):
+    """Une vieille variable Windows DISCORD_TOKEN ne doit pas masquer api/.env."""
+    from app import settings as settings_module
+
+    env_file = tmp_path / ".env"
+    env_file.write_text("\n".join(f"{k}={v}" for k, v in {**FULL, "DISCORD_TOKEN": "token-du-fichier"}.items()))
+    monkeypatch.setattr(settings_module, "ENV_FILE", env_file)
+    monkeypatch.setenv("DISCORD_TOKEN", "vieux-token-systeme")
+
+    assert settings_module.load_settings().discord_token == "token-du-fichier"

@@ -37,7 +37,9 @@ def load_settings(env: dict[str, str] | None = None) -> Settings:
     """Lit la config ; lève MissingSettings avec la liste exacte de ce qui manque,
     plutôt qu'un KeyError obscur au premier appel."""
     if env is None:
-        load_dotenv(ENV_FILE)
+        # override=True : api/.env gagne sur une variable Windows du même nom
+        # (ex. un vieux DISCORD_TOKEN système) — même choix que le bot.
+        load_dotenv(ENV_FILE, override=True)
         env = dict(os.environ)
 
     missing = [k for k in REQUIRED if not env.get(k)]
