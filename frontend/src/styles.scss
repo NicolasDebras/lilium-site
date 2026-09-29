@@ -1,0 +1,241 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+   Thème Lilium — noir & lilas.
+   Toutes les couleurs du site sont ici : les composants n'utilisent que ces
+   variables (aucune couleur en dur ailleurs).
+   ───────────────────────────────────────────────────────────────────────────── */
+:root {
+  --bg: #0b0a0f;
+  --surface: #15131c;
+  --surface-2: #1f1b29;
+  --border: #2e2840;
+  --text: #ece8f5;
+  --text-muted: #9d95b3;
+  --lilac: #c8a2ff;
+  --lilac-strong: #a77bf3;
+  --lilac-soft: rgba(200, 162, 255, 0.12);
+  --on-lilac: #140f1f;
+  --danger: #ff6b8b;
+  --danger-soft: rgba(255, 107, 139, 0.12);
+  --success: #7ee0b5;
+
+  --radius: 10px;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.25);
+  --gutter: 16px;
+
+  color-scheme: dark;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3 {
+  font-weight: 600;
+  line-height: 1.25;
+  margin: 0 0 0.5em;
+}
+h1 { font-size: 1.6rem; }
+h2 { font-size: 1.2rem; }
+h3 { font-size: 1rem; }
+
+a {
+  color: var(--lilac);
+  text-decoration: none;
+  &:hover { text-decoration: underline; }
+}
+
+::selection {
+  background: var(--lilac-soft);
+  color: var(--text);
+}
+
+:focus-visible {
+  outline: 2px solid var(--lilac);
+  outline-offset: 2px;
+}
+
+.muted { color: var(--text-muted); }
+.error-text { color: var(--danger); }
+
+/* ── Mise en page ───────────────────────────────────────────────────────────── */
+.container {
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px var(--gutter) 48px;
+}
+
+.page-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+  h1 { margin: 0; }
+}
+
+.grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ── Cartes ─────────────────────────────────────────────────────────────────── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px;
+  box-shadow: var(--shadow);
+  min-width: 0;
+}
+
+.card-link {
+  display: block;
+  color: inherit;
+  transition: border-color 0.15s, background 0.15s;
+  &:hover {
+    text-decoration: none;
+    border-color: var(--lilac-strong);
+    background: var(--surface-2);
+  }
+}
+
+/* ── Boutons ────────────────────────────────────────────────────────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 9px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.15s, border-color 0.15s;
+  &:hover { border-color: var(--lilac-strong); text-decoration: none; }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+
+.btn-primary {
+  background: var(--lilac);
+  border-color: var(--lilac);
+  color: var(--on-lilac);
+  &:hover { background: var(--lilac-strong); border-color: var(--lilac-strong); }
+}
+
+.btn-danger {
+  background: transparent;
+  border-color: var(--danger);
+  color: var(--danger);
+  &:hover { background: var(--danger-soft); border-color: var(--danger); }
+}
+
+.btn-sm { padding: 5px 10px; font-size: 0.85rem; }
+
+/* ── Badges ─────────────────────────────────────────────────────────────────── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--lilac-soft);
+  color: var(--lilac);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.badge-outline {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+}
+
+/* ── Formulaires ────────────────────────────────────────────────────────────── */
+.form {
+  display: grid;
+  gap: 16px;
+  max-width: 720px;
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+  label { font-weight: 500; font-size: 0.9rem; }
+}
+
+.input,
+.select,
+.textarea {
+  width: 100%;
+  padding: 9px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+  font: inherit;
+  &:focus {
+    outline: none;
+    border-color: var(--lilac);
+    box-shadow: 0 0 0 3px var(--lilac-soft);
+  }
+}
+
+.textarea { min-height: 110px; resize: vertical; }
+
+.alert {
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--danger);
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.empty {
+  padding: 32px;
+  text-align: center;
+  color: var(--text-muted);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+}
+
+/* ── Tableaux ───────────────────────────────────────────────────────────────── */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  th, td { padding: 6px 8px; text-align: left; }
+  th { color: var(--text-muted); font-weight: 500; font-size: 0.85rem; }
+  tbody tr:nth-child(odd) { background: var(--surface-2); }
+}
