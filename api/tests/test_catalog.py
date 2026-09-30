@@ -26,6 +26,22 @@ RAW = {
          "@shopsubcategory1": "plate_helmet"},
         {"@uniquename": "UNIQUE_HIDEOUT", "@slottype": "head", "@shopcategory": "head"},
     ],
+    "consumableitem": [
+        {"@uniquename": "T6_MEAL_STEW", "@slottype": "food", "@shopcategory": "consumables",
+         "@shopsubcategory1": "food"},
+        {"@uniquename": "T8_MEAL_STEW", "@slottype": "food", "@shopcategory": "consumables",
+         "@shopsubcategory1": "food"},
+        {"@uniquename": "T8_MEAL_STEW@1", "@slottype": "food", "@shopcategory": "consumables",
+         "@shopsubcategory1": "food"},
+        {"@uniquename": "T4_POTION_HEAL", "@slottype": "potion", "@shopcategory": "consumables",
+         "@shopsubcategory1": "potions"},
+        {"@uniquename": "T6_POTION_HEAL", "@slottype": "potion", "@shopcategory": "consumables",
+         "@shopsubcategory1": "potions"},
+        {"@uniquename": "T4_FISH_COMMON", "@slottype": "food", "@shopcategory": "crafting",
+         "@shopsubcategory1": "fish"},
+        {"@uniquename": "T4_SHOP_POTION", "@slottype": "potion", "@shopcategory": "consumables",
+         "@shopsubcategory1": "other"},
+    ],
 }
 
 
@@ -41,6 +57,12 @@ LOCALIZED = [
     loc("T8_OFF_SHIELD", "Bouclier du sage", "Elder's Shield"),
     loc("T6_CAPE_PLATE_UNDEAD", "Cape décorative", "Decorative Cape"),
     loc("T8_HEAD_PLATE_SET1", "Casque de soldat du sage", "Elder's Soldier Helmet"),
+    loc("T6_MEAL_STEW", "Ragoût de chèvre", "Goat Stew"),
+    loc("T8_MEAL_STEW", "Ragoût de bœuf", "Beef Stew"),
+    loc("T4_POTION_HEAL", "Potion de soin mineure", "Minor Healing Potion"),
+    loc("T6_POTION_HEAL", "Potion de soin", "Healing Potion"),
+    loc("T4_FISH_COMMON", "Poisson", "Fish"),
+    loc("T4_SHOP_POTION", "Potion boutique", "Shop Potion"),
 ]
 
 
@@ -87,35 +109,88 @@ def test_category_label_capes_and_unknown():
     assert category_label("inconnue") == "inconnue"
 
 
+# ── Bouffe & potions ─────────────────────────────────────────────────────────
+
+def test_food_and_potions_are_included_with_top_tier_name(catalog):
+    assert catalog["MEAL_STEW"]["slot"] == "food"
+    assert catalog["MEAL_STEW"]["name"] == "Ragoût de bœuf"
+    assert catalog["MEAL_STEW"]["category"] == "Nourriture"
+    assert catalog["POTION_HEAL"]["slot"] == "potion"
+    assert catalog["POTION_HEAL"]["name"] == "Potion de soin"
+    assert catalog["POTION_HEAL"]["name_en"] == "Healing Potion"
+
+
+def test_consumables_exclude_enchanted_raw_fish_and_shop_items(catalog):
+    assert "MEAL_STEW@1" not in catalog
+    assert "FISH_COMMON" not in catalog
+    assert "SHOP_POTION" not in catalog
+    assert catalog["MEAL_STEW"]["tiers"] == [6, 8]
+
+
 # ── validate_build_items ─────────────────────────────────────────────────────
 
+def test_validate_accepts_old_string_format(catalog):
+    assert validate_build_items({"mainhand": "MAIN_SWORD"}, catalog) == {"mainhand": ["MAIN_SWORD"]}
+
+
 def test_validate_keeps_known_items_in_slot_order(catalog):
-    items = {"head": "HEAD_PLATE_SET1", "mainhand": "MAIN_SWORD", "offhand": "OFF_SHIELD"}
+    items = {"head": ["HEAD_PLATE_SET1"], "mainhand": ["MAIN_SWORD"], "offhand": ["OFF_SHIELD"]}
     assert list(validate_build_items(items, catalog)) == ["mainhand", "offhand", "head"]
 
 
-def test_validate_drops_empty_slots(catalog):
-    assert validate_build_items({"mainhand": "MAIN_SWORD", "head": ""}, catalog) == {"mainhand": "MAIN_SWORD"}
+def test_validate_drops_empty_slots_and_duplicates(catalog):
+    items = {"mainhand": ["MAIN_SWORD", "MAIN_SWORD"], "head": [], "cape": ""}
+    assert validate_build_items(items, catalog) == {"mainhand": ["MAIN_SWORD"]}
+
+
+def test_validate_up_to_three_choices(catalog):
+    items = {"mainhand": ["MAIN_SWORD", "2H_HOLYSTAFF", "2H_SHAPESHIFTER_SET1"]}
+    assert validate_build_items(items, catalog)["mainhand"] == ["MAIN_SWORD", "2H_HOLYSTAFF", "2H_SHAPESHIFTER_SET1"]
+
+
+def test_validate_rejects_more_than_three_choices(catalog):
+    extra = {**catalog, "X": {**catalog["MAIN_SWORD"], "id": "X"}}
+    with pytest.raises(InvalidItems, match="3 choix maximum"):
+        validate_build_items({"mainhand": ["MAIN_SWORD", "2H_HOLYSTAFF", "2H_SHAPESHIFTER_SET1", "X"]}, extra)
+
+
+def test_validate_free_choice(catalog):
+    assert validate_build_items({"cape": ["*"], "food": "*"}, catalog) == {"cape": ["*"], "food": ["*"]}
+
+
+def test_validate_free_choice_cannot_be_mixed(catalog):
+    with pytest.raises(InvalidItems, match="Au choix du joueur"):
+        validate_build_items({"mainhand": ["*", "MAIN_SWORD"]}, catalog)
 
 
 def test_validate_rejects_unknown_item(catalog):
     with pytest.raises(InvalidItems, match="Objet inconnu"):
-        validate_build_items({"mainhand": "T8_FAKE"}, catalog)
+        validate_build_items({"mainhand": ["T8_FAKE"]}, catalog)
 
 
 def test_validate_rejects_unknown_slot(catalog):
     with pytest.raises(InvalidItems, match="Emplacement inconnu"):
-        validate_build_items({"ring": "MAIN_SWORD"}, catalog)
+        validate_build_items({"ring": ["MAIN_SWORD"]}, catalog)
 
 
 def test_validate_rejects_item_in_wrong_slot(catalog):
     with pytest.raises(InvalidItems, match="ne se porte pas"):
-        validate_build_items({"head": "MAIN_SWORD"}, catalog)
+        validate_build_items({"head": ["MAIN_SWORD"]}, catalog)
 
 
-def test_validate_rejects_offhand_with_two_handed_weapon(catalog):
+def test_validate_rejects_offhand_when_all_weapons_two_handed(catalog):
     with pytest.raises(InvalidItems, match="deux mains"):
-        validate_build_items({"mainhand": "2H_HOLYSTAFF", "offhand": "OFF_SHIELD"}, catalog)
+        validate_build_items({"mainhand": ["2H_HOLYSTAFF", "2H_SHAPESHIFTER_SET1"], "offhand": ["OFF_SHIELD"]}, catalog)
+
+
+def test_validate_offhand_ok_when_one_weapon_is_one_handed(catalog):
+    items = {"mainhand": ["2H_HOLYSTAFF", "MAIN_SWORD"], "offhand": ["OFF_SHIELD"]}
+    assert validate_build_items(items, catalog)["offhand"] == ["OFF_SHIELD"]
+
+
+def test_validate_offhand_ok_when_weapon_is_free_or_empty(catalog):
+    assert validate_build_items({"mainhand": ["*"], "offhand": ["OFF_SHIELD"]}, catalog)["offhand"] == ["OFF_SHIELD"]
+    assert validate_build_items({"offhand": ["OFF_SHIELD"]}, catalog) == {"offhand": ["OFF_SHIELD"]}
 
 
 # ── Fichier versionné ────────────────────────────────────────────────────────
@@ -123,7 +198,7 @@ def test_validate_rejects_offhand_with_two_handed_weapon(catalog):
 def test_shipped_catalog_is_complete():
     items = load_catalog()
     slots = {i["slot"] for i in items}
-    assert slots == {"mainhand", "offhand", "head", "armor", "shoes", "cape"}
+    assert slots == {"mainhand", "offhand", "head", "armor", "shoes", "cape", "food", "potion"}
     ids = [i["id"] for i in items]
     assert len(ids) == len(set(ids))
     assert {"MAIN_SWORD", "2H_HOLYSTAFF", "OFF_SHIELD"} <= set(ids)

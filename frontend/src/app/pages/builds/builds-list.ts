@@ -5,12 +5,13 @@ import { firstValueFrom } from 'rxjs';
 
 import { ApiService, errorMessage } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
-import { ItemsService, itemIconUrl, useFallbackIcon } from '../../core/items.service';
-import { Build, Item, RoleInfo, SLOTS, SLOT_LABELS, hasLevel } from '../../core/models';
+import { ItemsService } from '../../core/items.service';
+import { Build, RoleInfo, hasLevel } from '../../core/models';
+import { Gear, describeGear } from '../../shared/gear';
 
 @Component({
   selector: 'app-builds-list',
-  imports: [FormsModule, RouterLink],
+  imports: [FormsModule, RouterLink, Gear],
   template: `
     <div class="page-head">
       <h1>Builds</h1>
@@ -51,16 +52,9 @@ import { Build, Item, RoleInfo, SLOTS, SLOT_LABELS, hasLevel } from '../../core/
               <span class="badge badge-outline">{{ b.type_acti }}</span>
             </div>
             <h2>{{ b.name }}</h2>
-            @if (equipment(b); as eq) {
-              @if (eq.length) {
-                <div class="gear">
-                  @for (e of eq; track e.slot) {
-                    <img [src]="icon(e.item)" [alt]="e.item.name" [title]="e.label + ' : ' + e.item.name"
-                         width="48" height="48" loading="lazy" (error)="fallback($event)" />
-                  }
-                </div>
-                <p class="gear-names muted">{{ names(eq) }}</p>
-              }
+            <app-gear [items]="b.items" />
+            @if (gearNames(b); as names) {
+              <p class="gear-names muted">{{ names }}</p>
             }
             @if (b.weapon) {
               <p class="weapon">{{ b.weapon }}</p>
@@ -89,8 +83,6 @@ import { Build, Item, RoleInfo, SLOTS, SLOT_LABELS, hasLevel } from '../../core/
     .build h2 { margin: 0; }
     .thumb { width: 100%; max-height: 160px; object-fit: cover; border-radius: 8px; }
     .weapon, .notes, .by, .gear-names { margin: 0; }
-    .gear { display: flex; flex-wrap: wrap; gap: 4px; }
-    .gear img { width: 48px; height: 48px; border-radius: 8px; background: var(--surface-2); }
     .gear-names { font-size: .8rem; }
     .notes { white-space: pre-line; }
     .by { font-size: .8rem; }
@@ -132,24 +124,11 @@ export class BuildsList implements OnInit {
     }
   }
 
-  /** Objets du build dans l'ordre des emplacements (inconnus du catalogue ignorés). */
-  equipment(build: Build): { slot: string; label: string; item: Item }[] {
-    return SLOTS.flatMap((slot) => {
-      const item = this.items.get(build.items?.[slot]);
-      return item ? [{ slot, label: SLOT_LABELS[slot], item }] : [];
-    });
-  }
-
-  names(eq: { item: Item }[]): string {
-    return eq.map((e) => e.item.name).join(' · ');
-  }
-
-  icon(item: Item): string {
-    return itemIconUrl(item.icon);
-  }
-
-  fallback(event: Event): void {
-    useFallbackIcon(event);
+  /** « Épée large ou Hallebarde · Bouclier · Cape au choix » */
+  gearNames(build: Build): string {
+    return describeGear(build.items, (id) => this.items.get(id))
+      .map((g) => (g.free ? `${g.label} au choix` : g.items.map((i) => i.name).join(' ou ')))
+      .join(' · ');
   }
 
   emoji(role: string): string {

@@ -10,7 +10,8 @@ import { BuildsList } from './builds-list';
 
 const BUILDS: Build[] = [
   { id: 1, name: 'Tank Masse', role: 'TANK', type_acti: 'PVP', weapon: '1H Masse', notes: '', image: '',
-    items: { mainhand: 'MAIN_SWORD', offhand: 'OFF_SHIELD', head: 'HEAD_PLATE_SET1' }, created_by_name: 'Lily' },
+    items: { mainhand: ['MAIN_SWORD'], offhand: ['OFF_SHIELD'], head: ['HEAD_PLATE_SET1', 'HEAD_CLOTH_SET2'], cape: ['*'] },
+    created_by_name: 'Lily' },
   { id: 2, name: 'Heal Sancti', role: 'HEAL', type_acti: 'PVE', weapon: '', notes: 'Note', image: '',
     items: {}, created_by_name: 'Lily' },
 ];
@@ -47,6 +48,10 @@ describe('BuildsList', () => {
     const icons = [...first.querySelectorAll<HTMLImageElement>('.gear img')].map((i) => i.alt);
     expect(icons).toEqual(['Épée large', 'Bouclier', 'Casque de soldat']);
     expect(first.querySelector('.gear img')?.getAttribute('src')).toContain('render.albiononline.com');
+    expect(first.querySelector('.more')?.textContent).toContain('+1');
+    expect(first.querySelector('.free')).not.toBeNull();
+    expect(first.querySelector('.gear-names')?.textContent).toContain("Casque de soldat ou Capuchon d'ecclésiastique");
+    expect(first.querySelector('.gear-names')?.textContent).toContain('Cape au choix');
     expect(second.querySelector('.gear')).toBeNull();
   });
 

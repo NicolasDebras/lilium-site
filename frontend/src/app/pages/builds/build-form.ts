@@ -5,15 +5,30 @@ import { firstValueFrom } from 'rxjs';
 
 import { ApiService, errorMessage } from '../../core/api.service';
 import { ItemsService } from '../../core/items.service';
-import { BuildInput, RoleInfo, Slot } from '../../core/models';
+import { BuildInput, FREE_CHOICE, Item, RoleInfo, Slot } from '../../core/models';
 import { ItemPicker } from '../../shared/item-picker';
+
+/** Tolère l'ancien format {slot: "ID"} renvoyé par une vieille API. */
+function normalizeItems(items: unknown): BuildInput['items'] {
+  const out: Record<string, string[]> = {};
+  for (const [slot, value] of Object.entries((items ?? {}) as Record<string, string | string[]>)) {
+    const list = Array.isArray(value) ? value : value ? [value] : [];
+    if (list.length) out[slot] = list;
+  }
+  return out;
+}
 
 function emptyBuild(): BuildInput {
   return { name: '', role: '', type_acti: 'PVP', weapon: '', notes: '', image: '', items: {} };
 }
 
+export function allTwoHanded(mainhand: string[], get: (id: string) => Item | undefined): boolean {
+  const weapons = mainhand.filter((id) => id !== FREE_CHOICE).map(get);
+  return weapons.length > 0 && weapons.length === mainhand.length && weapons.every((w) => !!w?.two_handed);
+}
+
 /** Disposition de l'inventaire du jeu (null = case vide). */
-const PAPER_DOLL: (Slot | null)[] = [null, 'head', 'cape', 'mainhand', 'armor', 'offhand', null, 'shoes', null];
+const PAPER_DOLL: (Slot | null)[] = [null, 'head', 'cape', 'mainhand', 'armor', 'offhand', 'potion', 'shoes', 'food'];
 
 @Component({
   selector: 'app-build-form',
@@ -57,9 +72,9 @@ const PAPER_DOLL: (Slot | null)[] = [null, 'head', 'cape', 'mainhand', 'armor', 
         <div class="doll">
           @for (slot of doll; track $index) {
             @if (slot) {
-              <app-item-picker [slot]="slot" [value]="model().items[slot]"
+              <app-item-picker [slot]="slot" [value]="model().items[slot] ?? []"
                                [disabled]="slot === 'offhand' && twoHanded()"
-                               [disabledReason]="slot === 'offhand' && twoHanded() ? 'Arme à deux mains : pas de main gauche' : ''"
+                               [disabledReason]="slot === 'offhand' && twoHanded() ? 'Toutes les armes proposées sont à deux mains : pas de main gauche' : ''"
                                (valueChange)="setItem(slot, $event)" />
             } @else {
               <span></span>
@@ -122,15 +137,16 @@ export class BuildForm implements OnInit {
   protected readonly error = signal('');
   protected readonly itemsError = signal('');
 
-  /** L'arme choisie est à deux mains → la main gauche est bloquée. */
-  readonly twoHanded = computed(() => !!this.items.get(this.model().items.mainhand)?.two_handed);
+  /** Main gauche bloquée seulement si TOUTES les armes proposées sont à deux mains
+   *  (même règle que l'API). Arme « au choix » ou au moins une arme à une main → possible. */
+  readonly twoHanded = computed(() => allTwoHanded(this.model().items.mainhand ?? [], (id) => this.items.get(id)));
 
-  setItem(slot: Slot, itemId: string | null): void {
+  setItem(slot: Slot, choices: string[]): void {
     this.model.update((m) => {
       const items = { ...m.items };
-      if (itemId) items[slot] = itemId;
+      if (choices.length) items[slot] = choices;
       else delete items[slot];
-      if (slot === 'mainhand' && this.items.get(itemId)?.two_handed) delete items.offhand;
+      if (slot === 'mainhand' && allTwoHanded(choices, (id) => this.items.get(id))) delete items.offhand;
       return { ...m, items };
     });
   }
@@ -142,7 +158,7 @@ export class BuildForm implements OnInit {
     if (id) {
       try {
         const { id: _id, created_by_name: _by, ...rest } = await firstValueFrom(this.api.build(this.guildId(), +id));
-        this.model.set({ ...rest, items: rest.items ?? {} });
+        this.model.set({ ...rest, items: normalizeItems(rest.items) });
       } catch (err) {
         this.error.set(errorMessage(err));
       }

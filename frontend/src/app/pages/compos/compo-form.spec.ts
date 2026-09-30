@@ -4,7 +4,18 @@ import { TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 
 import { fakeAuth } from '../../../testing/fake-auth';
+import { TEST_ITEMS } from '../../../testing/items';
+import { Build } from '../../core/models';
 import { CompoForm } from './compo-form';
+
+const BUILDS: Build[] = [
+  { id: 12, name: 'Tank Masse', role: 'TANK', type_acti: 'PVP', weapon: '', notes: '', image: '',
+    items: { mainhand: ['MAIN_SWORD'] }, created_by_name: 'Lily' },
+  { id: 13, name: 'Tank Bouclier', role: 'TANK', type_acti: 'PVP', weapon: '', notes: '', image: '',
+    items: {}, created_by_name: 'Lily' },
+  { id: 15, name: 'Heal Sacré', role: 'HEAL', type_acti: 'PVP', weapon: '', notes: '', image: '',
+    items: { mainhand: ['2H_HOLYSTAFF'] }, created_by_name: 'Lily' },
+];
 
 async function render(name?: string) {
   TestBed.configureTestingModule({
@@ -16,17 +27,56 @@ async function render(name?: string) {
   if (name) fixture.componentRef.setInput('name', name);
   fixture.detectChanges();
   const http = TestBed.inject(HttpTestingController);
-  http.expectOne('/api/guilds/111/roles').flush([{ name: 'TANK', emoji: '🛡️' }, { name: 'DPS', emoji: '⚔️' }]);
+  http.expectOne('/api/guilds/111/roles').flush([{ name: 'TANK', emoji: '🛡️' }, { name: 'HEAL', emoji: '💚' }]);
+  http.expectOne((r) => r.url === '/api/guilds/111/builds').flush(BUILDS);
+  http.expectOne('/api/items').flush(TEST_ITEMS);
   const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+  await fixture.whenStable();
   return { fixture, http, navigate, cmp: fixture.componentInstance, el: fixture.nativeElement as HTMLElement };
 }
 
 describe('CompoForm', () => {
   it('démarre avec une ligne en PF1 et aucune en PF2', async () => {
-    const { fixture, el } = await render();
-    await fixture.whenStable();
+    const { el } = await render();
     expect(el.querySelectorAll('.slot[data-party="pf1"]').length).toBe(1);
     expect(el.querySelectorAll('.slot[data-party="pf2"]').length).toBe(0);
+  });
+
+  it('le sélecteur propose les builds groupés par rôle + « sans build »', async () => {
+    const { el } = await render();
+    const groups = [...el.querySelectorAll('select.source optgroup')].map((g) => g.getAttribute('label'));
+    expect(groups).toEqual(['TANK', 'HEAL']);
+    expect(el.querySelector('select.source')?.textContent).toContain('Sans build');
+  });
+
+  it('choisir un build fixe le rôle et affiche son équipement', async () => {
+    const { fixture, cmp, el } = await render();
+    cmp.setSource('pf1', 0, '15');
+    await fixture.whenStable();
+    expect(cmp['model']().pf1[0]).toMatchObject({ build_id: 15, role: 'HEAL', weapon: 'Heal Sacré' });
+    expect(el.querySelector('.detail .badge')?.textContent).toContain('HEAL');
+    expect(el.querySelector('.detail app-gear img')?.getAttribute('alt')).toBe('Grand bâton béni');
+  });
+
+  it('un rôle déjà pris dans la party est désactivé pour les autres lignes', async () => {
+    const { fixture, cmp, el } = await render();
+    cmp.setSource('pf1', 0, '12');
+    cmp.addRow('pf1');
+    await fixture.whenStable();
+    expect(cmp.isRoleTaken('pf1', 'TANK', 1)).toBe(true);
+    expect(cmp.isRoleTaken('pf1', 'TANK', 0)).toBe(false);
+    expect(cmp.isRoleTaken('pf2', 'TANK', 0)).toBe(false);
+    const secondSelect = el.querySelectorAll('select.source')[1];
+    const tankOption = [...secondSelect.querySelectorAll<HTMLOptionElement>('option')].find((o) => o.value === '13');
+    expect(tankOption?.disabled).toBe(true);
+  });
+
+  it('« sans build » affiche les champs rôle + armes', async () => {
+    const { fixture, cmp, el } = await render();
+    cmp.setSource('pf1', 0, 'free');
+    await fixture.whenStable();
+    expect(el.querySelector('.free-row select')).not.toBeNull();
+    expect(cmp['model']().pf1[0].build_id).toBeNull();
   });
 
   it('ajoute et retire des lignes PF1 / PF2', async () => {
@@ -36,7 +86,6 @@ describe('CompoForm', () => {
     await fixture.whenStable();
     expect(el.querySelectorAll('.slot[data-party="pf1"]').length).toBe(2);
     expect(el.querySelectorAll('.slot[data-party="pf2"]').length).toBe(1);
-
     cmp.removeRow('pf1', 0);
     await fixture.whenStable();
     expect(el.querySelectorAll('.slot[data-party="pf1"]').length).toBe(1);
@@ -44,39 +93,42 @@ describe('CompoForm', () => {
 
   it('calcule le total en ignorant les lignes sans rôle', async () => {
     const { cmp } = await render();
-    cmp['model'].set({
-      name: 'ZvZ', description: '', type_acti: 'PVP', image: '',
-      pf1: [{ role: 'TANK', count: 2, weapon: '' }, { role: '', count: 5, weapon: '' }],
-      pf2: [{ role: 'DPS', count: 4, weapon: '' }],
-    });
+    cmp.setSource('pf1', 0, '12');
+    cmp['model'].update((m) => ({ ...m, pf1: [{ ...m.pf1[0], count: 2 }, { build_id: null, role: '', count: 5, weapon: '' }] }));
     expect(cmp.total('pf1')).toBe(2);
-    expect(cmp.total('pf2')).toBe(4);
   });
 
-  it('crée la compo avec le bon payload puis revient à la liste', async () => {
+  it('crée la compo : lignes avec build_id, sans le champ interne « free »', async () => {
     const { cmp, http, navigate } = await render();
-    const body = {
-      name: 'ZvZ', description: 'd', type_acti: 'PVP' as const, image: '',
-      pf1: [{ role: 'TANK', count: 2, weapon: 'Masse' }], pf2: [],
-    };
-    cmp['model'].set(body);
+    cmp['model'].update((m) => ({ ...m, name: 'ZvZ' }));
+    cmp.setSource('pf1', 0, '12');
+    cmp.addRow('pf1');
+    cmp.setSource('pf1', 1, 'free');
+    cmp['model'].update((m) => ({ ...m, pf1: [m.pf1[0], { ...m.pf1[1], role: 'CALLER', weapon: 'Libre' }] }));
     const done = cmp.save();
     const req = http.expectOne('/api/guilds/111/compos');
     expect(req.request.method).toBe('POST');
-    expect(req.request.body).toEqual(body);
+    expect(req.request.body.pf1).toEqual([
+      { build_id: 12, role: 'TANK', count: 1, weapon: 'Tank Masse' },
+      { build_id: null, role: 'CALLER', count: 1, weapon: 'Libre' },
+    ]);
     req.flush({ name: 'ZvZ' });
     await done;
     expect(navigate).toHaveBeenCalledWith(['/g', '111', 'compos']);
   });
 
-  it('en édition : charge la compo puis fait un PUT sur son nom', async () => {
-    const { fixture, cmp, http } = await render('ZvZ');
+  it('en édition : relit les builds des lignes puis fait un PUT', async () => {
+    const { fixture, cmp, http, el } = await render('ZvZ');
     http.expectOne('/api/guilds/111/compos/ZvZ').flush({
       name: 'ZvZ', description: '', type_acti: 'PVP', image: '',
-      pf1: [{ role: 'TANK', count: 1, weapon: '' }], pf2: [], total: 1, custom: true,
+      pf1: [{ build_id: 12, role: 'TANK', count: 1, weapon: 'Tank Masse' }, { build_id: null, role: 'CALLER', count: 1, weapon: '' }],
+      pf2: [], total: 2, custom: true,
     });
+    await new Promise((r) => setTimeout(r));
     await fixture.whenStable();
-    expect(cmp['model']().pf1[0].role).toBe('TANK');
+    expect(cmp.sourceOf(cmp['model']().pf1[0])).toBe('12');
+    expect(cmp.sourceOf(cmp['model']().pf1[1])).toBe('free');
+    expect(el.querySelector('.free-row')).not.toBeNull();
 
     const done = cmp.save();
     const req = http.expectOne('/api/guilds/111/compos/ZvZ');
@@ -88,14 +140,14 @@ describe('CompoForm', () => {
 
   it('affiche le message d’erreur de l’API', async () => {
     const { fixture, cmp, http, el } = await render();
-    cmp['model'].update((m) => ({ ...m, name: 'Donjon Groupe 5' }));
+    cmp['model'].update((m) => ({ ...m, name: 'ZvZ' }));
     const done = cmp.save();
     http.expectOne('/api/guilds/111/compos').flush(
-      { detail: '« Donjon Groupe 5 » est un template par défaut, choisis un autre nom.' },
-      { status: 409, statusText: 'Conflict' },
+      { detail: 'Un seul build par rôle et par party : TANK en double en PF1.' },
+      { status: 422, statusText: 'Unprocessable Entity' },
     );
     await done;
     await fixture.whenStable();
-    expect(el.querySelector('.alert')?.textContent).toContain('template par défaut');
+    expect(el.querySelector('.alert')?.textContent).toContain('TANK en double');
   });
 });

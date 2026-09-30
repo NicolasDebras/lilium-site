@@ -3,7 +3,7 @@ from typing import Literal
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
 
-from app.compos import build_template_entry, template_to_compo
+from app.compos import InvalidCompo, build_template_entry, template_to_compo
 from app.constants import DEFAULT_TEMPLATES, default_templates_for
 from app.permissions import require_member, require_staff
 
@@ -11,6 +11,8 @@ router = APIRouter(prefix="/guilds/{guild_id}/compos", tags=["compos"])
 
 
 class SlotRow(BaseModel):
+    # build_id renseigné → rôle et arme viennent du build ; sinon ligne libre (rôle + arme en texte).
+    build_id: int | None = None
     role: str = ""
     count: int | str | None = None
     weapon: str = ""
@@ -25,8 +27,12 @@ class CompoIn(BaseModel):
     pf2: list[SlotRow] = []
 
 
-def _entry(body: CompoIn) -> dict:
-    entry = build_template_entry(body.model_dump())
+async def _entry(db, guild_id: int, body: CompoIn) -> dict:
+    builds_by_id = {b["id"]: b for b in await db.get_builds(guild_id)}
+    try:
+        entry = build_template_entry(body.model_dump(), builds_by_id)
+    except InvalidCompo as e:
+        raise HTTPException(status_code=422, detail=str(e))
     if not entry["pf_1"]:
         raise HTTPException(status_code=422, detail="La compo doit contenir au moins un rôle en PF1.")
     return entry
@@ -57,7 +63,7 @@ async def create_compo(guild_id: int, body: CompoIn, request: Request, user: dic
     db = request.app.state.db
     if name in await db.get_custom_templates(guild_id):
         raise HTTPException(status_code=409, detail=f"Une compo « {name} » existe déjà.")
-    await db.save_custom_template(guild_id, name, _entry(body))
+    await db.save_custom_template(guild_id, name, await _entry(db, guild_id, body))
     return {"name": name}
 
 
@@ -68,7 +74,7 @@ async def update_compo(guild_id: int, name: str, body: CompoIn, request: Request
     if name not in await db.get_custom_templates(guild_id):
         raise HTTPException(status_code=404, detail="Compo introuvable.")
     # Le nom sert de clé côté bot (/acti) : on ne le renomme pas ici.
-    await db.save_custom_template(guild_id, name, _entry(body))
+    await db.save_custom_template(guild_id, name, await _entry(db, guild_id, body))
     return {"name": name}
 
 

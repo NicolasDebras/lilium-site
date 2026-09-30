@@ -5,11 +5,13 @@ import { firstValueFrom } from 'rxjs';
 
 import { ApiService, errorMessage } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
-import { Compo, hasLevel } from '../../core/models';
+import { ItemsService } from '../../core/items.service';
+import { Build, Compo, SlotRow, hasLevel } from '../../core/models';
+import { Gear } from '../../shared/gear';
 
 @Component({
   selector: 'app-compos-list',
-  imports: [NgTemplateOutlet, RouterLink],
+  imports: [NgTemplateOutlet, RouterLink, Gear],
   template: `
     <div class="page-head">
       <h1>Compos</h1>
@@ -59,10 +61,23 @@ import { Compo, hasLevel } from '../../core/models';
         @for (pf of [{ label: 'PF1', rows: c.pf1 }, { label: 'PF2', rows: c.pf2 }]; track pf.label) {
           @if (pf.rows.length) {
             <table class="table">
-              <thead><tr><th>{{ pf.label }}</th><th>Nb</th><th>Armes</th></tr></thead>
+              <thead><tr><th>{{ pf.label }}</th><th>Nb</th><th>Build / armes</th></tr></thead>
               <tbody>
                 @for (r of pf.rows; track r.role) {
-                  <tr><td>{{ r.role }}</td><td>{{ r.count }}</td><td class="muted">{{ r.weapon }}</td></tr>
+                  <tr>
+                    <td>{{ r.role }}</td>
+                    <td>{{ r.count }}</td>
+                    <td>
+                      @if (buildOf(r); as b) {
+                        <div class="build-cell">
+                          <span>{{ b.name }}</span>
+                          <app-gear [items]="b.items" size="small" />
+                        </div>
+                      } @else {
+                        <span class="muted">{{ r.weapon }}</span>
+                      }
+                    </td>
+                  </tr>
                 }
               </tbody>
             </table>
@@ -84,11 +99,15 @@ import { Compo, hasLevel } from '../../core/models';
     .compo { display: grid; gap: 10px; align-content: start; }
     .compo h2 { margin: 0; flex: 1; }
     .desc { margin: 0; white-space: pre-line; }
+    .build-cell { display: grid; gap: 4px; }
   `,
 })
 export class ComposList implements OnInit {
   private readonly api = inject(ApiService);
   private readonly auth = inject(AuthService);
+  private readonly items = inject(ItemsService);
+  private readonly builds = signal<Build[]>([]);
+  private readonly buildsById = computed(() => new Map(this.builds().map((b) => [b.id, b])));
 
   readonly guildId = input.required<string>();
 
@@ -98,7 +117,13 @@ export class ComposList implements OnInit {
   protected readonly error = signal('');
   protected readonly canEdit = computed(() => hasLevel(this.auth.levelFor(this.guildId()), 'staff'));
 
+  buildOf(row: SlotRow): Build | undefined {
+    return row.build_id != null ? this.buildsById().get(row.build_id) : undefined;
+  }
+
   async ngOnInit(): Promise<void> {
+    this.items.load().catch(() => {});
+    this.api.builds(this.guildId()).subscribe({ next: (b) => this.builds.set(b), error: () => {} });
     try {
       const list = await firstValueFrom(this.api.compos(this.guildId()));
       this.custom.set(list.custom);

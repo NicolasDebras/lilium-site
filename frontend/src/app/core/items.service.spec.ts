@@ -19,7 +19,7 @@ describe('normalize / filterItems / itemIconUrl', () => {
   });
 
   it('cherche aussi dans le nom anglais et la famille', () => {
-    expect(filterItems(TEST_ITEMS, 'mainhand', 'holy').map((i) => i.id)).toEqual(['2H_HOLYSTAFF']);
+    expect(filterItems(TEST_ITEMS, 'mainhand', 'great holy').map((i) => i.id)).toEqual(['2H_HOLYSTAFF']);
     expect(filterItems(TEST_ITEMS, 'head', 'tissu').map((i) => i.id)).toEqual(['HEAD_CLOTH_SET2']);
   });
 

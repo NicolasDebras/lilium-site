@@ -4112,5 +4112,501 @@
   ],
   "two_handed": false,
   "category": "Capes"
+ },
+ {
+  "id": "MEAL_SPECIAL_FOOD_DRAKE_EGG",
+  "slot": "food",
+  "name": "Biscuits aux Œufs de Drake",
+  "name_en": "Drake Egg Biscuits",
+  "icon": "T8_MEAL_SPECIAL_FOOD_DRAKE_EGG",
+  "tiers": [
+   8
+  ],
+  "two_handed": false,
+  "category": "Nourriture"
+ },
+ {
+  "id": "MEAL_ROAST_FISH",
+  "slot": "food",
+  "name": "Lutjan purebrume rôti",
+  "name_en": "Roasted Puremist Snapper",
+  "icon": "T7_MEAL_ROAST_FISH",
+  "tiers": [
+   3,
+   5,
+   7
+  ],
+  "two_handed": false,
+  "category": "Nourriture"
+ },
+ {
+  "id": "MEAL_OMELETTE_DRAGONAREA",
+  "slot": "food",
+  "name": "Omelette au Tellurfin Draconique",
+  "name_en": "Dragonbound Leyfin Omelette",
+  "icon": "T7_MEAL_OMELETTE_DRAGONAREA",
+  "tiers": [
+   3,
+   5,
+   7
+  ],
+  "two_handed": false,
+  "category": "Nourriture"
+ },
+ {
+  "id": "MEAL_OMELETTE_FISH",
+  "slot": "food",
+  "name": "Omelette au crabe mantou",
+  "name_en": "Dusthole Crab Omelette",
+  "icon": "T7_MEAL_OMELETTE_FISH",
+  "tiers": [
+   3,
+   5,
+   7
+  ],
+  "two_handed": false,
+  "category": "Nourriture"
+ },
+ {
+  "id": "MEAL_OMELETTE",
+  "slot": "food",
+  "name": "Omelette au porc",
+  "name_en": "Pork Omelette",
+  "icon": "T7_MEAL_OMELETTE",
+  "tiers": [
+   3,
+   5,
+   7
+  ],
+  "two_handed": false,
+  "category": "Nourriture"
+ },
+ {
+  "id": "MEAL_OMELETTE_AVALON",
+  "slot": "food",
+  "name": "Omelette au porc avalonienne",
+  "name_en": "Avalonian Pork Omelette",
+  "icon": "T7_MEAL_OMELETTE_AVALON",
+  "tiers": [
+   3,
+   5,
+   7
+  ],
+  "two_handed": false,
+  "category": "Nourriture"
+ },
+ {
+  "id": "MEAL_GRILLEDFISH",
+  "slot": "food",
+  "name": "Poisson grillé",
+  "name_en": "Grilled Fish",
+  "icon": "T1_MEAL_GRILLEDFISH",
+  "tiers": [
+   1
+  ],
+  "two_handed": false,
+  "category": "Nourriture"
+ },
+ {
+  "id": "MEAL_ROAST",
+  "slot": "food",
+  "name": "Porc rôti",
+  "name_en": "Roast Pork",
+  "icon": "T7_MEAL_ROAST",
+  "tiers": [
+   3,
+   5,
+   7
+  ],
+  "two_handed": false,
+  "category": "Nourriture"
+ },
+ {
+  "id": "MEAL_STEW_FISH",
+  "slot": "food",
+  "name": "Ragoût d'anguille morteaux",
+  "name_en": "Deadwater Eel Stew",
+  "icon": "T8_MEAL_STEW_FISH",
+  "tiers": [
+   4,
+   6,
+   8
+  ],
+  "two_handed": false,
+  "category": "Nourriture"
+ },
+ {
+  "id": "MEAL_STEW",
+  "slot": "food",
+  "name": "Ragoût de bœuf",
+  "name_en": "Beef Stew",
+  "icon": "T8_MEAL_STEW",
+  "tiers": [
+   4,
+   6,
+   8
+  ],
+  "two_handed": false,
+  "category": "Nourriture"
+ },
+ {
+  "id": "MEAL_STEW_AVALON",
+  "slot": "food",
+  "name": "Ragoût de bœuf avalonien",
+  "name_en": "Avalonian Beef Stew",
+  "icon": "T8_MEAL_STEW_AVALON",
+  "tiers": [
+   4,
+   6,
+   8
+  ],
+  "two_handed": false,
+  "category": "Nourriture"
+ },
+ {
+  "id": "MEAL_SEAWEEDSALAD",
+  "slot": "food",
+  "name": "Salade d'algues",
+  "name_en": "Seaweed Salad",
+  "icon": "T1_MEAL_SEAWEEDSALAD",
+  "tiers": [
+   1
+  ],
+  "two_handed": false,
+  "category": "Nourriture"
+ },
+ {
+  "id": "MEAL_SALAD_FISH",
+  "slot": "food",
+  "name": "Salade de krakens des profondeurs",
+  "name_en": "Deepwater Kraken Salad",
+  "icon": "T6_MEAL_SALAD_FISH",
+  "tiers": [
+   2,
+   4,
+   6
+  ],
+  "two_handed": false,
+  "category": "Nourriture"
+ },
+ {
+  "id": "MEAL_SALAD",
+  "slot": "food",
+  "name": "Salade de patates",
+  "name_en": "Potato Salad",
+  "icon": "T6_MEAL_SALAD",
+  "tiers": [
+   2,
+   4,
+   6
+  ],
+  "two_handed": false,
+  "category": "Nourriture"
+ },
+ {
+  "id": "MEAL_SANDWICH",
+  "slot": "food",
+  "name": "Sandwich au bœuf",
+  "name_en": "Beef Sandwich",
+  "icon": "T8_MEAL_SANDWICH",
+  "tiers": [
+   4,
+   6,
+   8
+  ],
+  "two_handed": false,
+  "category": "Nourriture"
+ },
+ {
+  "id": "MEAL_SANDWICH_AVALON",
+  "slot": "food",
+  "name": "Sandwich au bœuf avalonien",
+  "name_en": "Avalonian Beef Sandwich",
+  "icon": "T8_MEAL_SANDWICH_AVALON",
+  "tiers": [
+   4,
+   6,
+   8
+  ],
+  "two_handed": false,
+  "category": "Nourriture"
+ },
+ {
+  "id": "MEAL_SANDWICH_FISH",
+  "slot": "food",
+  "name": "Sandwich à la loche léopard",
+  "name_en": "Thunderfall Lurcher Sandwich",
+  "icon": "T8_MEAL_SANDWICH_FISH",
+  "tiers": [
+   4,
+   6,
+   8
+  ],
+  "two_handed": false,
+  "category": "Nourriture"
+ },
+ {
+  "id": "MEAL_SOUP",
+  "slot": "food",
+  "name": "Soupe aux choux",
+  "name_en": "Cabbage Soup",
+  "icon": "T5_MEAL_SOUP",
+  "tiers": [
+   1,
+   3,
+   5
+  ],
+  "two_handed": false,
+  "category": "Nourriture"
+ },
+ {
+  "id": "MEAL_SOUP_FISH",
+  "slot": "food",
+  "name": "Soupe de palourdes noirebières",
+  "name_en": "Blackbog Clam Soup",
+  "icon": "T5_MEAL_SOUP_FISH",
+  "tiers": [
+   1,
+   3,
+   5
+  ],
+  "two_handed": false,
+  "category": "Nourriture"
+ },
+ {
+  "id": "MEAL_PIE",
+  "slot": "food",
+  "name": "Tourte au porc",
+  "name_en": "Pork Pie",
+  "icon": "T7_MEAL_PIE",
+  "tiers": [
+   3,
+   5,
+   7
+  ],
+  "two_handed": false,
+  "category": "Nourriture"
+ },
+ {
+  "id": "MEAL_PIE_FISH",
+  "slot": "food",
+  "name": "Tourte au sar boréal",
+  "name_en": "Frostpeak Deadeye Pie",
+  "icon": "T7_MEAL_PIE_FISH",
+  "tiers": [
+   3,
+   5,
+   7
+  ],
+  "two_handed": false,
+  "category": "Nourriture"
+ },
+ {
+  "id": "POTION_SLOWFIELD",
+  "slot": "potion",
+  "name": "Potion collante",
+  "name_en": "Sticky Potion",
+  "icon": "T7_POTION_SLOWFIELD",
+  "tiers": [
+   3,
+   5,
+   7
+  ],
+  "two_handed": false,
+  "category": "Potions"
+ },
+ {
+  "id": "POTION_ACID",
+  "slot": "potion",
+  "name": "Potion d'acide",
+  "name_en": "Acid Potion",
+  "icon": "T7_POTION_ACID",
+  "tiers": [
+   3,
+   5,
+   7
+  ],
+  "two_handed": false,
+  "category": "Potions"
+ },
+ {
+  "id": "POTION_CLEANSE",
+  "slot": "potion",
+  "name": "Potion d'invisibilité",
+  "name_en": "Invisibility Potion",
+  "icon": "T8_POTION_CLEANSE",
+  "tiers": [
+   8
+  ],
+  "two_handed": false,
+  "category": "Potions"
+ },
+ {
+  "id": "POTION_ENERGY",
+  "slot": "potion",
+  "name": "Potion d'énergie",
+  "name_en": "Energy Potion",
+  "icon": "T6_POTION_ENERGY",
+  "tiers": [
+   2,
+   4,
+   6
+  ],
+  "two_handed": false,
+  "category": "Potions"
+ },
+ {
+  "id": "POTION_LIFEWARD",
+  "slot": "potion",
+  "name": "Potion de Garde-Vie",
+  "name_en": "Lifeward Potion",
+  "icon": "T8_POTION_LIFEWARD",
+  "tiers": [
+   4,
+   6,
+   8
+  ],
+  "two_handed": false,
+  "category": "Potions"
+ },
+ {
+  "id": "POTION_BERSERK",
+  "slot": "potion",
+  "name": "Potion de berserker",
+  "name_en": "Berserk Potion",
+  "icon": "T8_POTION_BERSERK",
+  "tiers": [
+   4,
+   6,
+   8
+  ],
+  "two_handed": false,
+  "category": "Potions"
+ },
+ {
+  "id": "POTION_MOB_RESET",
+  "slot": "potion",
+  "name": "Potion de calme",
+  "name_en": "Calming Potion",
+  "icon": "T7_POTION_MOB_RESET",
+  "tiers": [
+   3,
+   5,
+   7
+  ],
+  "two_handed": false,
+  "category": "Potions"
+ },
+ {
+  "id": "POTION_LAVA",
+  "slot": "potion",
+  "name": "Potion de feu infernal",
+  "name_en": "Hellfire Potion",
+  "icon": "T8_POTION_LAVA",
+  "tiers": [
+   4,
+   6,
+   8
+  ],
+  "two_handed": false,
+  "category": "Potions"
+ },
+ {
+  "id": "POTION_REVIVE",
+  "slot": "potion",
+  "name": "Potion de gigantisme",
+  "name_en": "Gigantify Potion",
+  "icon": "T7_POTION_REVIVE",
+  "tiers": [
+   3,
+   5,
+   7
+  ],
+  "two_handed": false,
+  "category": "Potions"
+ },
+ {
+  "id": "POTION_COOLDOWN",
+  "slot": "potion",
+  "name": "Potion de poison",
+  "name_en": "Poison Potion",
+  "icon": "T8_POTION_COOLDOWN",
+  "tiers": [
+   4,
+   6,
+   8
+  ],
+  "two_handed": false,
+  "category": "Potions"
+ },
+ {
+  "id": "POTION_CLEANSE2",
+  "slot": "potion",
+  "name": "Potion de purification",
+  "name_en": "Cleansing Potion",
+  "icon": "T7_POTION_CLEANSE2",
+  "tiers": [
+   3,
+   5,
+   7
+  ],
+  "two_handed": false,
+  "category": "Potions"
+ },
+ {
+  "id": "POTION_GATHER",
+  "slot": "potion",
+  "name": "Potion de récolte",
+  "name_en": "Gathering Potion",
+  "icon": "T8_POTION_GATHER",
+  "tiers": [
+   4,
+   6,
+   8
+  ],
+  "two_handed": false,
+  "category": "Potions"
+ },
+ {
+  "id": "POTION_STONESKIN",
+  "slot": "potion",
+  "name": "Potion de résistance",
+  "name_en": "Resistance Potion",
+  "icon": "T7_POTION_STONESKIN",
+  "tiers": [
+   3,
+   5,
+   7
+  ],
+  "two_handed": false,
+  "category": "Potions"
+ },
+ {
+  "id": "POTION_HEAL",
+  "slot": "potion",
+  "name": "Potion de soin",
+  "name_en": "Healing Potion",
+  "icon": "T6_POTION_HEAL",
+  "tiers": [
+   2,
+   4,
+   6
+  ],
+  "two_handed": false,
+  "category": "Potions"
+ },
+ {
+  "id": "POTION_TORNADO",
+  "slot": "potion",
+  "name": "Tornade en bouteille",
+  "name_en": "Tornado in a Bottle",
+  "icon": "T8_POTION_TORNADO",
+  "tiers": [
+   4,
+   6,
+   8
+  ],
+  "two_handed": false,
+  "category": "Potions"
  }
 ]

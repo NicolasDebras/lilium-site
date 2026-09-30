@@ -122,14 +122,31 @@ Toutes sous `/api`. `{gid}` = id du serveur Discord.
 ### Builds et équipement
 
 Un build choisit son équipement parmi les **vrais objets du jeu**, avec leur image, dans une disposition identique à l'inventaire in-game :
-arme, main gauche, tête, armure, bottes, cape. Le sélecteur propose une recherche (FR, EN ou famille, accents ignorés) et des filtres par famille (Épées, Bâtons sacrés, Plaque, Cuir…).
+tête, cape / arme, armure, main gauche / potion, bottes, bouffe. Le sélecteur propose une recherche (FR, EN ou famille, accents ignorés) et des filtres par famille (Épées, Bâtons sacrés, Plaque, Nourriture, Potions…).
 
-- Stocké dans `builds.items` (JSON `{"mainhand": "2H_HOLYSTAFF", "head": "HEAD_CLOTH_SET2", …}`) : une entrée par **type** d'objet, tous tiers confondus.
-- L'API refuse un objet inconnu, un objet au mauvais emplacement, ou une main gauche avec une arme à deux mains. Le site bloque aussi la case main gauche dans ce cas.
+Chaque case peut valoir :
+- **1 objet** imposé ;
+- **2 ou 3 objets au choix** (« Grand bâton béni *ou* Bâton de rédemption ») ;
+- **« Au choix du joueur »** (rien d'imposé) ;
+- rien (case vide).
+
+Détails :
+- Stocké dans `builds.items` : `{"mainhand": ["2H_HOLYSTAFF", "2H_HOLYSTAFF_HELL"], "cape": ["*"], "food": ["MEAL_STEW"], …}` — une entrée par **type** d'objet, tous tiers confondus. L'ancien format `{"mainhand": "ID"}` est encore lu.
+- L'API refuse : objet inconnu ou au mauvais emplacement, plus de 3 choix, « au choix » mélangé à des objets, main gauche alors que **toutes** les armes proposées sont à deux mains (si au moins une est à une main, la main gauche reste possible). Le site applique les mêmes règles.
 - Images : CDN officiel `https://render.albiononline.com/v1/item/{id}.png`. Si une image manque (objet trop récent), une icône « ? » s'affiche à la place.
-- Le champ texte « Précisions sur le stuff » reste disponible pour le reste (tier minimum, bouffe, potion, monture…).
+- Le champ texte « Précisions sur le stuff » reste disponible (tier minimum, monture…).
 
-**Catalogue** : `api/app/data/items.json` (~250 objets), généré depuis les dumps officiels du jeu ([ao-bin-dumps](https://github.com/ao-data/ao-bin-dumps)).
+### Compos = ensemble de builds
+
+Chaque ligne d'une compo = **un build × un nombre de joueurs**, en PF1 et/ou PF2. Le rôle vient du build, et il n'y a **qu'un build par rôle et par party** :
+sur Discord, avec `/acti`, le joueur choisit son rôle et le build lui est imposé (pas de liste d'armes). Une ligne peut aussi rester « sans build » (rôle + armes en texte, comme avant).
+
+- Stocké dans `custom_templates` au format du bot, avec en plus `builds` / `builds_pf2` (`{rôle: id du build}`) ; le hint d'arme affiché dans l'acti = nom du build.
+- Un build utilisé par une compo ne peut pas être supprimé ni changer de rôle (409, avec la liste des compos). Le renommer met à jour les compos.
+- Lancement des activités : uniquement via `/acti nametemplate:<compo>` sur Discord.
+- `/massup` envoie en MP à chaque joueur l'image du build de son rôle (voir le README du bot).
+
+**Catalogue** : `api/app/data/items.json` (~290 objets, bouffe et potions comprises), généré depuis les dumps officiels du jeu ([ao-bin-dumps](https://github.com/ao-data/ao-bin-dumps)).
 Après un patch d'Albion qui ajoute des objets :
 
 ```powershell
@@ -167,11 +184,11 @@ lilium-site/
         ├── styles.scss      # thème noir & lilas (toutes les couleurs sont ici)
         └── app/
             ├── core/        # AuthService, ApiService, ItemsService, guards, intercepteur 401, modèles
-            ├── shared/      # item-picker (case d'équipement + sélecteur d'objets)
+            ├── shared/      # item-picker (case d'équipement, 1 à 3 choix), gear (rangée d'icônes d'un build)
             └── pages/       # login, guilds, shell (nav), builds, compos, bal, admin
 ```
 
 ## Pistes pour la suite
 - Page Admin : ajouter des outils (historique BAL, activité des membres…) — route `admin/…` + garde `require_admin`
-- Builds : bouffe / potion / monture dans l'équipement, lien entre les compos et les builds
+- Builds : monture dans l'équipement
 - Déploiement (Railway) puis retrait du site embarqué dans le bot (`web/`, `ENABLE_WEB`)

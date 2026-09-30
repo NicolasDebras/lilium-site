@@ -3,7 +3,8 @@ from typing import Literal
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field, field_validator
 
-from app.catalog import InvalidItems, validate_build_items
+from app.catalog import InvalidItems, normalize_items, validate_build_items
+from app.compos import compos_using_build, rename_build
 from app.permissions import require_member, require_staff
 
 router = APIRouter(prefix="/guilds/{guild_id}/builds", tags=["builds"])
@@ -16,8 +17,9 @@ class BuildIn(BaseModel):
     weapon: str = Field(default="", max_length=200)
     notes: str = Field(default="", max_length=4000)
     image: str = Field(default="", max_length=500)
-    # Équipement : {"mainhand": "2H_HOLYSTAFF", "head": "HEAD_CLOTH_SET2", ...} (ids de /api/items)
-    items: dict[str, str] = {}
+    # Équipement : {slot: [1 à 3 ids de /api/items]} ou {slot: ["*"]} = au choix du joueur.
+    # Une chaîne seule (ancien format) est aussi acceptée.
+    items: dict[str, str | list[str]] = {}
 
     @field_validator("name", "weapon", "notes", "image")
     @classmethod
@@ -48,7 +50,7 @@ def _out(build: dict) -> dict:
         "weapon":          build["weapon"],
         "notes":           build["notes"],
         "image":           build["image"],
-        "items":           build.get("items") or {},
+        "items":           normalize_items(build.get("items")),
         "created_by_name": build["created_by_name"],
     }
 
@@ -77,12 +79,33 @@ async def create_build(guild_id: int, body: BuildIn, request: Request, user: dic
 @router.put("/{build_id}")
 async def update_build(guild_id: int, build_id: int, body: BuildIn, request: Request,
                        user: dict = Depends(require_staff)):
-    if not await request.app.state.db.update_build(guild_id, build_id, _data(body)):
+    db = request.app.state.db
+    current = await db.get_build(guild_id, build_id)
+    if not current:
         raise HTTPException(status_code=404, detail="Build introuvable.")
+    data = _data(body)
+    old_name, old_role = current["name"], current["role"]
+
+    templates = await db.get_custom_templates(guild_id)
+    used_by = compos_using_build(templates, build_id)
+    if used_by and data["role"] != old_role:
+        raise HTTPException(status_code=409, detail=(
+            f"Ce build est utilisé en {old_role} par : {', '.join(used_by)}. "
+            "Retire-le de ces compos avant de changer son rôle."
+        ))
+
+    await db.update_build(guild_id, build_id, data)
+    if data["name"] != old_name:
+        for name in used_by:
+            await db.save_custom_template(guild_id, name, rename_build(templates[name], build_id, data["name"]))
     return {"id": build_id}
 
 
 @router.delete("/{build_id}", status_code=204)
 async def delete_build(guild_id: int, build_id: int, request: Request, user: dict = Depends(require_staff)):
-    if not await request.app.state.db.delete_build(guild_id, build_id):
+    db = request.app.state.db
+    used_by = compos_using_build(await db.get_custom_templates(guild_id), build_id)
+    if used_by:
+        raise HTTPException(status_code=409, detail=f"Ce build est utilisé par : {', '.join(used_by)}. Retire-le de ces compos d'abord.")
+    if not await db.delete_build(guild_id, build_id):
         raise HTTPException(status_code=404, detail="Build introuvable.")

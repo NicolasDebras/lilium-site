@@ -7,7 +7,7 @@ import { ItemsService } from '../core/items.service';
 import { Slot } from '../core/models';
 import { ItemPicker } from './item-picker';
 
-async function render(slot: Slot, value?: string, disabled = false) {
+async function render(slot: Slot, value: string[] = [], disabled = false) {
   TestBed.configureTestingModule({
     imports: [ItemPicker],
     providers: [provideHttpClient(), provideHttpClientTesting()],
@@ -18,17 +18,25 @@ async function render(slot: Slot, value?: string, disabled = false) {
 
   const fixture = TestBed.createComponent(ItemPicker);
   fixture.componentRef.setInput('slot', slot);
-  if (value) fixture.componentRef.setInput('value', value);
+  fixture.componentRef.setInput('value', value);
   fixture.componentRef.setInput('disabled', disabled);
-  const emitted: (string | null)[] = [];
-  fixture.componentInstance.valueChange.subscribe((v) => emitted.push(v));
+  const emitted: string[][] = [];
+  // Comme dans le formulaire : la valeur émise redevient la valeur affichée.
+  fixture.componentInstance.valueChange.subscribe((v) => {
+    emitted.push(v);
+    fixture.componentRef.setInput('value', v);
+  });
   await fixture.whenStable();
   const el = fixture.nativeElement as HTMLElement;
   const openPanel = async () => {
     el.querySelector<HTMLButtonElement>('button.slot')!.click();
     await fixture.whenStable();
   };
-  return { fixture, el, emitted, openPanel };
+  const clickResult = async (name: string) => {
+    [...el.querySelectorAll<HTMLButtonElement>('.result')].find((b) => b.textContent?.includes(name))!.click();
+    await fixture.whenStable();
+  };
+  return { fixture, el, emitted, openPanel, clickResult };
 }
 
 describe('ItemPicker', () => {
@@ -38,17 +46,35 @@ describe('ItemPicker', () => {
     expect(el.querySelector('.slot-label')?.textContent).toContain('Tête');
   });
 
-  it('affiche l’image et le nom de l’objet choisi', async () => {
-    const { el } = await render('mainhand', 'MAIN_SWORD');
-    expect(el.querySelector<HTMLImageElement>('.slot img')?.src).toContain('T8_MAIN_SWORD.png');
+  it('un seul objet : grande image + nom', async () => {
+    const { el } = await render('mainhand', ['MAIN_SWORD']);
+    expect(el.querySelector<HTMLImageElement>('.slot > img')?.src).toContain('T8_MAIN_SWORD.png');
     expect(el.querySelector('.slot-label')?.textContent).toContain('Épée large');
   });
 
-  it('ouvre le panneau avec seulement les objets de l’emplacement', async () => {
+  it('plusieurs choix : petites images + « A / B »', async () => {
+    const { el } = await render('mainhand', ['2H_HOLYSTAFF', '2H_HOLYSTAFF_HELL']);
+    expect(el.querySelectorAll('.multi img').length).toBe(2);
+    expect(el.querySelector('.slot-label')?.textContent).toContain('Grand bâton béni / Bâton de rédemption');
+  });
+
+  it('« au choix du joueur » s’affiche comme tel', async () => {
+    const { el } = await render('cape', ['*']);
+    expect(el.querySelector('.free')?.textContent).toContain('Au choix');
+    expect(el.querySelector('.slot-label')?.textContent).toContain('Au choix du joueur');
+  });
+
+  it('le panneau ne montre que les objets de l’emplacement', async () => {
     const { el, openPanel } = await render('head');
     await openPanel();
     const results = [...el.querySelectorAll('.result')].map((b) => b.textContent?.trim());
     expect(results).toEqual(['Casque de soldat', "Capuchon d'ecclésiastique"]);
+  });
+
+  it('bouffe et potion ont leurs propres objets', async () => {
+    const { el, openPanel } = await render('food');
+    await openPanel();
+    expect([...el.querySelectorAll('.result')].map((b) => b.textContent?.trim())).toEqual(['Ragoût de bœuf']);
   });
 
   it('la recherche filtre les résultats', async () => {
@@ -61,25 +87,48 @@ describe('ItemPicker', () => {
     expect(el.querySelectorAll('.result').length).toBe(1);
   });
 
-  it('cliquer sur un objet l’émet et ferme le panneau', async () => {
-    const { fixture, el, emitted, openPanel } = await render('head');
+  it('cliquer ajoute puis retire un objet, le panneau reste ouvert', async () => {
+    const { el, emitted, openPanel, clickResult } = await render('mainhand');
     await openPanel();
-    el.querySelector<HTMLButtonElement>('.result')!.click();
-    await fixture.whenStable();
-    expect(emitted).toEqual(['HEAD_PLATE_SET1']);
-    expect(el.querySelector('.panel')).toBeNull();
+    await clickResult('Épée large');
+    await clickResult('Grand bâton béni');
+    await clickResult('Épée large');
+    expect(emitted).toEqual([['MAIN_SWORD'], ['MAIN_SWORD', '2H_HOLYSTAFF'], ['2H_HOLYSTAFF']]);
+    expect(el.querySelector('.panel')).not.toBeNull();
   });
 
-  it('« Retirer l’objet » émet null', async () => {
-    const { fixture, el, emitted, openPanel } = await render('head', 'HEAD_PLATE_SET1');
+  it('3 choix maximum : les autres objets sont désactivés', async () => {
+    const { el, openPanel } = await render('mainhand', ['MAIN_SWORD', '2H_HOLYSTAFF', '2H_HOLYSTAFF_HELL']);
+    await openPanel();
+    const other = [...el.querySelectorAll<HTMLButtonElement>('.result')].find((b) => b.textContent?.includes('Bâton béni') && !b.textContent?.includes('Grand'))!;
+    expect(other.disabled).toBe(true);
+    expect(el.querySelector('.count')?.textContent).toContain('3/3');
+  });
+
+  it('« Au choix du joueur » remplace la sélection et ferme', async () => {
+    const { el, emitted, openPanel } = await render('mainhand', ['MAIN_SWORD']);
+    await openPanel();
+    el.querySelector<HTMLButtonElement>('.free-btn')!.click();
+    expect(emitted).toEqual([['*']]);
+  });
+
+  it('choisir un objet après « au choix » repart de zéro', async () => {
+    const { emitted, openPanel, clickResult } = await render('mainhand', ['*']);
+    await openPanel();
+    await clickResult('Épée large');
+    expect(emitted).toEqual([['MAIN_SWORD']]);
+  });
+
+  it('« Vider la case » émet une liste vide', async () => {
+    const { fixture, el, emitted, openPanel } = await render('head', ['HEAD_PLATE_SET1']);
     await openPanel();
     el.querySelector<HTMLButtonElement>('.clear')!.click();
     await fixture.whenStable();
-    expect(emitted).toEqual([null]);
+    expect(emitted).toEqual([[]]);
   });
 
   it('désactivé : la case ne s’ouvre pas', async () => {
-    const { el } = await render('offhand', undefined, true);
+    const { el } = await render('offhand', [], true);
     expect(el.querySelector<HTMLButtonElement>('button.slot')!.disabled).toBe(true);
   });
 });

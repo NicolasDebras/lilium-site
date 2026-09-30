@@ -12,4 +12,12 @@ export const TEST_ITEMS: Item[] = [
     tiers: [4, 5, 6, 7, 8], two_handed: false, category: 'Plaque' },
   { id: 'HEAD_CLOTH_SET2', slot: 'head', name: "Capuchon d'ecclésiastique", name_en: 'Cleric Cowl', icon: 'T8_HEAD_CLOTH_SET2',
     tiers: [4, 5, 6, 7, 8], two_handed: false, category: 'Tissu' },
+  { id: '2H_HOLYSTAFF_HELL', slot: 'mainhand', name: 'Bâton de rédemption', name_en: 'Redemption Staff',
+    icon: 'T8_2H_HOLYSTAFF_HELL', tiers: [4, 5, 6, 7, 8], two_handed: true, category: 'Bâtons sacrés' },
+  { id: 'MAIN_HOLYSTAFF', slot: 'mainhand', name: 'Bâton béni', name_en: 'Holy Staff', icon: 'T8_MAIN_HOLYSTAFF',
+    tiers: [4, 5, 6, 7, 8], two_handed: false, category: 'Bâtons sacrés' },
+  { id: 'MEAL_STEW', slot: 'food', name: 'Ragoût de bœuf', name_en: 'Beef Stew', icon: 'T8_MEAL_STEW',
+    tiers: [4, 6, 8], two_handed: false, category: 'Nourriture' },
+  { id: 'POTION_HEAL', slot: 'potion', name: 'Potion de soin', name_en: 'Healing Potion', icon: 'T6_POTION_HEAL',
+    tiers: [2, 4, 6], two_handed: false, category: 'Potions' },
 ];

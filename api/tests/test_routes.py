@@ -167,10 +167,19 @@ def test_items_catalog(login):
 
 def test_build_with_items_roundtrip(login):
     c = login(STAFF_ID)
-    items = {"head": "HEAD_PLATE_SET1", "mainhand": "MAIN_SWORD", "offhand": "OFF_SHIELD"}
+    items = {"head": ["HEAD_PLATE_SET1"], "mainhand": ["MAIN_SWORD", "2H_HOLYSTAFF"], "offhand": ["OFF_SHIELD"],
+             "cape": ["*"], "food": ["MEAL_STEW"], "potion": ["POTION_HEAL"]}
     build_id = c.post(f"/api/guilds/{GUILD}/builds", json={**BUILD, "items": items}).json()["id"]
     got = c.get(f"/api/guilds/{GUILD}/builds/{build_id}").json()["items"]
-    assert got == {"mainhand": "MAIN_SWORD", "offhand": "OFF_SHIELD", "head": "HEAD_PLATE_SET1"}
+    assert got == {"mainhand": ["MAIN_SWORD", "2H_HOLYSTAFF"], "offhand": ["OFF_SHIELD"], "head": ["HEAD_PLATE_SET1"],
+                   "cape": ["*"], "food": ["MEAL_STEW"], "potion": ["POTION_HEAL"]}
+
+
+def test_build_old_string_items_are_read_as_lists(login, fake_db):
+    c = login(STAFF_ID)
+    build_id = c.post(f"/api/guilds/{GUILD}/builds", json=BUILD).json()["id"]
+    fake_db.builds[build_id]["items"] = {"mainhand": "MAIN_SWORD"}  # ligne écrite avant les choix multiples
+    assert c.get(f"/api/guilds/{GUILD}/builds/{build_id}").json()["items"] == {"mainhand": ["MAIN_SWORD"]}
 
 
 def test_build_without_items_defaults_to_empty(login):
@@ -181,11 +190,75 @@ def test_build_without_items_defaults_to_empty(login):
 
 def test_build_rejects_offhand_with_two_handed(login):
     r = login(STAFF_ID).post(f"/api/guilds/{GUILD}/builds",
-                             json={**BUILD, "items": {"mainhand": "2H_HOLYSTAFF", "offhand": "OFF_SHIELD"}})
+                             json={**BUILD, "items": {"mainhand": ["2H_HOLYSTAFF"], "offhand": ["OFF_SHIELD"]}})
     assert r.status_code == 422
     assert "deux mains" in r.json()["detail"]
 
 
 def test_build_rejects_unknown_item(login):
-    r = login(STAFF_ID).post(f"/api/guilds/{GUILD}/builds", json={**BUILD, "items": {"head": "PAS_UN_OBJET"}})
+    r = login(STAFF_ID).post(f"/api/guilds/{GUILD}/builds", json={**BUILD, "items": {"head": ["PAS_UN_OBJET"]}})
     assert r.status_code == 422
+
+
+# ── Compos composées de builds ───────────────────────────────────────────────
+
+def _make_build(c, name, role):
+    return c.post(f"/api/guilds/{GUILD}/builds", json={**BUILD, "name": name, "role": role}).json()["id"]
+
+
+def test_compo_with_builds(login, fake_db):
+    c = login(STAFF_ID)
+    tank, heal = _make_build(c, "Tank Masse", "TANK"), _make_build(c, "Heal Sacre", "HEAL")
+    body = {**COMPO, "pf1": [{"build_id": tank, "count": 2}, {"build_id": heal, "count": 3}]}
+    assert c.post(f"/api/guilds/{GUILD}/compos", json=body).status_code == 201
+
+    saved = fake_db.templates[GUILD]["ZvZ"]
+    assert saved["pf_1"] == {"TANK": 2, "HEAL": 3}
+    assert saved["builds"] == {"TANK": tank, "HEAL": heal}
+    assert saved["weapon"] == {"TANK": "Tank Masse", "HEAL": "Heal Sacre"}
+    rows = c.get(f"/api/guilds/{GUILD}/compos/ZvZ").json()["pf1"]
+    assert [r["build_id"] for r in rows] == [tank, heal]
+
+
+def test_compo_two_builds_same_role_is_422(login):
+    c = login(STAFF_ID)
+    a, b = _make_build(c, "Tank A", "TANK"), _make_build(c, "Tank B", "TANK")
+    r = c.post(f"/api/guilds/{GUILD}/compos", json={**COMPO, "pf1": [{"build_id": a, "count": 1}, {"build_id": b, "count": 1}]})
+    assert r.status_code == 422
+    assert "TANK en double" in r.json()["detail"]
+
+
+def test_compo_with_unknown_build_is_422(login):
+    r = login(STAFF_ID).post(f"/api/guilds/{GUILD}/compos", json={**COMPO, "pf1": [{"build_id": 999, "count": 1}]})
+    assert r.status_code == 422
+
+
+def test_delete_build_used_by_compo_is_409(login):
+    c = login(STAFF_ID)
+    tank = _make_build(c, "Tank Masse", "TANK")
+    c.post(f"/api/guilds/{GUILD}/compos", json={**COMPO, "pf1": [{"build_id": tank, "count": 1}]})
+    r = c.delete(f"/api/guilds/{GUILD}/builds/{tank}")
+    assert r.status_code == 409
+    assert "ZvZ" in r.json()["detail"]
+
+
+def test_renaming_build_updates_compo_hint(login, fake_db):
+    c = login(STAFF_ID)
+    tank = _make_build(c, "Tank Masse", "TANK")
+    c.post(f"/api/guilds/{GUILD}/compos", json={**COMPO, "pf1": [{"build_id": tank, "count": 1}]})
+    assert c.put(f"/api/guilds/{GUILD}/builds/{tank}", json={**BUILD, "name": "Tank Hallebarde", "role": "TANK"}).status_code == 200
+    assert fake_db.templates[GUILD]["ZvZ"]["weapon"]["TANK"] == "Tank Hallebarde"
+
+
+def test_changing_role_of_used_build_is_409(login):
+    c = login(STAFF_ID)
+    tank = _make_build(c, "Tank Masse", "TANK")
+    c.post(f"/api/guilds/{GUILD}/compos", json={**COMPO, "pf1": [{"build_id": tank, "count": 1}]})
+    r = c.put(f"/api/guilds/{GUILD}/builds/{tank}", json={**BUILD, "name": "Tank Masse", "role": "HEAL"})
+    assert r.status_code == 409
+
+
+def test_changing_role_of_unused_build_is_fine(login):
+    c = login(STAFF_ID)
+    b = _make_build(c, "Libre", "TANK")
+    assert c.put(f"/api/guilds/{GUILD}/builds/{b}", json={**BUILD, "role": "HEAL"}).status_code == 200

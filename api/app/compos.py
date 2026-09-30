@@ -1,69 +1,114 @@
-"""Conversion entre le format du site (lignes rôle/nombre/arme) et le format
-des templates du bot (table custom_templates, même format que /addtemplate) :
+"""Conversion entre le format du site (lignes build/rôle/nombre/arme) et le
+format des templates du bot (table custom_templates, même format que /addtemplate) :
 
     {"description", "type_acti", "image",
-     "pf_1": {rôle: nb}, "weapon": {rôle: hint},
-     "pf_2": {rôle: nb}, "weapon_pf2": {rôle: hint}}   ← pf_2 seulement si non vide
+     "pf_1": {rôle: nb}, "weapon": {rôle: hint}, "builds": {rôle: build_id},
+     "pf_2": {rôle: nb}, "weapon_pf2": {rôle: hint}, "builds_pf2": {rôle: build_id}}
+    (les clés *_pf2 seulement si la PF2 n'est pas vide)
 
-Logique pure, portée de _build_template_entry (botDiscord/web/routes_compos.py).
+Une ligne peut pointer vers un build (le rôle et le hint viennent alors du
+build : un seul build par rôle et par party, le joueur choisit son rôle et le
+build lui est imposé) ou rester libre (rôle + arme en texte, comme avant).
+Logique pure, sans I/O.
 """
 
+PARTIES = (
+    # (clé du site, clé nombres, clé hints, clé builds, libellé)
+    ("pf1", "pf_1", "weapon", "builds", "PF1"),
+    ("pf2", "pf_2", "weapon_pf2", "builds_pf2", "PF2"),
+)
 
-def _rows_to_maps(rows: list[dict]) -> tuple[dict[str, int], dict[str, str]]:
+
+class InvalidCompo(ValueError):
+    pass
+
+
+def _party(rows: list[dict], builds_by_id: dict[int, dict], label: str
+           ) -> tuple[dict[str, int], dict[str, str], dict[str, int]]:
     counts: dict[str, int] = {}
     weapons: dict[str, str] = {}
+    builds: dict[str, int] = {}
     for row in rows:
-        role = str(row.get("role") or "").strip().upper()
         raw_count = row.get("count")
-        if not role or raw_count in (None, ""):
-            continue
         try:
             count = int(raw_count)
         except (TypeError, ValueError):
             continue
         if count <= 0:
             continue
+
+        build_id = row.get("build_id")
+        if build_id is not None:
+            build = builds_by_id.get(int(build_id))
+            if build is None:
+                raise InvalidCompo(f"Build introuvable (n°{build_id}) : il a peut-être été supprimé.")
+            role, weapon = build["role"].strip().upper(), build["name"]
+        else:
+            role = str(row.get("role") or "").strip().upper()
+            weapon = str(row.get("weapon") or "").strip()
+        if not role:
+            continue
+
+        if role in counts:
+            raise InvalidCompo(f"Un seul build par rôle et par party : {role} en double en {label}.")
         counts[role] = count
-        weapon = str(row.get("weapon") or "").strip()
         if weapon:
             weapons[role] = weapon
-    return counts, weapons
+        if build_id is not None:
+            builds[role] = int(build_id)
+    return counts, weapons, builds
 
 
-def build_template_entry(body: dict) -> dict:
-    pf_1, weapon = _rows_to_maps(body.get("pf1") or [])
-    pf_2, weapon_pf2 = _rows_to_maps(body.get("pf2") or [])
+def build_template_entry(body: dict, builds_by_id: dict[int, dict] | None = None) -> dict:
+    builds_by_id = builds_by_id or {}
     entry = {
         "description": str(body.get("description") or "").strip(),
         "type_acti":   body.get("type_acti") or "PVP",
         "image":       str(body.get("image") or "").strip(),
-        "pf_1":        pf_1,
-        "weapon":      weapon,
     }
-    if pf_2:
-        entry["pf_2"] = pf_2
-        entry["weapon_pf2"] = weapon_pf2
+    for site_key, count_key, weapon_key, builds_key, label in PARTIES:
+        counts, weapons, builds = _party(body.get(site_key) or [], builds_by_id, label)
+        if site_key == "pf2" and not counts:
+            continue
+        entry[count_key] = counts
+        entry[weapon_key] = weapons
+        if builds:
+            entry[builds_key] = builds
     return entry
 
 
-def _maps_to_rows(counts: dict | None, weapons: dict | None) -> list[dict]:
-    weapons = weapons or {}
-    return [
-        {"role": role, "count": count, "weapon": weapons.get(role, "")}
-        for role, count in (counts or {}).items()
-    ]
-
-
 def template_to_compo(name: str, data: dict, *, custom: bool) -> dict:
-    pf1 = _maps_to_rows(data.get("pf_1"), data.get("weapon"))
-    pf2 = _maps_to_rows(data.get("pf_2"), data.get("weapon_pf2"))
-    return {
+    compo = {
         "name":        name,
         "description": data.get("description", ""),
         "type_acti":   data.get("type_acti", "PVP"),
         "image":       data.get("image", ""),
-        "pf1":         pf1,
-        "pf2":         pf2,
-        "total":       sum(r["count"] for r in pf1 + pf2),
         "custom":      custom,
     }
+    for site_key, count_key, weapon_key, builds_key, _ in PARTIES:
+        weapons = data.get(weapon_key) or {}
+        builds = data.get(builds_key) or {}
+        compo[site_key] = [
+            {"role": role, "count": count, "weapon": weapons.get(role, ""), "build_id": builds.get(role)}
+            for role, count in (data.get(count_key) or {}).items()
+        ]
+    compo["total"] = sum(r["count"] for r in compo["pf1"] + compo["pf2"])
+    return compo
+
+
+def build_ids_of(data: dict) -> set[int]:
+    return {int(b) for _, _, _, builds_key, _ in PARTIES for b in (data.get(builds_key) or {}).values()}
+
+
+def compos_using_build(templates: dict[str, dict], build_id: int) -> list[str]:
+    return sorted(name for name, data in templates.items() if build_id in build_ids_of(data))
+
+
+def rename_build(data: dict, build_id: int, new_name: str) -> dict:
+    """Le hint affiché dans l'embed de /acti = nom du build : on le suit quand le build est renommé."""
+    data = {**data}
+    for _, _, weapon_key, builds_key, _ in PARTIES:
+        for role, bid in (data.get(builds_key) or {}).items():
+            if int(bid) == build_id:
+                data[weapon_key] = {**(data.get(weapon_key) or {}), role: new_name}
+    return data

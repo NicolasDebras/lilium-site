@@ -28,7 +28,7 @@ export interface Me {
 export type TypeActi = 'PVP' | 'PVE';
 
 // ── Équipement Albion (catalogue /api/items) ──────────────────────────────────
-export const SLOTS = ['mainhand', 'offhand', 'head', 'armor', 'shoes', 'cape'] as const;
+export const SLOTS = ['mainhand', 'offhand', 'head', 'armor', 'shoes', 'cape', 'food', 'potion'] as const;
 export type Slot = (typeof SLOTS)[number];
 
 export const SLOT_LABELS: Record<Slot, string> = {
@@ -38,7 +38,14 @@ export const SLOT_LABELS: Record<Slot, string> = {
   armor: 'Armure',
   shoes: 'Bottes',
   cape: 'Cape',
+  food: 'Bouffe',
+  potion: 'Potion',
 };
+
+/** Valeur d'une case « au choix du joueur » (rien d'imposé). */
+export const FREE_CHOICE = '*';
+/** Nombre max d'objets proposés au choix dans une case. */
+export const MAX_CHOICES = 3;
 
 export interface Item {
   id: string;
@@ -52,7 +59,8 @@ export interface Item {
   category: string;
 }
 
-export type BuildItems = Partial<Record<Slot, string>>;
+/** Par case : 1 à 3 ids d'objets au choix, ou [FREE_CHOICE]. Case absente = rien de précisé. */
+export type BuildItems = Partial<Record<Slot, string[]>>;
 
 export interface Build {
   id: number;
@@ -69,6 +77,8 @@ export interface Build {
 export type BuildInput = Omit<Build, 'id' | 'created_by_name'>;
 
 export interface SlotRow {
+  /** Ligne liée à un build : le rôle et l'arme viennent du build. null = ligne libre. */
+  build_id: number | null;
   role: string;
   count: number | null;
   weapon: string;
