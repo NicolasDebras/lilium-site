@@ -99,6 +99,14 @@ class FakeDB:
         return {"builds": len(await self.get_builds(guild_id)), "compos": len(self.templates.get(guild_id, {})),
                 "profiles": sum(1 for g, _ in self.profiles if g == guild_id), "total_bal": 1_500_000}
 
+    async def get_bal_events(self, guild_id, since):
+        self.bal_events_since = since
+        return []
+
+    async def get_bal_balances(self, guild_id):
+        return [{"uid": str(u), "name": f"Joueur{u}", "amount": a}
+                for (g, u), a in self.bal.items() if g == guild_id and a > 0]
+
 
 class FakeDiscord:
     def __init__(self):

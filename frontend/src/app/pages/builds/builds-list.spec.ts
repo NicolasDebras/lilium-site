@@ -84,6 +84,53 @@ describe('BuildsList', () => {
     expect((fixture.nativeElement as HTMLElement).querySelectorAll('article.build').length).toBe(1);
   });
 
+  describe('recherche', () => {
+    /** Rend la page une fois et renvoie une fonction « tape dans la recherche → builds affichés ». */
+    async function searcher() {
+      const r = await render('member');
+      const input = r.el.querySelector<HTMLInputElement>('input.search')!;
+      return async (text: string) => {
+        input.value = text;
+        input.dispatchEvent(new Event('input'));
+        r.fixture.detectChanges();
+        await r.fixture.whenStable();
+        return names(r.el);
+      };
+    }
+
+    function names(el: HTMLElement) {
+      return [...el.querySelectorAll('article.build h2')].map((h) => h.textContent?.trim());
+    }
+
+    it('filtre par nom, sans tenir compte des majuscules ni des accents', async () => {
+      const search = await searcher();
+      expect(await search('sancti')).toEqual(['Heal Sancti']);
+      expect(await search('MASSE')).toEqual(['Tank Masse']);
+      expect(await search('')).toEqual(['Tank Masse', 'Heal Sancti']);
+    });
+
+    it('trouve un build par un objet de son équipement ou son rôle', async () => {
+      const search = await searcher();
+      expect(await search('bouclier')).toEqual(['Tank Masse']);
+      expect(await search('ecclesiastique')).toEqual(['Tank Masse']);
+      expect(await search('heal')).toEqual(['Heal Sancti']);
+    });
+
+    it('tous les mots doivent correspondre', async () => {
+      const search = await searcher();
+      expect(await search('tank pve')).toEqual([]);
+      expect(await search('tank pvp')).toEqual(['Tank Masse']);
+    });
+
+    it('affiche un message quand rien ne correspond', async () => {
+      const r = await render('member');
+      r.fixture.componentInstance['query'].set('zzz');
+      r.fixture.detectChanges();
+      expect(names(r.el)).toEqual([]);
+      expect(r.el.querySelector('.empty')?.textContent).toContain('Aucun build ne correspond à « zzz »');
+    });
+  });
+
   it('supprimer retire le build après confirmation', async () => {
     const { fixture, http, el } = await render('staff');
     vi.spyOn(window, 'confirm').mockReturnValue(true);

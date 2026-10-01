@@ -9,7 +9,7 @@ import { AuthService } from '../../core/auth.service';
     <div class="login">
       <div class="card login-card">
         <div class="logo">❀</div>
-        <h1>Lilium</h1>
+        <h1>Lilium <span class="beta">BETA</span></h1>
         <p class="muted">Builds, compos et BAL de la guilde.</p>
         @if (error()) {
           <p class="alert">La connexion Discord a échoué ou a été annulée. Réessaie.</p>

@@ -118,6 +118,19 @@ Toutes sous `/api`. `{gid}` = id du serveur Discord.
 | POST · PUT · DELETE | `/guilds/{gid}/compos[/{nom}]` | staff |
 | GET | `/guilds/{gid}/bal/me`, `/guilds/{gid}/roles` | membre |
 | GET | `/guilds/{gid}/admin/overview` | admin |
+| GET | `/guilds/{gid}/admin/bal?days=30` (7 à 180) | admin |
+
+### Page Admin — tableau de bord BAL
+
+Période au choix (30 jours, 90 jours, 6 mois), lue dans `bal_log` (historique conservé 6 mois par le bot) et `bal` :
+- **BAL due** aux joueurs (en grand) + crédité, payé, solde net et nombre de fins d'activité sur la période ;
+- **Silver crédité et payé** par jour (par semaine au-delà de 31 jours) — crédité = `/finacti`, `/paybal`, `/addbal` ; payé = `/retirebal` ; les `/transferbal` ne comptent ni dans l'un ni dans l'autre ;
+- **Évolution de la BAL due**, reconstituée à rebours depuis le total actuel ;
+- **Plus grosses BAL dues** (top 10) et **silver gagné par compo**.
+
+Chaque graphique a une info-bulle au survol et un tableau « Voir les données ». Les calculs sont dans `api/app/bal_stats.py` (fonctions pures testées) ; les graphiques sont des composants SVG/HTML maison (`frontend/src/app/shared/charts.ts`), sans librairie. Jours comptés à l'heure de Paris.
+
+La liste des **builds** a une barre de recherche instantanée (nom, rôle, arme, notes, auteur, objets de l'équipement ; accents et majuscules ignorés, tous les mots doivent correspondre).
 
 ### Builds et équipement
 
@@ -172,6 +185,7 @@ lilium-site/
 │   │   ├── discord_rest.py  # membres/serveurs via l'API Discord (cache 60 s)
 │   │   ├── permissions.py   # niveaux member / staff / admin
 │   │   ├── compos.py        # conversion lignes du site <-> format template du bot
+│   │   ├── bal_stats.py     # statistiques BAL de la page Admin (fonctions pures)
 │   │   ├── catalog.py       # catalogue d'objets Albion (génération + validation de l'équipement)
 │   │   ├── data/items.json  # catalogue généré (versionné)
 │   │   ├── constants.py     # ROLES + DEFAULT_TEMPLATES (copie de botDiscord/config.py, à garder synchro)
@@ -184,11 +198,11 @@ lilium-site/
         ├── styles.scss      # thème noir & lilas (toutes les couleurs sont ici)
         └── app/
             ├── core/        # AuthService, ApiService, ItemsService, guards, intercepteur 401, modèles
-            ├── shared/      # item-picker (case d'équipement, 1 à 3 choix), gear (rangée d'icônes d'un build)
+            ├── shared/      # item-picker (case d'équipement, 1 à 3 choix), gear (rangée d'icônes d'un build), charts (graphiques)
             └── pages/       # login, guilds, shell (nav), builds, compos, bal, admin
 ```
 
 ## Pistes pour la suite
-- Page Admin : ajouter des outils (historique BAL, activité des membres…) — route `admin/…` + garde `require_admin`
+- Page Admin : d'autres outils (activité des membres…) — route `admin/…` + garde `require_admin`
 - Builds : monture dans l'équipement
-- Déploiement (Railway) puis retrait du site embarqué dans le bot (`web/`, `ENABLE_WEB`)
+- Déploiement (Railway)

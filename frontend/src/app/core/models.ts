@@ -118,3 +118,14 @@ export interface AdminOverview {
   profiles: number;
   total_bal: number;
 }
+
+/** GET /admin/bal?days= — graphiques BAL de la page Admin. */
+export interface BalStats {
+  days: number;
+  bucket: 'day' | 'week';
+  totals: { due: number; players: number; credited: number; withdrawn: number; activities: number };
+  flow: { start: string; credited: number; withdrawn: number }[];
+  due: { date: string; total: number }[];
+  top_players: { name: string; amount: number }[];
+  by_template: { template: string; silver: number; activities: number }[];
+}

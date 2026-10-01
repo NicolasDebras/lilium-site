@@ -5,7 +5,7 @@ import { firstValueFrom } from 'rxjs';
 
 import { ApiService, errorMessage } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
-import { ItemsService } from '../../core/items.service';
+import { ItemsService, normalize } from '../../core/items.service';
 import { Build, RoleInfo, hasLevel } from '../../core/models';
 import { Gear, describeGear } from '../../shared/gear';
 
@@ -21,6 +21,14 @@ import { Gear, describeGear } from '../../shared/gear';
     </div>
 
     <div class="row filters">
+      <input
+        class="input search"
+        type="search"
+        placeholder="Rechercher un build, une arme, un objet…"
+        aria-label="Rechercher un build"
+        [ngModel]="query()"
+        (ngModelChange)="query.set($event)"
+      />
       <select class="select" aria-label="Filtrer par rôle" [ngModel]="role()" (ngModelChange)="role.set($event); load()">
         <option value="">Tous les rôles</option>
         @for (r of roles(); track r.name) {
@@ -40,9 +48,9 @@ import { Gear, describeGear } from '../../shared/gear';
 
     @if (loading()) {
       <p class="muted">Chargement…</p>
-    } @else if (builds().length) {
+    } @else if (visible().length) {
       <div class="grid">
-        @for (b of builds(); track b.id) {
+        @for (b of visible(); track b.id) {
           <article class="card build">
             @if (b.image) {
               <img [src]="b.image" alt="" class="thumb" />
@@ -72,6 +80,8 @@ import { Gear, describeGear } from '../../shared/gear';
           </article>
         }
       </div>
+    } @else if (builds().length) {
+      <div class="empty">Aucun build ne correspond à « {{ query() }} ».</div>
     } @else {
       <div class="empty">Aucun build pour l'instant.</div>
     }
@@ -79,6 +89,7 @@ import { Gear, describeGear } from '../../shared/gear';
   styles: `
     .filters { margin-bottom: 18px; }
     .filters .select { width: auto; min-width: 170px; }
+    .filters .search { flex: 1 1 260px; width: auto; }
     .build { display: grid; gap: 8px; align-content: start; }
     .build h2 { margin: 0; }
     .thumb { width: 100%; max-height: 160px; object-fit: cover; border-radius: 8px; }
@@ -100,6 +111,18 @@ export class BuildsList implements OnInit {
   protected readonly roles = signal<RoleInfo[]>([]);
   protected readonly role = signal('');
   protected readonly typeActi = signal('');
+  protected readonly query = signal('');
+  /** Recherche instantanée (sans accents) : nom, rôle, arme, notes, auteur et objets de l'équipement. */
+  protected readonly visible = computed(() => {
+    const words = normalize(this.query()).split(/\s+/).filter(Boolean);
+    if (!words.length) return this.builds();
+    return this.builds().filter((b) => {
+      const text = normalize(
+        [b.name, b.role, b.type_acti, b.weapon, b.notes, b.created_by_name, this.gearNames(b)].join(' '),
+      );
+      return words.every((w) => text.includes(w));
+    });
+  });
   protected readonly loading = signal(true);
   protected readonly error = signal('');
   protected readonly canEdit = computed(() => hasLevel(this.auth.levelFor(this.guildId()), 'staff'));

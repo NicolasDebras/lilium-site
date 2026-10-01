@@ -13,7 +13,7 @@ import { hasLevel } from '../../core/models';
   template: `
     <header class="nav">
       <div class="nav-inner">
-        <a routerLink="/" class="brand">❀ Lilium</a>
+        <a routerLink="/" class="brand">❀ Lilium <span class="beta" title="Site en cours de développement">BETA</span></a>
 
         @if (guild(); as g) {
           <button class="burger btn btn-sm" type="button" (click)="menuOpen.set(!menuOpen())"
@@ -51,7 +51,8 @@ import { hasLevel } from '../../core/models';
     .nav { position: sticky; top: 0; z-index: 10; background: var(--surface); border-bottom: 1px solid var(--border); }
     .nav-inner { max-width: 1100px; margin: 0 auto; padding: 10px var(--gutter);
                  display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
-    .brand { color: var(--lilac); font-weight: 700; font-size: 1.15rem; letter-spacing: .02em; }
+    .brand { color: var(--lilac); font-weight: 700; font-size: 1.15rem; letter-spacing: .02em;
+             display: inline-flex; align-items: center; gap: 8px; }
     .brand:hover { text-decoration: none; }
     .links { display: flex; gap: 4px; flex: 1; }
     .links a { color: var(--text-muted); padding: 6px 12px; border-radius: 8px; display: inline-flex; gap: 6px; align-items: center; }

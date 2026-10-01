@@ -146,6 +146,23 @@ def test_admin_overview_for_admin(login):
     assert r.json()["profiles"] == 4
 
 
+def test_admin_bal_stats(login, fake_db):
+    r = login(ADMIN_ID).get(f"/api/guilds/{GUILD}/admin/bal?days=90")
+    assert r.status_code == 200
+    body = r.json()
+    assert body["days"] == 90 and body["bucket"] == "week"
+    assert body["totals"]["due"] == 1_500_000
+    assert body["top_players"] == [{"name": "Joueur1", "amount": 1_500_000}]
+
+
+def test_admin_bal_rejects_out_of_range_period(login):
+    assert login(ADMIN_ID).get(f"/api/guilds/{GUILD}/admin/bal?days=400").status_code == 422
+
+
+def test_admin_bal_forbidden_for_staff(login):
+    assert login(STAFF_ID).get(f"/api/guilds/{GUILD}/admin/bal").status_code == 403
+
+
 def test_permission_check_is_cached_between_requests(login, fake_db):
     c = login(MEMBER_ID)
     c.get(f"/api/guilds/{GUILD}/builds")

@@ -155,3 +155,34 @@ class Database:
                        (SELECT COALESCE(SUM(amount), 0) FROM bal WHERE guild_id = $1 AND amount > 0) AS total_bal
             """, guild_id)
         return {k: int(v) for k, v in dict(row).items()}
+
+    async def get_bal_events(self, guild_id: int, since) -> list[dict]:
+        """Mouvements de BAL depuis `since` : une ligne par joueur et par opération du bal_log."""
+        async with self._pool.acquire() as conn:
+            rows = await conn.fetch("""
+                SELECT l.id, l.ts, l.action, COALESCE(l.template, '') AS template,
+                       elem->>'uid' AS uid, elem->>'name' AS name, (elem->>'delta')::bigint AS delta
+                FROM bal_log l, jsonb_array_elements(l.entries) AS elem
+                WHERE l.guild_id = $1 AND l.ts >= $2
+                ORDER BY l.ts
+            """, guild_id, since)
+        return [dict(r) for r in rows]
+
+    async def get_bal_balances(self, guild_id: int) -> list[dict]:
+        """Soldes > 0 avec le meilleur nom connu : pseudo IG (/register), sinon dernier nom du bal_log."""
+        async with self._pool.acquire() as conn:
+            rows = await conn.fetch("""
+                WITH names AS (
+                    SELECT DISTINCT ON (elem->>'uid') elem->>'uid' AS uid, elem->>'name' AS name
+                    FROM bal_log l, jsonb_array_elements(l.entries) AS elem
+                    WHERE l.guild_id = $1
+                    ORDER BY elem->>'uid', l.id DESC
+                )
+                SELECT b.user_id AS uid, b.amount, COALESCE(NULLIF(p.ig_name, ''), n.name, b.user_id) AS name
+                FROM bal b
+                LEFT JOIN player_profiles p ON p.user_id = b.user_id AND p.guild_id = b.guild_id
+                LEFT JOIN names n ON n.uid = b.user_id
+                WHERE b.guild_id = $1 AND b.amount > 0
+                ORDER BY b.amount DESC
+            """, guild_id)
+        return [dict(r) for r in rows]

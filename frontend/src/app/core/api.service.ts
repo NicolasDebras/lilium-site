@@ -2,7 +2,7 @@ import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http'
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
-import { AdminOverview, Bal, Build, BuildInput, Compo, CompoInput, CompoList, RoleInfo } from './models';
+import { AdminOverview, Bal, BalStats, Build, BuildInput, Compo, CompoInput, CompoList, RoleInfo } from './models';
 
 /** Message lisible à partir d'une erreur HTTP de l'API (champ "detail" de FastAPI). */
 export function errorMessage(err: unknown): string {
@@ -79,5 +79,9 @@ export class ApiService {
 
   adminOverview(guildId: string): Observable<AdminOverview> {
     return this.http.get<AdminOverview>(`${this.g(guildId)}/admin/overview`);
+  }
+
+  adminBal(guildId: string, days: number): Observable<BalStats> {
+    return this.http.get<BalStats>(`${this.g(guildId)}/admin/bal`, { params: { days } });
   }
 }

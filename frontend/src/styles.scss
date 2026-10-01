@@ -18,6 +18,13 @@
   --danger-soft: rgba(255, 107, 139, 0.12);
   --success: #7ee0b5;
 
+  /* Graphiques — paire validée (bande de luminosité, daltonisme, contraste) sur --surface */
+  --series-1: #a07af2;   /* lilas : crédité / série unique */
+  --series-2: #d96b30;   /* orange : retiré (payé) */
+  --series-1-wash: rgba(160, 122, 242, 0.12);
+  --grid: #251f31;
+  --axis: #3a3350;
+
   --radius: 10px;
   --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.25);
   --gutter: 16px;
@@ -175,6 +182,21 @@ a {
   font-weight: 600;
   letter-spacing: 0.02em;
   white-space: nowrap;
+}
+
+/* Pastille « BETA » à côté du logo (barre de navigation + page de connexion). */
+.beta {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: linear-gradient(135deg, var(--lilac), var(--lilac-strong));
+  color: var(--on-lilac);
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  line-height: 1.4;
+  vertical-align: middle;
+  box-shadow: 0 0 12px rgba(200, 162, 255, 0.35);
 }
 
 .badge-outline {
