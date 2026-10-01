@@ -3,11 +3,13 @@
 Lancement local (depuis api/) :
     uvicorn app.main:create_app --factory --reload --port 8000
 """
+import re
 from contextlib import asynccontextmanager
+from pathlib import Path
 from types import SimpleNamespace
 
 from fastapi import APIRouter, FastAPI, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
 
 from app import auth
 from app.db import Database
@@ -53,4 +55,30 @@ def create_app(settings: Settings | None = None, *, db=None, discord=None, oauth
     for module in (auth_routes, me, items, builds, compos, guild):
         api.include_router(module.router)
     app.include_router(api)
+    if settings.static_dir:
+        mount_frontend(app, Path(settings.static_dir))
     return app
+
+
+def mount_frontend(app: FastAPI, static_dir: Path) -> None:
+    """Sert le front Angular compilé (même origine que l'API : pas de CORS, cookie simple).
+    Un fichier existant est servi tel quel ; toute autre URL hors /api renvoie index.html
+    (routes Angular : /g/123/builds…). Une URL /api inconnue reste un 404 JSON."""
+    root = static_dir.resolve()
+    index = root / "index.html"
+    if not index.is_file():
+        raise RuntimeError(f"STATIC_DIR={static_dir} : index.html introuvable (front non compilé ?)")
+
+    @app.get("/{path:path}", include_in_schema=False)
+    async def frontend(path: str):
+        if path == "api" or path.startswith("api/"):
+            return JSONResponse(status_code=404, content={"detail": "Not Found"})
+        file = (root / path).resolve()
+        if path and file.is_file() and file.is_relative_to(root):
+            # Fichiers à nom haché (main-XXXX.js…) : cache long ; le reste revalidé.
+            cache = "public, max-age=31536000, immutable" if _HASHED.search(file.name) else "no-cache"
+            return FileResponse(file, headers={"Cache-Control": cache})
+        return FileResponse(index, headers={"Cache-Control": "no-cache"})
+
+
+_HASHED = re.compile(r"-[A-Za-z0-9_]{8,}\.(js|css)$")   # ex. main-QXSL2V3G.js, chunk-Dy9_9D9O.js

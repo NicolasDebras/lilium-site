@@ -31,6 +31,8 @@ class Settings:
     session_secret: str
     frontend_url: str = "http://localhost:4200"
     cookie_secure: bool = False
+    # Front Angular compilé servi par l'API (prod : image Docker). Vide en local (ng serve + proxy).
+    static_dir: str = ""
 
 
 def load_settings(env: dict[str, str] | None = None) -> Settings:
@@ -58,4 +60,5 @@ def load_settings(env: dict[str, str] | None = None) -> Settings:
         session_secret=env["SESSION_SECRET"],
         frontend_url=env.get("FRONTEND_URL", "http://localhost:4200").rstrip("/"),
         cookie_secure=env.get("COOKIE_SECURE", "false").lower() == "true",
+        static_dir=env.get("STATIC_DIR", ""),
     )

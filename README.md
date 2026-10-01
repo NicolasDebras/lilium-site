@@ -171,11 +171,37 @@ Les compos sont écrites dans `custom_templates` (même format que `/addtemplate
 
 ---
 
+## Déploiement (Railway)
+
+Un **seul service** construit avec le `Dockerfile` de la racine (`railway.json` force ce builder) :
+le front Angular est compilé (Node), puis servi par l'API FastAPI (`STATIC_DIR=/app/static`) — site et API sur le même domaine, pas de CORS.
+Toute URL hors `/api` renvoie `index.html` (routes Angular). Healthcheck : `/api/health` (vérifie aussi la base).
+
+1. Railway → service **lilium-site** → **Settings → Networking → Generate Domain** (ex. `lilium-site-production.up.railway.app`).
+2. **Variables** du service :
+
+   | Variable | Valeur |
+   |---|---|
+   | `DATABASE_URL` | `${{Postgres.DATABASE_URL}}` (référence au Postgres du projet, réseau interne) |
+   | `DISCORD_TOKEN` | token du bot (le même que le bot) |
+   | `DISCORD_CLIENT_ID` / `DISCORD_CLIENT_SECRET` | application Discord → OAuth2 |
+   | `DISCORD_REDIRECT_URI` | `https://<domaine>/api/auth/callback` |
+   | `FRONTEND_URL` | `https://<domaine>` |
+   | `SESSION_SECRET` | longue chaîne aléatoire (différente de celle du local) |
+   | `COOKIE_SECURE` | `true` |
+
+3. Portail Discord → ton application → **OAuth2 → Redirects** : ajouter `https://<domaine>/api/auth/callback` (garder celle de localhost pour le dev).
+4. Chaque push sur `main` redéploie.
+
+Le bot n'est pas concerné : il continue de tourner seul, le seul lien reste la base Postgres.
+
 ## Structure
 
 ```
 lilium-site/
 ├── start-local.ps1          # lance API + frontend en local
+├── Dockerfile               # image de prod (front compilé + API) — Railway
+├── railway.json             # builder Dockerfile + healthcheck /api/health
 ├── api/
 │   ├── app/
 │   │   ├── main.py          # create_app() : FastAPI, routes sous /api
@@ -205,4 +231,3 @@ lilium-site/
 ## Pistes pour la suite
 - Page Admin : d'autres outils (activité des membres…) — route `admin/…` + garde `require_admin`
 - Builds : monture dans l'équipement
-- Déploiement (Railway)
