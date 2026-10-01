@@ -131,6 +131,58 @@ describe('BuildsList', () => {
     });
   });
 
+  describe('pagination', () => {
+    const MANY: Build[] = Array.from({ length: 30 }, (_, i) => ({
+      ...BUILDS[1], id: 100 + i, name: `Build ${i + 1}`, role: i % 2 ? 'HEAL' : 'TANK',
+    }));
+
+    async function renderMany() {
+      TestBed.configureTestingModule({
+        imports: [BuildsList],
+        providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting(), fakeAuth({ levels: { '111': 'member' } })],
+      });
+      const fixture = TestBed.createComponent(BuildsList);
+      fixture.componentRef.setInput('guildId', '111');
+      fixture.detectChanges();
+      const http = TestBed.inject(HttpTestingController);
+      http.expectOne('/api/items').flush(TEST_ITEMS);
+      http.expectOne('/api/guilds/111/roles').flush([]);
+      http.expectOne((r) => r.url === '/api/guilds/111/builds').flush(MANY);
+      await fixture.whenStable();
+      const el = fixture.nativeElement as HTMLElement;
+      const shown = () => [...el.querySelectorAll('article.build h2')].map((h) => h.textContent?.trim());
+      return { fixture, el, shown };
+    }
+
+    it('12 builds par page, avec le pager', async () => {
+      const { el, shown } = await renderMany();
+      expect(shown().length).toBe(12);
+      expect(shown()[0]).toBe('Build 1');
+      expect(el.querySelector('app-pager .range')?.textContent?.trim()).toBe('1–12 sur 30 builds');
+    });
+
+    it('changer de page affiche la suite', async () => {
+      const { fixture, el, shown } = await renderMany();
+      el.querySelectorAll<HTMLButtonElement>('app-pager .num')[2].click();
+      fixture.detectChanges();
+      expect(shown()).toEqual(['Build 25', 'Build 26', 'Build 27', 'Build 28', 'Build 29', 'Build 30']);
+    });
+
+    it('une recherche revient à la page 1 et le pager suit le nombre de résultats', async () => {
+      const { fixture, el, shown } = await renderMany();
+      el.querySelectorAll<HTMLButtonElement>('app-pager .num')[1].click();
+      fixture.detectChanges();
+      expect(shown()[0]).toBe('Build 13');
+
+      const input = el.querySelector<HTMLInputElement>('input.search')!;
+      input.value = 'build 2';
+      input.dispatchEvent(new Event('input'));
+      fixture.detectChanges();
+      expect(shown()[0]).toBe('Build 2');
+      expect(el.querySelector('app-pager .pager')).toBeNull();   // 11 résultats → une seule page
+    });
+  });
+
   it('supprimer retire le build après confirmation', async () => {
     const { fixture, http, el } = await render('staff');
     vi.spyOn(window, 'confirm').mockReturnValue(true);

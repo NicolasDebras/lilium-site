@@ -130,7 +130,7 @@ Période au choix (30 jours, 90 jours, 6 mois), lue dans `bal_log` (historique c
 
 Chaque graphique a une info-bulle au survol et un tableau « Voir les données ». Les calculs sont dans `api/app/bal_stats.py` (fonctions pures testées) ; les graphiques sont des composants SVG/HTML maison (`frontend/src/app/shared/charts.ts`), sans librairie. Jours comptés à l'heure de Paris.
 
-La liste des **builds** a une barre de recherche instantanée (nom, rôle, arme, notes, auteur, objets de l'équipement ; accents et majuscules ignorés, tous les mots doivent correspondre).
+La liste des **builds** a une barre de recherche instantanée (nom, rôle, arme, notes, auteur, objets de l'équipement ; accents et majuscules ignorés, tous les mots doivent correspondre) et un **pager** (12 builds par page, retour à la page 1 quand la recherche ou les filtres changent ; composant réutilisable `shared/pager.ts`).
 
 ### Builds et équipement
 

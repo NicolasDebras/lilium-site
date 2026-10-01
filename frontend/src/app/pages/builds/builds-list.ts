@@ -8,10 +8,11 @@ import { AuthService } from '../../core/auth.service';
 import { ItemsService, normalize } from '../../core/items.service';
 import { Build, RoleInfo, hasLevel } from '../../core/models';
 import { Gear, describeGear } from '../../shared/gear';
+import { Pager } from '../../shared/pager';
 
 @Component({
   selector: 'app-builds-list',
-  imports: [FormsModule, RouterLink, Gear],
+  imports: [FormsModule, RouterLink, Gear, Pager],
   template: `
     <div class="page-head">
       <h1>Builds</h1>
@@ -27,7 +28,7 @@ import { Gear, describeGear } from '../../shared/gear';
         placeholder="Rechercher un build, une arme, un objet…"
         aria-label="Rechercher un build"
         [ngModel]="query()"
-        (ngModelChange)="query.set($event)"
+        (ngModelChange)="query.set($event); page.set(1)"
       />
       <select class="select" aria-label="Filtrer par rôle" [ngModel]="role()" (ngModelChange)="role.set($event); load()">
         <option value="">Tous les rôles</option>
@@ -50,7 +51,7 @@ import { Gear, describeGear } from '../../shared/gear';
       <p class="muted">Chargement…</p>
     } @else if (visible().length) {
       <div class="grid">
-        @for (b of visible(); track b.id) {
+        @for (b of pageBuilds(); track b.id) {
           <article class="card build">
             @if (b.image) {
               <img [src]="b.image" alt="" class="thumb" />
@@ -80,6 +81,8 @@ import { Gear, describeGear } from '../../shared/gear';
           </article>
         }
       </div>
+      <app-pager [page]="currentPage()" [pageSize]="pageSize" [total]="visible().length" label="builds"
+                 (pageChange)="goToPage($event)" />
     } @else if (builds().length) {
       <div class="empty">Aucun build ne correspond à « {{ query() }} ».</div>
     } @else {
@@ -123,6 +126,22 @@ export class BuildsList implements OnInit {
       return words.every((w) => text.includes(w));
     });
   });
+
+  /** Pagination côté navigateur ; revient à la page 1 quand la recherche ou les filtres changent. */
+  protected readonly pageSize = 12;
+  protected readonly page = signal(1);
+  /** Page bornée au nombre de pages (ex. après une suppression sur la dernière page). */
+  protected readonly currentPage = computed(() =>
+    Math.min(this.page(), Math.max(1, Math.ceil(this.visible().length / this.pageSize))));
+  protected readonly pageBuilds = computed(() => {
+    const start = (this.currentPage() - 1) * this.pageSize;
+    return this.visible().slice(start, start + this.pageSize);
+  });
+
+  goToPage(page: number): void {
+    this.page.set(page);
+    window.scrollTo?.({ top: 0, behavior: 'smooth' });
+  }
   protected readonly loading = signal(true);
   protected readonly error = signal('');
   protected readonly canEdit = computed(() => hasLevel(this.auth.levelFor(this.guildId()), 'staff'));
@@ -134,6 +153,7 @@ export class BuildsList implements OnInit {
   }
 
   async load(): Promise<void> {
+    this.page.set(1);
     this.loading.set(true);
     this.error.set('');
     try {
