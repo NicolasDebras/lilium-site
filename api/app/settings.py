@@ -47,8 +47,8 @@ def load_settings(env: dict[str, str] | None = None) -> Settings:
     missing = [k for k in REQUIRED if not env.get(k)]
     if missing:
         raise MissingSettings(
-            "Variables manquantes dans api/.env : " + ", ".join(missing)
-            + " (voir api/.env.example)"
+            "Variables d'environnement manquantes : " + ", ".join(missing)
+            + " — en local : api/.env (voir api/.env.example) ; sur Railway : onglet Variables du service"
         )
 
     return Settings(
