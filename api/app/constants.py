@@ -5,29 +5,10 @@ défaut y est ajouté/supprimé, reporter le changement ici.
 """
 
 ROLES: dict[str, str] = {
-    "TANK":        "🛡️",
-    "MAIN TANK":   "🛡️",
-    "TANK OFF":    "🛡️",
-    "TANK DEF":    "🛡️",
-    "OFF TANK":    "🛡️",
-    "HEAL":        "💚",
-    "MAIN HEAL":   "💚",
-    "IRON ROOT":   "🌿",
-    "IRON":        "🌿",
-    "DPS":         "⚔️",
-    "FAUX":        "🌾",
-    "DAMME":       "💥",
-    "SUPPORT":     "🔮",
-    "CALLER":      "📢",
-    "SCOUT":       "👁️",
-    "FROST":       "❄️",
-    "HURLEGIVRE":  "🌨️",
-    "SC":          "💣",
-    "COBRA/GA":    "🏹",
-    "COBRA":       "🐍",
-    "BM":          "🐴",
-    "LEACHER PVP": "⚡",
-    "HO":          "🏠",
+    "TANK":    "🛡️",
+    "HEAL":    "💚",
+    "DPS":     "⚔️",
+    "SUPPORT": "🔮",
 }
 
 DEFAULT_TEMPLATES: dict[str, dict] = {
