@@ -202,3 +202,10 @@ def test_shipped_catalog_is_complete():
     ids = [i["id"] for i in items]
     assert len(ids) == len(set(ids))
     assert {"MAIN_SWORD", "2H_HOLYSTAFF", "OFF_SHIELD"} <= set(ids)
+
+
+def test_shipped_catalog_has_a_name_for_every_item_and_no_removed_item():
+    from app.catalog import REMOVED_ITEMS, load_catalog
+    items = load_catalog()
+    assert [i["id"] for i in items if not i["name"].strip()] == []
+    assert not {i["id"] for i in items} & REMOVED_ITEMS

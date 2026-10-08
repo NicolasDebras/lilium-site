@@ -91,6 +91,16 @@ def _consumable_name(name: str) -> str:
     return _CONSUMABLE_TIER_WORDS.sub("", name).strip()
 
 
+# Objets dont les noms par tier n'ont aucune partie commune : nom générique fixé à la main.
+NAME_FIXES = {
+    "2H_FIRESTAFF": ("Grand bâton de feu", "Great Fire Staff"),
+    "2H_AXE": ("Grande hache", "Greataxe"),
+    "OFF_BOOK": ("Tome de sorts", "Tome of Spells"),
+}
+# Encore dans les dumps mais retirés du jeu (pas d'icône sur le CDN).
+REMOVED_ITEMS = {"2H_IRONGAUNTLETS_HELL"}  # anciennes « Mains noires »
+
+
 def build_catalog(raw_items: dict, localized: list[dict]) -> list[dict]:
     """raw_items = contenu de items.json["items"] ; localized = formatted/items.json."""
     names = {i["UniqueName"]: i.get("LocalizedNames") or {} for i in localized if i.get("UniqueName")}
@@ -116,6 +126,8 @@ def build_catalog(raw_items: dict, localized: list[dict]) -> list[dict]:
 
     catalog = []
     for (slot, base_id), variants in groups.items():
+        if base_id in REMOVED_ITEMS:
+            continue
         variants.sort(key=lambda v: v[0])
         top_tier, top_name, top_item = variants[-1]
         category = top_item.get("@shopsubcategory1") or ""
@@ -129,6 +141,8 @@ def build_catalog(raw_items: dict, localized: list[dict]) -> list[dict]:
             name, name_en = _consumable_name(fr[-1]), _consumable_name(en[-1]) if en else ""
         else:
             name, name_en = _shared_start(fr), _shared_end(en) if en else ""
+        # Noms par tier sans partie commune (« Grande hache »/« Hache de guerre »…) → nom fixé à la main
+        name, name_en = NAME_FIXES.get(base_id, (name, name_en)) if not name else (name, name_en)
         catalog.append({
             "id":         base_id,
             "slot":       slot,

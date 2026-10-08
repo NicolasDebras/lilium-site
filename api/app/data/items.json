@@ -519,8 +519,8 @@
  {
   "id": "2H_FIRESTAFF",
   "slot": "mainhand",
-  "name": "",
-  "name_en": "",
+  "name": "Grand bâton de feu",
+  "name_en": "Great Fire Staff",
   "icon": "T8_2H_FIRESTAFF",
   "tiers": [
    4,
@@ -1518,22 +1518,6 @@
   "category": "Gantelets de combat"
  },
  {
-  "id": "2H_IRONGAUNTLETS_HELL",
-  "slot": "mainhand",
-  "name": "Mains noires",
-  "name_en": "Black Hands",
-  "icon": "T8_2H_IRONGAUNTLETS_HELL",
-  "tiers": [
-   4,
-   5,
-   6,
-   7,
-   8
-  ],
-  "two_handed": true,
-  "category": "Gantelets de combat"
- },
- {
   "id": "2H_KNUCKLES_KEEPER",
   "slot": "mainhand",
   "name": "Poignes ursines",
@@ -1568,8 +1552,8 @@
  {
   "id": "2H_AXE",
   "slot": "mainhand",
-  "name": "",
-  "name_en": "",
+  "name": "Grande hache",
+  "name_en": "Greataxe",
   "icon": "T8_2H_AXE",
   "tiers": [
    4,
@@ -2314,8 +2298,8 @@
  {
   "id": "OFF_BOOK",
   "slot": "offhand",
-  "name": "",
-  "name_en": "",
+  "name": "Tome de sorts",
+  "name_en": "Tome of Spells",
   "icon": "T8_OFF_BOOK",
   "tiers": [
    2,
