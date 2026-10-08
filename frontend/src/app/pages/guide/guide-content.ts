@@ -147,3 +147,31 @@ export const PRIVACY: Article = { id: 'confidentialite', title: 'Confidentialit�
   'Chaque serveur ne voit que ses propres données : BAL, builds, compos et profils sont cloisonnés.',
   'L’historique BAL est conservé 6 mois, les erreurs du bot 30 jours.',
 ] };
+
+// ── Public visé (filtre « Joueur / Staff / Admin » du guide) ─────────────────
+
+export type Audience = 'joueur' | 'staff' | 'admin';
+
+export const AUDIENCES: { value: Audience | null; label: string }[] = [
+  { value: null, label: 'Tout' },
+  { value: 'joueur', label: 'Joueur' },
+  { value: 'staff', label: 'Staff' },
+  { value: 'admin', label: 'Admin' },
+];
+
+/** Le tuto « lier ton serveur au site » s'adresse à celui qui installe le bot. */
+export const TUTORIAL_AUDIENCE: Audience = 'admin';
+
+/** Public des articles du site et de la FAQ (par id). */
+export const ARTICLE_AUDIENCE: Record<string, Audience> = {
+  niveaux: 'joueur', 'multi-serveur': 'joueur', builds: 'staff', compos: 'staff', modeles: 'staff',
+  bal: 'joueur', 'page-admin': 'admin',
+  'faq-serveur': 'joueur', 'faq-modifier': 'staff', 'faq-mp': 'joueur', 'faq-role': 'admin', 'faq-refuse': 'admin',
+};
+
+/** Public d'une commande d'après « qui peut l'utiliser ». */
+export function commandAudience(who: string): Audience {
+  if (/\b(Tous|Membre)\b/.test(who)) return 'joueur';
+  if (/Officier|Caller|Recruteur|Créateur|Organisateur/.test(who)) return 'staff';
+  return 'admin';
+}
