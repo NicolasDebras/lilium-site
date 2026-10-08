@@ -3,7 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import {
-  AdminOverview, Bal, BalAction, BalOperationsPage, BalPeriod, BalPlayer, BalStats, BotErrorDetail, BotErrorsPage, Build, BuildInput,
+  AdminOverview, Bal, BalAction, BalOperationsPage, BalPeriod, BalPlayer, BalStats, BotErrorDetail, BotErrorsPage, Build, BuildDetail, BuildInput,
   Compo, CompoInput, CompoList, MyBalHistory, RoleInfo,
 } from './models';
 
@@ -36,6 +36,19 @@ export class ApiService {
 
   build(guildId: string, id: number): Observable<Build> {
     return this.http.get<Build>(`${this.g(guildId)}/builds/${id}`);
+  }
+
+  buildDetail(guildId: string, id: number): Observable<BuildDetail> {
+    return this.http.get<BuildDetail>(`${this.g(guildId)}/builds/${id}`);
+  }
+
+  /** Image PNG du build (cookie de session, même domaine) : utilisable directement en <img src>. */
+  buildImageUrl(guildId: string, id: number): string {
+    return `${this.g(guildId)}/builds/${id}/image.png`;
+  }
+
+  duplicateBuild(guildId: string, id: number): Observable<{ id: number }> {
+    return this.http.post<{ id: number }>(`${this.g(guildId)}/builds/${id}/duplicate`, {});
   }
 
   createBuild(guildId: string, body: BuildInput): Observable<{ id: number }> {

@@ -22,6 +22,10 @@ export const routes: Routes = [
             loadComponent: () => import('./pages/builds/build-form').then((m) => m.BuildForm),
           },
           {
+            path: 'builds/:buildId',
+            loadComponent: () => import('./pages/builds/build-detail').then((m) => m.BuildDetailPage),
+          },
+          {
             path: 'builds/:buildId/edit',
             canActivate: [levelGuard('staff')],
             loadComponent: () => import('./pages/builds/build-form').then((m) => m.BuildForm),

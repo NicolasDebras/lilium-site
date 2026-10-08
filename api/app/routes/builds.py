@@ -1,12 +1,14 @@
 from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.responses import Response
 from pydantic import BaseModel, Field, field_validator
 
 from app.catalog import InvalidItems, normalize_items, validate_build_items
 from app.compos import compos_using_build, rename_build
+from app.images import build_png
 from app.permissions import require_member, require_staff
-from app.validation import https_url_or_empty
+from app.validation import duplicate_name, https_url_or_empty
 
 router = APIRouter(prefix="/guilds/{guild_id}/builds", tags=["builds"])
 
@@ -79,20 +81,48 @@ async def list_builds(guild_id: int, request: Request, role: str = "", type_acti
     return [_out(b) for b in builds]
 
 
-@router.get("/{build_id}")
-async def get_build(guild_id: int, build_id: int, request: Request, user: dict = Depends(require_member)):
-    build = await request.app.state.db.get_build(guild_id, build_id)
+async def _build_or_404(db, guild_id: int, build_id: int) -> dict:
+    build = await db.get_build(guild_id, build_id)
     if not build:
         raise HTTPException(status_code=404, detail="Build introuvable.")
-    return _out(build)
+    return build
+
+
+@router.get("/{build_id}")
+async def get_build(guild_id: int, build_id: int, request: Request, user: dict = Depends(require_member)):
+    """Un build + les compos du serveur qui l'utilisent (page de partage)."""
+    db = request.app.state.db
+    build = await _build_or_404(db, guild_id, build_id)
+    return {**_out(build), "used_by": compos_using_build(await db.get_custom_templates(guild_id), build_id)}
+
+
+@router.get("/{build_id}/image.png")
+async def build_image(guild_id: int, build_id: int, request: Request, user: dict = Depends(require_member)):
+    """La même image que celle envoyée en MP par /massup."""
+    build = await _build_or_404(request.app.state.db, guild_id, build_id)
+    return Response(await build_png(build), media_type="image/png", headers={"Cache-Control": "private, max-age=60"})
+
+
+async def _create(db, guild_id: int, data: dict, user: dict) -> int:
+    if len(await db.get_builds(guild_id)) >= MAX_BUILDS:
+        raise HTTPException(status_code=409, detail=f"{MAX_BUILDS} builds maximum par serveur : supprimes-en d'abord.")
+    return await db.add_build(guild_id, data, user["id"], user["username"])
 
 
 @router.post("", status_code=201)
 async def create_build(guild_id: int, body: BuildIn, request: Request, user: dict = Depends(require_staff)):
-    if len(await request.app.state.db.get_builds(guild_id)) >= MAX_BUILDS:
-        raise HTTPException(status_code=409, detail=f"{MAX_BUILDS} builds maximum par serveur : supprimes-en d'abord.")
-    build_id = await request.app.state.db.add_build(guild_id, _data(body), user["id"], user["username"])
-    return {"id": build_id}
+    return {"id": await _create(request.app.state.db, guild_id, _data(body), user)}
+
+
+@router.post("/{build_id}/duplicate", status_code=201)
+async def duplicate_build(guild_id: int, build_id: int, request: Request, user: dict = Depends(require_staff)):
+    """Copie « Nom (copie) » du build, que le staff ajuste ensuite."""
+    db = request.app.state.db
+    source = await _build_or_404(db, guild_id, build_id)
+    data = {k: source.get(k) or "" for k in ("role", "type_acti", "weapon", "notes", "image")}
+    data["name"] = duplicate_name(source["name"], {b["name"] for b in await db.get_builds(guild_id)})
+    data["items"] = normalize_items(source.get("items"))
+    return {"id": await _create(db, guild_id, data, user)}
 
 
 @router.put("/{build_id}")

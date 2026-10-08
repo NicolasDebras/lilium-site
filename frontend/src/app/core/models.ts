@@ -76,6 +76,11 @@ export interface Build {
 
 export type BuildInput = Omit<Build, 'id' | 'created_by_name'>;
 
+/** GET /builds/{id} — le build + les compos du serveur qui l'utilisent. */
+export interface BuildDetail extends Build {
+  used_by: string[];
+}
+
 export interface SlotRow {
   /** Ligne liée à un build : le rôle et l'arme viennent du build. null = ligne libre. */
   build_id: number | null;

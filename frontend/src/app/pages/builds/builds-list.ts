@@ -76,7 +76,7 @@ import { roleColor, sortByRole } from '../../shared/roles';
               <span class="role-tag">{{ emoji(b.role) }} {{ b.role }}</span>
               <span class="badge badge-outline">{{ b.type_acti }}</span>
             </div>
-            <h2>{{ b.name }}</h2>
+            <h2><a class="title-link" [routerLink]="['/g', guildId(), 'builds', b.id]">{{ b.name }}</a></h2>
             @if (hasGear(b)) {
               <div class="body">
                 <app-gear [items]="b.items" layout="doll" size="small" />
@@ -117,6 +117,8 @@ import { roleColor, sortByRole } from '../../shared/roles';
   `,
   styles: `
     code { color: var(--lilac); }
+    .title-link { color: inherit; }
+    .title-link:hover { color: var(--lilac); text-decoration: none; }
     .toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 12px; margin-bottom: 18px; }
     .search-box { flex: 1 1 260px; }
     .search { width: 100%; }

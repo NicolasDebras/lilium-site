@@ -112,7 +112,8 @@ Toutes sous `/api`. `{gid}` = id du serveur Discord.
 | GET | `/auth/login`, `/auth/callback` · POST `/auth/logout` | — |
 | GET | `/me` (utilisateur + serveurs avec niveau) | connecté |
 | GET | `/items` (catalogue des objets d'équipement Albion) | connecté |
-| GET | `/guilds/{gid}/builds[?role=&type_acti=]`, `/guilds/{gid}/builds/{id}` | membre |
+| GET | `/guilds/{gid}/builds[?role=&type_acti=]`, `/guilds/{gid}/builds/{id}` (+ `used_by` : compos qui l'utilisent), `/guilds/{gid}/builds/{id}/image.png` | membre |
+| POST | `/guilds/{gid}/builds/{id}/duplicate` (« Nom (copie) ») | staff |
 | POST · PUT · DELETE | `/guilds/{gid}/builds[/{id}]` | staff |
 | GET | `/guilds/{gid}/compos`, `/guilds/{gid}/compos/{nom}` | membre |
 | POST · PUT · DELETE | `/guilds/{gid}/compos[/{nom}]` | staff |
@@ -165,6 +166,10 @@ Thème noir & lilas refondu (`frontend/src/styles.scss`, toutes les couleurs en 
 La liste des **builds** a une barre de recherche instantanée (nom, rôle, arme, notes, auteur, objets de l'équipement ; accents et majuscules ignorés, tous les mots doivent correspondre) et un **pager** (12 builds par page, retour à la page 1 quand la recherche ou les filtres changent ; composant réutilisable `shared/pager.ts`).
 
 ### Builds et équipement
+
+**Page d'un build** (`/g/{gid}/builds/{id}`, lien à coller dans Discord — il faut être connecté et membre du serveur) : équipement en grand, précisions, compos qui l'utilisent, **image PNG** identique au MP de `/massup` (télécharger / copier), et pour le staff **Dupliquer** (crée « Nom (copie) » puis ouvre son formulaire).
+
+**Images générées par l'API** (`app/images.py`) : **copie** du rendu du bot (`botDiscord/Service/build_image.py`) — à resynchroniser si le bot change — avec sa police et ses icônes (`app/assets/`, CDN Albion en secours). Rendu dans un thread, 2 à la fois au plus, 200 dernières images gardées en mémoire (clé = contenu exact).
 
 Un build choisit son équipement parmi les **vrais objets du jeu**, avec leur image, dans une disposition identique à l'inventaire in-game :
 tête, cape / arme, armure, main gauche / potion, bottes, bouffe. Le sélecteur propose une recherche (FR, EN ou famille, accents ignorés) et des filtres par famille (Épées, Bâtons sacrés, Plaque, Nourriture, Potions…).
