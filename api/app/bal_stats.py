@@ -6,6 +6,7 @@ Le bot écrit dans bal_log à chaque /finacti, /paybal, /addbal, /retirebal, /tr
 """
 import csv
 import io
+import unicodedata
 from datetime import date, datetime, time, timedelta
 from zoneinfo import ZoneInfo
 
@@ -241,3 +242,35 @@ def bal_operations_csv(rows: list[dict]) -> str:
             "" if op["total"] is None else op["total"], _csv_safe(op["by"]),
         ])
     return out.getvalue()
+
+
+def guild_operations_csv(events: list[dict]) -> str:
+    """Export CSV de tout le bal_log de la guilde (une ligne par joueur et par opération),
+    plus récentes d'abord. `events` = lignes de `db.get_bal_events`."""
+    out = io.StringIO()
+    writer = csv.writer(out, delimiter=";", lineterminator="\r\n")
+    writer.writerow(["date", "operation", "compo", "joueur", "uid", "montant", "par"])
+    for e in sorted(events, key=lambda e: e["ts"], reverse=True):
+        writer.writerow([
+            e["ts"].astimezone(PARIS).isoformat(timespec="minutes"), e["action"], _csv_safe(e["template"] or ""),
+            _csv_safe(e.get("name") or ""), e["uid"], int(e["delta"] or 0), _csv_safe(e.get("by_user") or ""),
+        ])
+    return out.getvalue()
+
+
+# ── Recherche de joueurs (Admin → BAL par joueur) ────────────────────────────
+
+MAX_PLAYER_RESULTS = 50
+
+
+def _fold(text: str) -> str:
+    """Minuscules sans accents : « Élise » et « elise » se trouvent l'un l'autre."""
+    return "".join(c for c in unicodedata.normalize("NFKD", text.casefold()) if not unicodedata.combining(c))
+
+
+def search_players(players: list[dict], query: str, limit: int = MAX_PLAYER_RESULTS) -> list[dict]:
+    """Joueurs dont le nom (ou l'id Discord) contient chaque mot de `query` ; ordre d'entrée conservé
+    (plus grosses BAL d'abord). Requête vide = les premiers joueurs."""
+    words = _fold(query).split()
+    found = [p for p in players if all(w in _fold(f"{p['name']} {p['uid']}") for w in words)]
+    return [{"uid": str(p["uid"]), "name": p["name"], "amount": int(p["amount"])} for p in found[:limit]]

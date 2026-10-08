@@ -133,7 +133,7 @@ describe('AdminPage', () => {
 
   it('propose « Cette semaine » et « 7 jours », et garde l’ancien rendu estompé pendant le rechargement', async () => {
     const { fixture, http, el } = await loaded();
-    const buttons = [...el.querySelectorAll<HTMLButtonElement>('app-period-picker button')];
+    const buttons = [...el.querySelectorAll<HTMLButtonElement>('section.bal app-period-picker button')];
     expect(buttons.map((b) => b.textContent?.trim())).toEqual(['Cette semaine', '7 jours', '30 jours', '90 jours', '6 mois']);
 
     buttons[0].click();
@@ -147,7 +147,7 @@ describe('AdminPage', () => {
     await settle(fixture);
     expect(el.querySelector('.dashboard.stale')).toBeNull();
     expect(el.querySelector('.hero-value')?.textContent?.trim()).toBe('50 M');
-    expect(el.querySelector('app-period-picker button.on')?.textContent).toContain('Cette semaine');
+    expect(el.querySelector('section.bal app-period-picker button.on')?.textContent).toContain('Cette semaine');
   });
 
   it('affiche le refus de l’API (403)', async () => {

@@ -120,9 +120,12 @@ Toutes sous `/api`. `{gid}` = id du serveur Discord.
 | GET | `/guilds/{gid}/bal/me/operations?action=&page=` (25 par page), `/guilds/{gid}/bal/me/operations.csv?action=` | membre (ses propres lignes uniquement) |
 | GET | `/guilds/{gid}/admin/overview` | admin |
 | GET | `/guilds/{gid}/admin/bal?period=week\|7d\|30d\|90d\|180d` | admin |
+| GET | `/guilds/{gid}/admin/bal/players?q=` (50 max, soldes à 0 compris), `/guilds/{gid}/admin/bal/players/{uid}/operations[.csv]?action=&page=`, `/guilds/{gid}/admin/bal/operations.csv?period=` (toute la guilde) | admin |
 | GET | `/guilds/{gid}/admin/errors?command=&page=` (sans traceback), `/guilds/{gid}/admin/errors/{id}` (avec traceback, 404 si autre serveur) | admin |
 
 **Page « Ma BAL » → Historique complet** : toutes les opérations du joueur (6 mois gardés par le bot), filtre par type (`/finacti`, `/paybal`, `/addbal`, `/retirebal`, `/transferbal`), pagination et **export CSV** (séparateur `;`, ouvrable dans Excel ; les cellules commençant par `= + - @` sont neutralisées contre l'injection de formules).
+
+**Page Admin → BAL par joueur** : recherche par pseudo ou id Discord (accents et majuscules ignorés), liste des joueurs avec leur solde, clic → historique complet du joueur (même vue que « Ma BAL », filtre et export CSV), et **export CSV de toute la BAL de la guilde** sur la période choisie (colonnes date, opération, compo, joueur, uid, montant, par).
 
 **Page Admin → Erreurs du bot** : équivalent web de `/errors` (table `error_log` du bot, 30 jours), filtre par commande, traceback chargé au clic et affiché en texte brut.
 

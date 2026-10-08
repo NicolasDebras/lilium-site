@@ -121,7 +121,13 @@ class FakeDB:
 
     async def get_bal_events(self, guild_id, since):
         self.bal_events_since = since
-        return []
+        return [e for e in getattr(self, "bal_events", []) if e["guild_id"] == guild_id and e["ts"] >= since]
+
+    async def get_bal_players(self, guild_id):
+        uids = {r["uid"] for r in self.bal_ops if r["guild_id"] == guild_id}
+        uids |= {str(u) for (g, u) in self.bal if g == guild_id}
+        players = [{"uid": u, "name": f"Joueur{u}", "amount": self.bal.get((guild_id, int(u)), 0)} for u in uids]
+        return sorted(players, key=lambda p: (-p["amount"], p["name"]))
 
     async def get_my_bal_events(self, guild_id, user_id, since):
         self.my_events_query = (guild_id, user_id)
@@ -137,7 +143,7 @@ class FakeDB:
         return [{"uid": str(u), "name": f"Joueur{u}", "amount": a}
                 for (g, u), a in self.bal.items() if g == guild_id and a > 0]
 
-    async def get_my_bal_operations(self, guild_id, user_id, action, limit=None, offset=0):
+    async def get_bal_operations(self, guild_id, user_id, action, limit=None, offset=0):
         rows = [r for r in self.bal_ops if r["guild_id"] == guild_id and r["uid"] == str(user_id)
                 and (action is None or r["action"] == action)]
         rows.sort(key=lambda r: r["ts"], reverse=True)

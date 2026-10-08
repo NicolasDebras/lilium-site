@@ -8,15 +8,16 @@ import { Icon } from '../../shared/icon';
 import { Pager } from '../../shared/pager';
 import { BAL_ACTIONS, balAction, opWhen } from './bal-actions';
 
-/** « Ma BAL » → historique complet : toutes les opérations (6 mois gardés par le bot),
- *  filtrables par type, paginées, exportables en CSV. */
+/** Historique complet d'un joueur : toutes les opérations (6 mois gardés par le bot),
+ *  filtrables par type, paginées, exportables en CSV. Sans `userId` : le joueur connecté
+ *  (« Ma BAL ») ; avec `userId` : un joueur choisi par un admin (Admin → BAL par joueur). */
 @Component({
   selector: 'app-bal-operations',
   imports: [Icon, Pager],
   template: `
     <section class="card history" aria-labelledby="ops-title">
       <div class="head">
-        <h3 id="ops-title">Historique complet</h3>
+        <h3 id="ops-title">{{ title() }}</h3>
         <div class="tools">
           <label class="sr-only" for="ops-filter">Type d'opération</label>
           <select id="ops-filter" class="select" [value]="action() ?? ''" (change)="setAction($any($event.target).value)">
@@ -25,7 +26,7 @@ import { BAL_ACTIONS, balAction, opWhen } from './bal-actions';
               <option [value]="a.key">{{ a.label }}</option>
             }
           </select>
-          <a class="btn btn-sm" [href]="csvUrl()" download="ma-bal.csv">Exporter en CSV</a>
+          <a class="btn btn-sm" [href]="csvUrl()" download>Exporter en CSV</a>
         </div>
       </div>
 
@@ -86,12 +87,18 @@ import { BAL_ACTIONS, balAction, opWhen } from './bal-actions';
 export class BalOperations implements OnInit {
   private readonly api = inject(ApiService);
   readonly guildId = input.required<string>();
+  /** Joueur affiché (admin) ; absent = le joueur connecté. */
+  readonly userId = input<string | null>(null);
+  readonly title = input('Historique complet');
 
   protected readonly data = signal<BalOperationsPage | null>(null);
   protected readonly action = signal<BalAction | null>(null);
   protected readonly loading = signal(false);
   protected readonly error = signal('');
-  protected readonly csvUrl = computed(() => this.api.myBalCsvUrl(this.guildId(), this.action()));
+  protected readonly csvUrl = computed(() => {
+    const uid = this.userId();
+    return uid ? this.api.playerBalCsvUrl(this.guildId(), uid, this.action()) : this.api.myBalCsvUrl(this.guildId(), this.action());
+  });
   protected readonly actions = Object.entries(BAL_ACTIONS).map(([key, a]) => ({ key, label: a.label }));
   protected readonly label = balAction;
   protected readonly when = opWhen;
@@ -118,7 +125,10 @@ export class BalOperations implements OnInit {
     this.loading.set(true);
     this.error.set('');
     try {
-      const d = await firstValueFrom(this.api.myBalOperations(this.guildId(), page, this.action()));
+      const uid = this.userId();
+      const d = await firstValueFrom(uid
+        ? this.api.playerBalOperations(this.guildId(), uid, page, this.action())
+        : this.api.myBalOperations(this.guildId(), page, this.action()));
       if (request === this.request) this.data.set(d);
     } catch (err) {
       if (request === this.request) this.error.set(errorMessage(err));

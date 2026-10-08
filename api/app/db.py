@@ -212,14 +212,36 @@ class Database:
             """, guild_id)
         return [dict(r) for r in rows]
 
-    # ── Historique BAL complet d'un joueur (page « Ma BAL ») ──────────────────
+    # ── Historique BAL complet d'un joueur (« Ma BAL », Admin → BAL par joueur) ─
     _MY_OPS_FROM = """
         FROM bal_log l, jsonb_array_elements(l.entries) AS elem
         WHERE l.guild_id = $1 AND elem->>'uid' = $2 AND ($3::text IS NULL OR l.action = $3)
     """
 
-    async def get_my_bal_operations(self, guild_id: int, user_id: int, action: str | None,
-                                    limit: int | None = None, offset: int = 0) -> tuple[list[dict], int]:
+    async def get_bal_players(self, guild_id: int) -> list[dict]:
+        """Tous les joueurs ayant une BAL ou une ligne au bal_log (soldes à 0 compris), avec le
+        meilleur nom connu : pseudo IG (/register), sinon dernier nom du bal_log, sinon l'id."""
+        async with self._pool.acquire() as conn:
+            rows = await conn.fetch("""
+                WITH names AS (
+                    SELECT DISTINCT ON (elem->>'uid') elem->>'uid' AS uid, elem->>'name' AS name
+                    FROM bal_log l, jsonb_array_elements(l.entries) AS elem
+                    WHERE l.guild_id = $1
+                    ORDER BY elem->>'uid', l.id DESC
+                ),
+                ids AS (SELECT uid FROM names UNION SELECT user_id FROM bal WHERE guild_id = $1)
+                SELECT ids.uid, COALESCE(b.amount, 0) AS amount,
+                       COALESCE(NULLIF(p.ig_name, ''), n.name, ids.uid) AS name
+                FROM ids
+                LEFT JOIN bal b ON b.user_id = ids.uid AND b.guild_id = $1
+                LEFT JOIN player_profiles p ON p.user_id = ids.uid AND p.guild_id = $1
+                LEFT JOIN names n ON n.uid = ids.uid
+                ORDER BY amount DESC, name
+            """, guild_id)
+        return [dict(r) for r in rows]
+
+    async def get_bal_operations(self, guild_id: int, user_id: int, action: str | None,
+                                 limit: int | None = None, offset: int = 0) -> tuple[list[dict], int]:
         """Opérations BAL d'UN joueur (plus récentes d'abord) + leur nombre total. `limit=None` = toutes."""
         async with self._pool.acquire() as conn:
             total = await conn.fetchval(f"SELECT COUNT(*) {self._MY_OPS_FROM}", guild_id, str(user_id), action)

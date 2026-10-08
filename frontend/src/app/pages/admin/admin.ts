@@ -10,6 +10,7 @@ import {
 } from '../../shared/charts';
 import { Icon, IconName } from '../../shared/icon';
 import { PeriodPicker } from '../../shared/period-picker';
+import { BalPlayers } from './bal-players';
 import { BotErrors } from './bot-errors';
 
 interface Tile {
@@ -26,7 +27,7 @@ interface Tile {
  *  chiffres clés + tableau de bord complet de la BAL. */
 @Component({
   selector: 'app-admin',
-  imports: [BotErrors, DecimalPipe, Delta, DonutChart, FlowChart, HBarChart, Heatmap, Icon, LineChart, PeriodPicker],
+  imports: [BalPlayers, BotErrors, DecimalPipe, Delta, DonutChart, FlowChart, HBarChart, Heatmap, Icon, LineChart, PeriodPicker],
   template: `
     <div class="page-head">
       <div>
@@ -157,6 +158,7 @@ interface Tile {
       }
     </section>
 
+    <app-bal-players [guildId]="guildId()" />
     <app-bot-errors [guildId]="guildId()" />
     }
   `,

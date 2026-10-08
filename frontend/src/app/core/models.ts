@@ -189,6 +189,13 @@ export interface BalOperationsPage {
   page_size: number;
 }
 
+/** GET /admin/bal/players?q= — un joueur de la BAL du serveur. */
+export interface BalPlayer {
+  uid: string;
+  name: string;
+  amount: number;
+}
+
 /** Une erreur du bot (table error_log), sans traceback. */
 export interface BotError {
   id: number;

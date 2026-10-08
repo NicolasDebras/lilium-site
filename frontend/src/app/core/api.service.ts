@@ -3,7 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import {
-  AdminOverview, Bal, BalAction, BalOperationsPage, BalPeriod, BalStats, BotErrorDetail, BotErrorsPage, Build, BuildInput,
+  AdminOverview, Bal, BalAction, BalOperationsPage, BalPeriod, BalPlayer, BalStats, BotErrorDetail, BotErrorsPage, Build, BuildInput,
   Compo, CompoInput, CompoList, MyBalHistory, RoleInfo,
 } from './models';
 
@@ -102,6 +102,26 @@ export class ApiService {
   myBalCsvUrl(guildId: string, action: BalAction | null): string {
     const query = action ? `?action=${encodeURIComponent(action)}` : '';
     return `${this.g(guildId)}/bal/me/operations.csv${query}`;
+  }
+
+  // ── Admin : BAL par joueur ────────────────────────────────────────────────
+  balPlayers(guildId: string, q: string): Observable<BalPlayer[]> {
+    return this.http.get<BalPlayer[]>(`${this.g(guildId)}/admin/bal/players`, { params: { q } });
+  }
+
+  playerBalOperations(guildId: string, uid: string, page: number, action: BalAction | null): Observable<BalOperationsPage> {
+    let params = new HttpParams().set('page', page);
+    if (action) params = params.set('action', action);
+    return this.http.get<BalOperationsPage>(`${this.g(guildId)}/admin/bal/players/${uid}/operations`, { params });
+  }
+
+  playerBalCsvUrl(guildId: string, uid: string, action: BalAction | null): string {
+    const query = action ? `?action=${encodeURIComponent(action)}` : '';
+    return `${this.g(guildId)}/admin/bal/players/${uid}/operations.csv${query}`;
+  }
+
+  guildBalCsvUrl(guildId: string, period: BalPeriod): string {
+    return `${this.g(guildId)}/admin/bal/operations.csv?period=${period}`;
   }
 
   // ── Admin : erreurs du bot ────────────────────────────────────────────────
