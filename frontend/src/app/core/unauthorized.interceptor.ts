@@ -14,7 +14,7 @@ export const unauthorizedInterceptor: HttpInterceptorFn = (req, next) => {
     catchError((err: unknown) => {
       if (err instanceof HttpErrorResponse && err.status === 401 && !req.url.endsWith('/api/me')) {
         auth.clear();
-        router.navigate(['/login']);
+        router.navigate(['/accueil']);
       }
       return throwError(() => err);
     }),

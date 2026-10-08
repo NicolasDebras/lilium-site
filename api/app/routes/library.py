@@ -1,5 +1,6 @@
 """Bibliothèque de compos : copie entre ses serveurs et modèles publics partagés entre tous les serveurs."""
 from typing import Literal
+from urllib.parse import urlencode
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, Request
 from fastapi.responses import Response
@@ -86,6 +87,23 @@ async def _guild_snapshot(db, guild_id: int, name: str) -> tuple[dict, dict]:
         raise HTTPException(status_code=404, detail="Compo introuvable.")
     builds_by_id = {b["id"]: b for b in await db.get_builds(guild_id)}
     return templates[name], snapshot(templates[name], builds_by_id)
+
+
+# ── Infos publiques (page d'accueil) ─────────────────────────────────────────
+
+# Permissions demandées à l'invitation : le strict nécessaire de ce que fait le bot.
+# Voir/envoyer/intégrer/joindre/historique/réactions/emojis externes (activités, BAL, récap),
+# gérer les salons (vocaux temporaires, salons de candidature), déplacer + se connecter
+# (vocaux temporaires), gérer les pseudos (pseudo IG à /register) et les rôles
+# (rôles à la carte, rôle d'arrivée, validation, /kick), fils publics (activités).
+BOT_PERMISSIONS = sum(1 << bit for bit in (4, 6, 10, 11, 14, 15, 16, 18, 20, 24, 27, 28, 35, 38))
+
+
+@router.get("/public/info")
+async def public_info(request: Request):
+    client_id = request.app.state.settings.discord_client_id
+    query = urlencode({"client_id": client_id, "scope": "bot applications.commands", "permissions": BOT_PERMISSIONS})
+    return {"invite_url": f"https://discord.com/oauth2/authorize?{query}"}
 
 
 # ── Copier vers un autre de mes serveurs ─────────────────────────────────────

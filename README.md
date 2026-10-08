@@ -15,6 +15,11 @@ Le bot reste propriétaire du schéma (il crée les tables au démarrage) ; l'AP
 
 ---
 
+## Pages publiques
+
+- **`/accueil`** (vitrine, sans connexion) : présentation du bot et du site, bouton **Ajouter le bot à ton serveur**, connexion Discord (ou « Mes serveurs » si connecté), démarrage en 3 étapes, derniers modèles de compos. `/login` y redirige (et `?error=1` y affiche l'échec de connexion).
+- **`/guide`** : **tuto pas à pas « Lier ton serveur Discord au site »** (inviter le bot, placer son rôle, `/register`, rôle staff via `/config`, `/webadmin`, connexion ; cases « fait » mémorisées dans le navigateur, aide « Ça ne marche pas ? » par étape), fiches de **toutes les commandes du bot** (ancre partageable : `/guide#transferbal`), le site, FAQ, confidentialité ; recherche instantanée. Contenu : `frontend/src/app/pages/guide/guide-content.ts` — un test du bot (`tests/test_guide_sync.py`) échoue si une commande manque.
+
 ## Accès et rôles
 
 Tout se joue **par serveur Discord** :
@@ -108,7 +113,7 @@ Toutes sous `/api`. `{gid}` = id du serveur Discord.
 
 | Méthode | Route | Niveau |
 |---|---|---|
-| GET | `/health` | — |
+| GET | `/health`, `/public/info` (lien d'invitation du bot, permissions minimales, jamais administrateur) | — |
 | GET | `/auth/login`, `/auth/callback` · POST `/auth/logout` | — |
 | GET | `/me` (utilisateur + serveurs avec niveau) | connecté |
 | GET | `/items` (catalogue des objets d'équipement Albion) | connecté |

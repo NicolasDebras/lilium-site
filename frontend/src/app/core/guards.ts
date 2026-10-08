@@ -9,7 +9,7 @@ export const authGuard: CanActivateFn = async () => {
   const auth = inject(AuthService);
   const router = inject(Router);
   const me = await auth.load();
-  return me ? true : router.createUrlTree(['/login']);
+  return me ? true : router.createUrlTree(['/accueil']);
 };
 
 function guildIdOf(route: ActivatedRouteSnapshot): string | null {
@@ -29,7 +29,7 @@ export function levelGuard(minimum: Level): CanActivateFn {
     const auth = inject(AuthService);
     const router = inject(Router);
     const me = await auth.load();
-    if (!me) return router.createUrlTree(['/login']);
+    if (!me) return router.createUrlTree(['/accueil']);
 
     const guildId = guildIdOf(route);
     const level = auth.levelFor(guildId);

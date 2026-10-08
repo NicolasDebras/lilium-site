@@ -32,7 +32,7 @@ describe('authGuard', () => {
 
   it('redirige vers /login sinon', async () => {
     setup({ me: null });
-    expect(url(await run(authGuard, routeFor(null)))).toBe('/login');
+    expect(url(await run(authGuard, routeFor(null)))).toBe('/accueil');
   });
 });
 
@@ -69,6 +69,6 @@ describe('levelGuard', () => {
 
   it('non connecté → /login', async () => {
     setup({ me: null });
-    expect(url(await run(levelGuard('member'), routeFor('111')))).toBe('/login');
+    expect(url(await run(levelGuard('member'), routeFor('111')))).toBe('/accueil');
   });
 });

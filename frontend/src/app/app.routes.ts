@@ -3,7 +3,9 @@ import { Routes } from '@angular/router';
 import { authGuard, levelGuard } from './core/guards';
 
 export const routes: Routes = [
-  { path: 'login', loadComponent: () => import('./pages/login/login').then((m) => m.LoginPage) },
+  { path: 'accueil', loadComponent: () => import('./pages/landing/landing').then((m) => m.LandingPage) },
+  { path: 'guide', loadComponent: () => import('./pages/guide/guide').then((m) => m.GuidePage) },
+  { path: 'login', redirectTo: 'accueil' },
   {
     path: '',
     canActivate: [authGuard],

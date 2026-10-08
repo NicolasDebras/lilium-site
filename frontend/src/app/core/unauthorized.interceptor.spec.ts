@@ -31,7 +31,7 @@ describe('unauthorizedInterceptor', () => {
     const p = firstValueFrom(http.get('/api/guilds/1/builds')).catch((e) => e);
     ctrl.expectOne('/api/guilds/1/builds').flush({}, { status: 401, statusText: 'Unauthorized' });
     expect((await p).status).toBe(401);
-    expect(navigate).toHaveBeenCalledWith(['/login']);
+    expect(navigate).toHaveBeenCalledWith(['/accueil']);
     expect(TestBed.inject(AuthService).user()).toBeNull();
   });
 

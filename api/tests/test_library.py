@@ -113,3 +113,13 @@ def test_delete_public_by_author_admin_or_owner_only(login, two_guilds):
     assert login(ADMIN_ID).delete(f"/api/public/compos/{pid}").status_code == 204   # admin du serveur d'origine
     pid = login(STAFF_ID).post(f"/api/guilds/{GUILD}/compos/ZvZ/publish").json()["id"]
     assert login(STAFF_ID).delete(f"/api/public/compos/{pid}").status_code == 204   # auteur
+
+
+def test_public_info_gives_invite_url_without_login(client):
+    from urllib.parse import parse_qs, urlparse
+    url = client.get("/api/public/info").json()["invite_url"]
+    q = parse_qs(urlparse(url).query)
+    assert q["client_id"] == ["client-id"] and q["scope"] == ["bot applications.commands"]
+    perms = int(q["permissions"][0])
+    assert perms & (1 << 28) and perms & (1 << 4)        # gérer rôles + salons
+    assert not perms & (1 << 3)                           # jamais administrateur

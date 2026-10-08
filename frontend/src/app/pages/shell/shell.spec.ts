@@ -16,7 +16,7 @@ async function render(level: Level, url = '/g/111/builds') {
     providers: [
       provideRouter([
         { path: 'g/:guildId/:page', component: Empty },
-        { path: 'login', component: Empty },
+        { path: 'accueil', component: Empty },
         { path: '', component: Empty },
       ]),
       fakeAuth({ levels: { '111': level } }),
@@ -70,7 +70,7 @@ describe('Shell', () => {
     fixture.detectChanges();
     el.querySelector<HTMLButtonElement>('.menu .logout')!.click();
     await fixture.whenStable();
-    expect(TestBed.inject(Router).url).toBe('/login');
+    expect(TestBed.inject(Router).url).toBe('/accueil');
   });
 
   it('menu burger (mobile) : ouvre et referme la liste des liens', async () => {

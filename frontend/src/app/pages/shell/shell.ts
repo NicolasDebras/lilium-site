@@ -77,6 +77,9 @@ export const NAV_LINKS: NavLink[] = [
                   <a role="menuitem" routerLink="/" (click)="accountOpen.set(false)">
                     <app-icon name="swap" [size]="16" /> Changer de serveur
                   </a>
+                  <a role="menuitem" routerLink="/guide" (click)="accountOpen.set(false)">
+                    <app-icon name="book" [size]="16" /> Guide
+                  </a>
                   <button type="button" role="menuitem" class="logout" (click)="logout()">
                     <app-icon name="logout" [size]="16" /> Déconnexion
                   </button>
@@ -196,6 +199,6 @@ export class Shell {
   async logout(): Promise<void> {
     this.accountOpen.set(false);
     await this.auth.logout();
-    await this.router.navigate(['/login']);
+    await this.router.navigate(['/accueil']);
   }
 }
