@@ -29,11 +29,12 @@ export function normalize(text: string): string {
 }
 
 /** Objets d'un emplacement qui correspondent à la recherche (nom FR, nom EN ou famille). */
-export function filterItems(items: readonly Item[], slot: Slot, query = '', category = ''): Item[] {
+/** `slot` null = tous les emplacements (swaps). */
+export function filterItems(items: readonly Item[], slot: Slot | null, query = '', category = ''): Item[] {
   const q = normalize(query);
   return items.filter(
     (i) =>
-      i.slot === slot &&
+      (slot === null || i.slot === slot) &&
       (!category || i.category === category) &&
       (!q || normalize(`${i.name} ${i.name_en} ${i.category}`).includes(q)),
   );

@@ -49,6 +49,7 @@ export function allTwoHanded(mainhand: string[], get: (id: string) => Item | und
       <div class="layout">
         <fieldset class="equipment card">
           <legend><app-icon name="shield" [size]="16" /> Équipement</legend>
+          <div class="gear-row">
           <div class="doll">
             @for (slot of doll; track $index) {
               @if (slot) {
@@ -60,6 +61,10 @@ export function allTwoHanded(mainhand: string[], get: (id: string) => Item | und
                 <span class="doll-gap"><app-icon name="sparkles" [size]="22" /></span>
               }
             }
+          </div>
+          <div class="swaps-picker" title="Objets de rechange (tous emplacements)">
+            <app-item-picker slot="swaps" [value]="model().items.swaps ?? []" (valueChange)="setSwaps($event)" />
+          </div>
           </div>
           @if (itemsError()) {
             <p class="error-text">{{ itemsError() }}</p>
@@ -130,6 +135,9 @@ export function allTwoHanded(mainhand: string[], get: (id: string) => Item | und
     .equipment { margin: 0; padding: 18px; position: sticky; top: 84px; z-index: 30;
                  background: radial-gradient(circle at 50% 35%, rgba(167, 123, 243, .16), transparent 65%), var(--surface); }
     legend { display: inline-flex; align-items: center; gap: 6px; padding: 0 8px; font-weight: 700; color: var(--lilac); }
+    .gear-row { display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-start; gap: 16px; }
+    /* Swaps à droite de l'équipement, séparés par un trait lilas */
+    .swaps-picker { padding-left: 16px; border-left: 2px solid var(--lilac-strong); }
     .doll { display: grid; grid-template-columns: repeat(3, 104px); gap: 14px 16px; justify-content: center; }
     .doll-gap { display: grid; place-items: center; color: var(--lilac); opacity: .25; }
     .save-bar { position: sticky; bottom: 12px; z-index: 5; display: flex; justify-content: flex-end; gap: 10px;
@@ -163,6 +171,16 @@ export class BuildForm implements OnInit {
   /** Main gauche bloquée seulement si TOUTES les armes proposées sont à deux mains
    *  (même règle que l'API). Arme « au choix » ou au moins une arme à une main → possible. */
   readonly twoHanded = computed(() => allTwoHanded(this.model().items.mainhand ?? [], (id) => this.items.get(id)));
+
+  /** Objets de rechange (tous emplacements), affichés à droite de l'équipement. */
+  setSwaps(ids: string[]): void {
+    this.model.update((m) => {
+      const items = { ...m.items };
+      if (ids.length) items.swaps = ids;
+      else delete items.swaps;
+      return { ...m, items };
+    });
+  }
 
   setItem(slot: Slot, choices: string[]): void {
     this.model.update((m) => {

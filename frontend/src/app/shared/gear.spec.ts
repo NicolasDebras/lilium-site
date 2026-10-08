@@ -1,5 +1,5 @@
 import { TEST_ITEMS } from '../../testing/items';
-import { describeGear, gearTitle } from './gear';
+import { describeGear, describeSwaps, gearTitle } from './gear';
 
 const byId = new Map(TEST_ITEMS.map((i) => [i.id, i]));
 const get = (id: string) => byId.get(id);
@@ -21,5 +21,14 @@ describe('describeGear', () => {
   it('ignore les objets inconnus du catalogue', () => {
     expect(describeGear({ head: ['INCONNU'] }, get)).toEqual([]);
     expect(describeGear(undefined, get)).toEqual([]);
+  });
+});
+
+describe('describeSwaps', () => {
+  it('objets de rechange de tous emplacements, ids inconnus ignorés, hors équipement', () => {
+    const items = { mainhand: ['MAIN_SWORD'], swaps: ['HEAD_PLATE_SET1', 'INCONNU', 'MEAL_STEW'] };
+    expect(describeSwaps(items, get).map((i) => i.id)).toEqual(['HEAD_PLATE_SET1', 'MEAL_STEW']);
+    expect(describeGear(items, get).map((g) => g.slot)).toEqual(['mainhand']);
+    expect(describeSwaps({}, get)).toEqual([]);
   });
 });

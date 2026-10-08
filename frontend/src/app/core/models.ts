@@ -60,7 +60,9 @@ export interface Item {
 }
 
 /** Par case : 1 à 3 ids d'objets au choix, ou [FREE_CHOICE]. Case absente = rien de précisé. */
-export type BuildItems = Partial<Record<Slot, string[]>>;
+/** Équipement d'un build : 1 à 3 choix par case + `swaps` (objets de rechange, tout emplacement, 6 max). */
+export type BuildItems = Partial<Record<Slot, string[]>> & { swaps?: string[] };
+export const SWAPS_MAX = 6;
 
 export interface Build {
   id: number;

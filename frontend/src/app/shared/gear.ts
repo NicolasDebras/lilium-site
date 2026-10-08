@@ -14,6 +14,11 @@ export interface GearSlot {
 /** Disposition de l'inventaire du jeu (null = case vide), lue ligne par ligne. */
 export const PAPER_DOLL: (Slot | null)[] = [null, 'head', 'cape', 'mainhand', 'armor', 'offhand', 'potion', 'shoes', 'food'];
 
+/** Objets de swap d'un build (ids inconnus ignorés). */
+export function describeSwaps(items: BuildItems | undefined, get: (id: string) => Item | undefined): Item[] {
+  return (items?.swaps ?? []).map(get).filter((i): i is Item => !!i);
+}
+
 /** Cases renseignées d'un build, dans l'ordre des emplacements (ids inconnus ignorés). */
 export function describeGear(items: BuildItems | undefined, get: (id: string) => Item | undefined): GearSlot[] {
   return SLOTS.flatMap((slot) => describeSlot(items, slot, get) ?? []);
@@ -35,6 +40,7 @@ export function gearTitle(g: GearSlot): string {
 @Component({
   selector: 'app-gear',
   template: `
+    <div class="with-swaps">
     @if (layout() === 'doll') {
       <div class="doll" [class.small]="size() === 'small'">
         @for (cell of doll(); track $index) {
@@ -58,6 +64,17 @@ export function gearTitle(g: GearSlot): string {
         }
       </div>
     }
+    @if (swaps().length) {
+      <div class="swaps" [class.small]="size() === 'small'" [class.column]="layout() === 'doll'" aria-label="Swaps">
+        <span class="swaps-label">Swaps</span>
+        @for (s of swaps(); track s.id) {
+          <span class="cell swap" [title]="'Swap : ' + s.name">
+            <img [src]="icon(s)" [alt]="s.name" loading="lazy" (error)="fallback($event)" />
+          </span>
+        }
+      </div>
+    }
+    </div>
 
     <ng-template #content let-g>
       @if (g.free) {
@@ -72,7 +89,13 @@ export function gearTitle(g: GearSlot): string {
   `,
   imports: [NgTemplateOutlet],
   styles: `
+    .with-swaps { display: flex; align-items: flex-start; gap: 10px; flex-wrap: wrap; }
     .gear { display: flex; flex-wrap: wrap; gap: 4px; }
+    /* Swaps à droite de l'équipement : trait lilas, puis les objets de rechange */
+    .swaps { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; padding-left: 10px; border-left: 2px solid var(--lilac-strong); }
+    .swaps.column { flex-direction: column; flex-wrap: nowrap; align-items: flex-start; align-self: stretch; padding-top: 4px; }
+    .swaps-label { font-size: .7rem; text-transform: uppercase; letter-spacing: .06em; color: var(--text-faint); }
+    .swaps .cell { border-color: var(--lilac-soft); }
     .cell { position: relative; width: 48px; height: 48px; border-radius: 9px; background: var(--surface-2);
             border: 1px solid var(--border-soft); display: grid; place-items: center; }
     .small .cell { width: 32px; height: 32px; border-radius: 7px; }
@@ -98,6 +121,7 @@ export class Gear {
   readonly layout = input<'row' | 'doll'>('row');
 
   readonly gear = computed(() => describeGear(this.items(), (id) => this.catalog.get(id)));
+  readonly swaps = computed(() => describeSwaps(this.items(), (id) => this.catalog.get(id)));
   readonly doll = computed(() =>
     PAPER_DOLL.map((slot) =>
       slot === null

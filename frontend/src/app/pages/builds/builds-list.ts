@@ -8,7 +8,7 @@ import { AuthService } from '../../core/auth.service';
 import { ItemsService, normalize } from '../../core/items.service';
 import { Build, RoleInfo, hasLevel } from '../../core/models';
 import { ToastService } from '../../core/toast.service';
-import { Gear, describeGear } from '../../shared/gear';
+import { Gear, describeGear, describeSwaps } from '../../shared/gear';
 import { Icon } from '../../shared/icon';
 import { Pager } from '../../shared/pager';
 import { roleColor, sortByRole } from '../../shared/roles';
@@ -235,6 +235,7 @@ export class BuildsList implements OnInit {
   gearNames(build: Build): string {
     return describeGear(build.items, (id) => this.items.get(id))
       .map((g) => (g.free ? `${g.label} au choix` : g.items.map((i) => i.name).join(' ou ')))
+      .concat(describeSwaps(build.items, (id) => this.items.get(id)).map((i) => `swap ${i.name}`))
       .join(' · ');
   }
 

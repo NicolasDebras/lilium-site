@@ -1,7 +1,7 @@
 import { Component, computed, inject, input, output, signal } from '@angular/core';
 
 import { ItemsService, filterItems, itemIconUrl, useFallbackIcon } from '../core/items.service';
-import { FREE_CHOICE, Item, MAX_CHOICES, SLOT_LABELS, Slot } from '../core/models';
+import { FREE_CHOICE, Item, MAX_CHOICES, SLOT_LABELS, SWAPS_MAX, Slot } from '../core/models';
 
 /**
  * Case d'équipement cliquable (comme l'inventaire du jeu). Une case vaut :
@@ -36,10 +36,10 @@ import { FREE_CHOICE, Item, MAX_CHOICES, SLOT_LABELS, Slot } from '../core/model
       <div class="overlay" (click)="close()"></div>
       <div class="panel card" role="dialog" [attr.aria-label]="'Choisir : ' + label()">
         <div class="panel-head">
-          <h3>{{ label() }} <span class="muted count">{{ items().length }}/{{ max }}</span></h3>
+          <h3>{{ label() }} <span class="muted count">{{ items().length }}/{{ max() }}</span></h3>
           <button type="button" class="btn btn-sm" (click)="close()" aria-label="Fermer">✕</button>
         </div>
-        <p class="muted hint">Clique jusqu'à {{ max }} objets : le joueur aura le choix entre eux.</p>
+        <p class="muted hint">{{ swaps() ? 'Objets de rechange, tous emplacements : jusqu’à ' + max() + '.' : 'Clique jusqu’à ' + max() + ' objets : le joueur aura le choix entre eux.' }}</p>
         <input class="input search" type="search" placeholder="Rechercher (ex : épée, holy, cuir…)"
                aria-label="Rechercher un objet" [value]="query()" (input)="query.set($any($event.target).value)" />
         @if (categories().length > 1) {
@@ -62,9 +62,11 @@ import { FREE_CHOICE, Item, MAX_CHOICES, SLOT_LABELS, Slot } from '../core/model
           }
         </div>
         <div class="row actions">
-          <button type="button" class="btn btn-sm free-btn" [class.btn-primary]="isFree()" (click)="setFree()">
-            Au choix du joueur
-          </button>
+          @if (!swaps()) {
+            <button type="button" class="btn btn-sm free-btn" [class.btn-primary]="isFree()" (click)="setFree()">
+              Au choix du joueur
+            </button>
+          }
           @if (value().length) {
             <button type="button" class="btn btn-sm btn-danger clear" (click)="clear()">Vider la case</button>
           }
@@ -109,9 +111,11 @@ import { FREE_CHOICE, Item, MAX_CHOICES, SLOT_LABELS, Slot } from '../core/model
 })
 export class ItemPicker {
   private readonly catalog = inject(ItemsService);
-  protected readonly max = MAX_CHOICES;
-
-  readonly slot = input.required<Slot>();
+  /** Un emplacement, ou 'swaps' : objets de rechange de tous emplacements (6 max, jamais « au choix »). */
+  readonly slot = input.required<Slot | 'swaps'>();
+  protected readonly swaps = computed(() => this.slot() === 'swaps');
+  protected readonly max = computed(() => (this.swaps() ? SWAPS_MAX : MAX_CHOICES));
+  private readonly slotFilter = computed(() => (this.swaps() ? null : (this.slot() as Slot)));
   /** Ids choisis (1 à 3), [FREE_CHOICE] pour « au choix du joueur », [] = rien. */
   readonly value = input<string[]>([]);
   readonly disabled = input(false);
@@ -122,19 +126,19 @@ export class ItemPicker {
   protected readonly query = signal('');
   protected readonly category = signal('');
 
-  protected readonly label = computed(() => SLOT_LABELS[this.slot()]);
+  protected readonly label = computed(() => (this.swaps() ? 'Swaps' : SLOT_LABELS[this.slot() as Slot]));
   readonly isFree = computed(() => this.value()[0] === FREE_CHOICE);
   readonly items = computed(() =>
     this.isFree() ? [] : this.value().map((id) => this.catalog.get(id)).filter((i): i is Item => !!i),
   );
-  readonly isFull = computed(() => this.items().length >= MAX_CHOICES);
+  readonly isFull = computed(() => this.items().length >= this.max());
   readonly summary = computed(() =>
     this.isFree() ? 'Au choix du joueur' : this.items().map((i) => i.name).join(' / ') || 'vide',
   );
   protected readonly categories = computed(() => [
-    ...new Set(filterItems(this.catalog.items(), this.slot()).map((i) => i.category)),
+    ...new Set(filterItems(this.catalog.items(), this.slotFilter()).map((i) => i.category)),
   ]);
-  readonly results = computed(() => filterItems(this.catalog.items(), this.slot(), this.query(), this.category()));
+  readonly results = computed(() => filterItems(this.catalog.items(), this.slotFilter(), this.query(), this.category()));
 
   protected icon(icon: string): string {
     return itemIconUrl(icon);
@@ -153,7 +157,7 @@ export class ItemPicker {
     const current = this.isFree() ? [] : this.value();
     if (current.includes(item.id)) {
       this.valueChange.emit(current.filter((id) => id !== item.id));
-    } else if (current.length < MAX_CHOICES) {
+    } else if (current.length < this.max()) {
       this.valueChange.emit([...current, item.id]);
     }
   }

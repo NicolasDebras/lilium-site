@@ -43,10 +43,11 @@ describe('BuildForm — équipement', () => {
     );
   }
 
-  it('affiche les 8 cases (dont bouffe et potion)', async () => {
+  it('affiche les 8 cases (dont bouffe et potion) + la case Swaps à droite', async () => {
     const { el } = await render();
-    const labels = [...el.querySelectorAll('button.slot')].map((b) => b.getAttribute('aria-label')?.split(' :')[0]);
+    const labels = [...el.querySelectorAll('.doll button.slot')].map((b) => b.getAttribute('aria-label')?.split(' :')[0]);
     expect(labels.length).toBe(8);
+    expect(el.querySelector('.swaps-picker button.slot')?.getAttribute('aria-label')).toContain('Swaps');
     expect(labels).toContain('Bouffe');
     expect(labels).toContain('Potion');
   });

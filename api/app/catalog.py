@@ -203,6 +203,9 @@ def validate_build_items(items: dict, catalog: dict[str, dict] | None = None) ->
         choices = _choices(value)
         if not choices:
             continue
+        if slot == SWAPS_KEY:
+            cleaned[slot] = _validate_swaps(choices, catalog)
+            continue
         if slot not in SLOTS:
             raise InvalidItems(f"Emplacement inconnu : {slot}")
         if FREE_CHOICE in choices:
@@ -222,7 +225,25 @@ def validate_build_items(items: dict, catalog: dict[str, dict] | None = None) ->
 
     if "offhand" in cleaned and all_two_handed(cleaned.get("mainhand", []), catalog):
         raise InvalidItems("Toutes les armes proposées sont à deux mains : pas de main gauche possible.")
-    return {slot: cleaned[slot] for slot in SLOTS if slot in cleaned}
+    out = {slot: cleaned[slot] for slot in SLOTS if slot in cleaned}
+    if cleaned.get(SWAPS_KEY):
+        out[SWAPS_KEY] = cleaned[SWAPS_KEY]
+    return out
+
+
+SWAPS_KEY = "swaps"   # objets de rechange, n'importe quel emplacement (affichés à droite du build)
+SWAPS_MAX = 6
+
+
+def _validate_swaps(choices: list[str], catalog: dict[str, dict]) -> list[str]:
+    if FREE_CHOICE in choices:
+        raise InvalidItems("Un swap doit être un objet précis.")
+    if len(choices) > SWAPS_MAX:
+        raise InvalidItems(f"{SWAPS_MAX} swaps maximum.")
+    unknown = [i for i in choices if i not in catalog]
+    if unknown:
+        raise InvalidItems(f"Objet inconnu : {unknown[0]}")
+    return choices
 
 
 def all_two_handed(mainhand: list[str], catalog: dict[str, dict]) -> bool:

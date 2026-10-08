@@ -7,7 +7,7 @@ import { ItemsService } from '../core/items.service';
 import { Slot } from '../core/models';
 import { ItemPicker } from './item-picker';
 
-async function render(slot: Slot, value: string[] = [], disabled = false) {
+async function render(slot: Slot | 'swaps', value: string[] = [], disabled = false) {
   TestBed.configureTestingModule({
     imports: [ItemPicker],
     providers: [provideHttpClient(), provideHttpClientTesting()],
@@ -130,5 +130,18 @@ describe('ItemPicker', () => {
   it('désactivé : la case ne s’ouvre pas', async () => {
     const { el } = await render('offhand', [], true);
     expect(el.querySelector<HTMLButtonElement>('button.slot')!.disabled).toBe(true);
+  });
+
+  it('swaps : tous les emplacements, jusqu’à 6, sans « au choix »', async () => {
+    const { el, openPanel, clickResult, emitted } = await render('swaps');
+    await openPanel();
+    const results = [...el.querySelectorAll('.result')].map((b) => b.textContent?.trim());
+    expect(results).toContain('Casque de soldat');
+    expect(results.length).toBeGreaterThan(2);
+    expect(el.textContent).not.toContain('Au choix du joueur');
+    expect(el.querySelector('.panel h3')?.textContent).toContain('Swaps');
+    expect(el.querySelector('.panel .count')?.textContent?.trim()).toBe('0/6');
+    await clickResult('Casque de soldat');
+    expect(emitted.at(-1)?.length).toBe(1);
   });
 });

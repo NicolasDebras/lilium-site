@@ -209,3 +209,13 @@ def test_shipped_catalog_has_a_name_for_every_item_and_no_removed_item():
     items = load_catalog()
     assert [i["id"] for i in items if not i["name"].strip()] == []
     assert not {i["id"] for i in items} & REMOVED_ITEMS
+
+
+def test_swaps_any_slot_deduplicated_and_bounded():
+    from app.catalog import InvalidItems, SWAPS_MAX, items_by_id, validate_build_items
+    ids = list(items_by_id())
+    ok = validate_build_items({"swaps": [ids[0], ids[-1], ids[0]]})
+    assert ok == {"swaps": [ids[0], ids[-1]]}   # n'importe quel emplacement, doublon retiré
+    for bad in ({"swaps": ["*"]}, {"swaps": ["INCONNU"]}, {"swaps": ids[: SWAPS_MAX + 1]}):
+        with pytest.raises(InvalidItems):
+            validate_build_items(bad)
