@@ -10,12 +10,13 @@ import { Build, Compo, SlotRow, hasLevel } from '../../core/models';
 import { ToastService } from '../../core/toast.service';
 import { Gear } from '../../shared/gear';
 import { Icon } from '../../shared/icon';
+import { ImageShare, fileSlug } from '../../shared/image-share';
 import { RoleBar } from '../../shared/role-bar';
 import { roleColor, sortByRole } from '../../shared/roles';
 
 @Component({
   selector: 'app-compos-list',
-  imports: [NgTemplateOutlet, RouterLink, Gear, Icon, RoleBar],
+  imports: [NgTemplateOutlet, RouterLink, Gear, Icon, ImageShare, RoleBar],
   template: `
     <div class="page-head">
       <div>
@@ -96,11 +97,20 @@ import { roleColor, sortByRole } from '../../shared/roles';
             </section>
           }
         }
-        @if (canEdit() && c.custom) {
+        @if (c.custom && (canEdit() || hasBuilds(c))) {
           <div class="foot row">
-            <a class="btn btn-sm btn-ghost" [routerLink]="['/g', guildId(), 'compos', c.name, 'edit']"><app-icon name="edit" [size]="14" /> Modifier</a>
-            <button type="button" class="btn btn-sm btn-danger" (click)="remove(c)"><app-icon name="trash" [size]="14" /> Supprimer</button>
+            @if (hasBuilds(c)) {
+              <button type="button" class="btn btn-sm" [attr.aria-expanded]="imageOf() === c.name"
+                      (click)="toggleImage(c.name)"><app-icon name="sparkles" [size]="14" /> Image</button>
+            }
+            @if (canEdit()) {
+              <a class="btn btn-sm btn-ghost" [routerLink]="['/g', guildId(), 'compos', c.name, 'edit']"><app-icon name="edit" [size]="14" /> Modifier</a>
+              <button type="button" class="btn btn-sm btn-danger" (click)="remove(c)"><app-icon name="trash" [size]="14" /> Supprimer</button>
+            }
           </div>
+          @if (imageOf() === c.name) {
+            <app-image-share [src]="imageUrl(c.name)" [alt]="'Image de la compo ' + c.name" [fileName]="'compo-' + slug(c.name)" />
+          }
         }
       </article>
     </ng-template>
@@ -133,6 +143,22 @@ export class ComposList implements OnInit {
   private readonly api = inject(ApiService);
   private readonly auth = inject(AuthService);
   private readonly items = inject(ItemsService);
+  /** Compo dont l'image est affichée (une à la fois). */
+  protected readonly imageOf = signal<string | null>(null);
+  protected readonly slug = fileSlug;
+
+  /** L'image ne montre que les rôles liés à un build : sans build, pas d'image. */
+  hasBuilds(c: Compo): boolean {
+    return [...c.pf1, ...c.pf2].some((r) => r.build_id != null);
+  }
+
+  toggleImage(name: string): void {
+    this.imageOf.update((open) => (open === name ? null : name));
+  }
+
+  imageUrl(name: string): string {
+    return this.api.compoImageUrl(this.guildId(), name);
+  }
   private readonly toast = inject(ToastService);
   private readonly builds = signal<Build[]>([]);
   private readonly buildsById = computed(() => new Map(this.builds().map((b) => [b.id, b])));

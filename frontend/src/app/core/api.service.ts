@@ -72,6 +72,16 @@ export class ApiService {
     return this.http.get<Compo>(`${this.g(guildId)}/compos/${encodeURIComponent(name)}`);
   }
 
+  /** Image PNG de la compo (comme sous /acti), utilisable directement en <img src>. */
+  compoImageUrl(guildId: string, name: string): string {
+    return `${this.g(guildId)}/compos/${encodeURIComponent(name)}/image.png`;
+  }
+
+  /** Aperçu de l'image d'une compo en cours d'édition (rien n'est enregistré). */
+  previewCompoImage(guildId: string, body: CompoInput): Observable<Blob> {
+    return this.http.post(`${this.g(guildId)}/compos/preview-image`, body, { responseType: 'blob' });
+  }
+
   createCompo(guildId: string, body: CompoInput): Observable<{ name: string }> {
     return this.http.post<{ name: string }>(`${this.g(guildId)}/compos`, body);
   }

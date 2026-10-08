@@ -115,7 +115,8 @@ Toutes sous `/api`. `{gid}` = id du serveur Discord.
 | GET | `/guilds/{gid}/builds[?role=&type_acti=]`, `/guilds/{gid}/builds/{id}` (+ `used_by` : compos qui l'utilisent), `/guilds/{gid}/builds/{id}/image.png` | membre |
 | POST | `/guilds/{gid}/builds/{id}/duplicate` (« Nom (copie) ») | staff |
 | POST · PUT · DELETE | `/guilds/{gid}/builds[/{id}]` | staff |
-| GET | `/guilds/{gid}/compos`, `/guilds/{gid}/compos/{nom}` | membre |
+| GET | `/guilds/{gid}/compos`, `/guilds/{gid}/compos/{nom}`, `/guilds/{gid}/compos/{nom}/image.png` (404 si aucun rôle n'a de build) | membre |
+| POST | `/guilds/{gid}/compos/preview-image` (aperçu PNG d'une compo non enregistrée) | staff |
 | POST · PUT · DELETE | `/guilds/{gid}/compos[/{nom}]` | staff |
 | GET | `/guilds/{gid}/bal/me`, `/guilds/{gid}/bal/me/history?period=`, `/guilds/{gid}/roles` | membre |
 | GET | `/guilds/{gid}/bal/me/operations?action=&page=` (25 par page), `/guilds/{gid}/bal/me/operations.csv?action=` | membre (ses propres lignes uniquement) |
@@ -187,6 +188,8 @@ Détails :
 - Le champ texte « Précisions sur le stuff » reste disponible (tier minimum, monture…).
 
 ### Compos = ensemble de builds
+
+**Image de la compo depuis le site** : bouton **Image** sur chaque compo de guilde qui a au moins un build (visible par tous les membres), et **Aperçu de l'image** dans le formulaire (avant même d'enregistrer, staff). C'est la même image que celle postée sous `/acti` (seuls les rôles liés à un build y figurent) ; boutons Télécharger et Copier pour la coller dans Discord.
 
 Chaque ligne d'une compo = **un build × un nombre de joueurs**, en PF1 et/ou PF2. Le rôle vient du build, et il n'y a **qu'un build par rôle et par party** :
 sur Discord, avec `/acti`, le joueur choisit son rôle et le build lui est imposé (pas de liste d'armes). Une ligne peut aussi rester « sans build » (rôle + armes en texte, comme avant).

@@ -150,4 +150,36 @@ describe('CompoForm', () => {
     await fixture.whenStable();
     expect(el.querySelector('.alert')?.textContent).toContain('TANK en double');
   });
+
+  it("génère l'aperçu de l'image sans enregistrer la compo", async () => {
+    const { fixture, cmp, http, el } = await render();
+    cmp['model'].update((m) => ({ ...m, name: 'ZvZ' }));
+    cmp.setSource('pf1', 0, '12');
+    await fixture.whenStable();
+    const createUrl = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:apercu');
+    const button = [...el.querySelectorAll<HTMLButtonElement>('.image-preview button')][0];
+    button.click();
+    const req = http.expectOne('/api/guilds/111/compos/preview-image');
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body.pf1[0]).toEqual({ build_id: 12, role: 'TANK', count: 1, weapon: 'Tank Masse' });
+    expect(req.request.body.pf1[0].free).toBeUndefined();
+    req.flush(new Blob(['png'], { type: 'image/png' }));
+    await new Promise((resolve) => setTimeout(resolve));
+    fixture.detectChanges();
+    expect(createUrl).toHaveBeenCalled();
+    expect(el.querySelector('.image-preview app-image-share img')?.getAttribute('src')).toBe('blob:apercu');
+    http.expectNone('/api/guilds/111/compos');   // rien d'enregistré
+  });
+
+  it("affiche le message de l'API quand l'aperçu échoue", async () => {
+    const { fixture, cmp, http, el } = await render();
+    cmp['model'].update((m) => ({ ...m, name: 'ZvZ' }));
+    await fixture.whenStable();
+    el.querySelector<HTMLButtonElement>('.image-preview button')!.click();
+    const body = new Blob([JSON.stringify({ detail: "Aucun rôle de cette compo n'a de build." })], { type: 'application/json' });
+    http.expectOne('/api/guilds/111/compos/preview-image').flush(body, { status: 404, statusText: 'Not Found' });
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    fixture.detectChanges();
+    expect(el.querySelector('.image-preview .alert')?.textContent).toContain("n'a de build");
+  });
 });

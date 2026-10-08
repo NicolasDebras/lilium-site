@@ -1,4 +1,5 @@
-import { Component, OnInit, computed, inject, input, signal } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
+import { Component, DestroyRef, OnInit, computed, inject, input, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
@@ -9,6 +10,7 @@ import { Build, CompoInput, RoleInfo, SlotRow } from '../../core/models';
 import { ToastService } from '../../core/toast.service';
 import { Gear } from '../../shared/gear';
 import { Icon } from '../../shared/icon';
+import { ImageShare, fileSlug } from '../../shared/image-share';
 import { RoleBar } from '../../shared/role-bar';
 
 export type Party = 'pf1' | 'pf2';
@@ -26,7 +28,7 @@ function emptyRow(): Row {
 
 @Component({
   selector: 'app-compo-form',
-  imports: [FormsModule, RouterLink, Gear, Icon, RoleBar],
+  imports: [FormsModule, RouterLink, Gear, Icon, ImageShare, RoleBar],
   template: `
     <div class="page-head">
       <div>
@@ -128,6 +130,22 @@ function emptyRow(): Row {
         <p class="muted">Aucun build sur ce serveur pour l'instant : crée d'abord des builds, ou utilise des lignes « sans build ».</p>
       }
 
+      <section class="card image-preview">
+        <div class="preview-head">
+          <h3>Image de la compo <span class="muted">— celle postée sous /acti</span></h3>
+          <button type="button" class="btn btn-sm" [disabled]="previewing() || !model().name.trim()" (click)="previewImage()">
+            <app-icon name="sparkles" [size]="14" /> {{ previewing() ? 'Génération…' : previewUrl() ? 'Régénérer' : "Aperçu de l'image" }}
+          </button>
+        </div>
+        @if (previewError()) {
+          <p class="alert">{{ previewError() }}</p>
+        } @else if (previewUrl(); as url) {
+          <app-image-share [src]="url" [alt]="'Aperçu de la compo ' + model().name" [fileName]="'compo-' + slug(model().name)" />
+        } @else {
+          <p class="muted help">Seuls les rôles liés à un build apparaissent sur l'image. Rien n'est enregistré.</p>
+        }
+      </section>
+
       <div class="save-bar glass">
         <a class="btn btn-ghost" [routerLink]="['/g', guildId(), 'compos']">Annuler</a>
         <button type="submit" class="btn btn-primary" [disabled]="saving() || !model().name.trim()">
@@ -154,6 +172,9 @@ function emptyRow(): Row {
     .free-row .select { width: auto; min-width: 150px; }
     .free-row .input { flex: 1 1 200px; }
     .add { justify-self: start; }
+    .image-preview { display: grid; gap: 10px; margin: 16px 0; }
+    .image-preview h3 { margin: 0; font-size: 1rem; }
+    .image-preview h3 .muted { font-weight: 400; font-size: .85rem; }
   `,
 })
 export class CompoForm implements OnInit {
@@ -180,6 +201,14 @@ export class CompoForm implements OnInit {
   protected readonly builds = signal<Build[]>([]);
   protected readonly saving = signal(false);
   protected readonly error = signal('');
+  protected readonly previewUrl = signal<string | null>(null);
+  protected readonly previewing = signal(false);
+  protected readonly previewError = signal('');
+  protected readonly slug = fileSlug;
+
+  constructor() {
+    inject(DestroyRef).onDestroy(() => this.setPreview(null));
+  }
 
   private readonly buildsById = computed(() => new Map(this.builds().map((b) => [b.id, b])));
   /** Aperçu de la composition (PF1 + PF2, lignes avec un rôle). Méthode et pas computed :
@@ -253,14 +282,40 @@ export class CompoForm implements OnInit {
     return this.model()[party].reduce((sum, r) => sum + (r.role ? Number(r.count) || 0 : 0), 0);
   }
 
+  /** Corps envoyé à l'API (sans l'état d'interface « free »). */
+  private body(): CompoInput {
+    const { pf1, pf2, ...rest } = this.model();
+    const clean = (rows: Row[]): SlotRow[] => rows.map(({ free: _f, ...r }) => r);
+    return { ...rest, pf1: clean(pf1), pf2: clean(pf2) };
+  }
+
+  /** Génère l'image de la compo telle qu'elle est dans le formulaire (non enregistrée). */
+  async previewImage(): Promise<void> {
+    this.previewing.set(true);
+    this.previewError.set('');
+    try {
+      const blob = await firstValueFrom(this.api.previewCompoImage(this.guildId(), this.body()));
+      this.setPreview(URL.createObjectURL(blob));
+    } catch (err) {
+      this.setPreview(null);
+      this.previewError.set(await blobErrorMessage(err));
+    } finally {
+      this.previewing.set(false);
+    }
+  }
+
+  private setPreview(url: string | null): void {
+    const old = this.previewUrl();
+    if (old) URL.revokeObjectURL(old);
+    this.previewUrl.set(url);
+  }
+
   async save(): Promise<void> {
     this.saving.set(true);
     this.error.set('');
     try {
       const name = this.name();
-      const { pf1, pf2, ...rest } = this.model();
-      const clean = (rows: Row[]): SlotRow[] => rows.map(({ free: _f, ...r }) => r);
-      const body: CompoInput = { ...rest, pf1: clean(pf1), pf2: clean(pf2) };
+      const body = this.body();
       await firstValueFrom(
         name ? this.api.updateCompo(this.guildId(), name, { ...body, name }) : this.api.createCompo(this.guildId(), body),
       );
@@ -276,4 +331,18 @@ export class CompoForm implements OnInit {
   private updateRow(party: Party, index: number, change: (row: Row) => Row): void {
     this.model.update((m) => ({ ...m, [party]: m[party].map((r, i) => (i === index ? change(r) : r)) }));
   }
+}
+
+/** Les erreurs d'une requête en `responseType: 'blob'` arrivent en Blob : on relit le « detail » JSON. */
+export async function blobErrorMessage(err: unknown): Promise<string> {
+  if (err instanceof HttpErrorResponse && err.error instanceof Blob) {
+    try {
+      const detail = JSON.parse(await err.error.text())?.detail;
+      if (typeof detail === 'string') return detail;
+      if (Array.isArray(detail)) return 'Compo invalide : vérifie les lignes (nombre de joueurs, rôles).';
+    } catch {
+      /* corps non JSON : message générique */
+    }
+  }
+  return errorMessage(err);
 }

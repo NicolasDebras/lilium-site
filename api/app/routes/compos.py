@@ -1,10 +1,12 @@
 from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.responses import Response
 from pydantic import BaseModel, Field, field_validator
 
 from app.compos import InvalidCompo, build_template_entry, template_to_compo
 from app.constants import DEFAULT_TEMPLATES, default_templates_for
+from app.images import compo_png
 from app.permissions import require_member, require_staff
 from app.validation import https_url_or_empty
 
@@ -72,6 +74,34 @@ async def get_compo(guild_id: int, name: str, request: Request, user: dict = Dep
     if name not in custom:
         raise HTTPException(status_code=404, detail="Compo introuvable.")
     return template_to_compo(name, custom[name], custom=True)
+
+
+NO_BUILD_IMAGE = "Aucun rôle de cette compo n'a de build : pas d'image à générer."
+
+
+async def _png_response(db, guild_id: int, name: str, entry: dict) -> Response:
+    builds_by_id = {b["id"]: b for b in await db.get_builds(guild_id)}
+    png = await compo_png(name, entry, builds_by_id)
+    if png is None:
+        raise HTTPException(status_code=404, detail=NO_BUILD_IMAGE)
+    return Response(png, media_type="image/png", headers={"Cache-Control": "private, max-age=60"})
+
+
+@router.get("/{name}/image.png")
+async def compo_image(guild_id: int, name: str, request: Request, user: dict = Depends(require_member)):
+    """La même image que celle postée sous /acti (seulement les rôles qui ont un build)."""
+    db = request.app.state.db
+    custom = await db.get_custom_templates(guild_id)
+    if name not in custom:
+        raise HTTPException(status_code=404, detail="Compo introuvable.")
+    return await _png_response(db, guild_id, name, custom[name])
+
+
+@router.post("/preview-image")
+async def preview_compo_image(guild_id: int, body: CompoIn, request: Request, user: dict = Depends(require_staff)):
+    """Aperçu de l'image d'une compo en cours d'édition (rien n'est enregistré)."""
+    db = request.app.state.db
+    return await _png_response(db, guild_id, body.name, await _entry(db, guild_id, body))
 
 
 @router.post("", status_code=201)
