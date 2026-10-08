@@ -36,7 +36,7 @@ export const TUTORIAL: TutoStep[] = [
   },
   {
     id: 'admin', title: 'Nommer les admins du site',
-    text: 'Sur Discord : /webadmin add @toi (réservé aux administrateurs du serveur et au Maitre de guilde). Les admins voient la page Admin : stats BAL, BAL par joueur, erreurs du bot.',
+    text: 'Sur Discord, tape /webadmin add puis mentionne-toi (ex. /webadmin add @toi). Réservé aux administrateurs du serveur et au Maitre de guilde. Les admins voient la page Admin : stats BAL, BAL par joueur, erreurs du bot. Vérifie avec /webadmin list. Plusieurs serveurs ? Refais-le sur chacun.',
     help: 'Commande refusée ? Il faut la permission Administrateur sur Discord ou le rôle « Maitre de guilde ».',
   },
   {
@@ -91,7 +91,9 @@ export const COMMANDS: Command[] = [
   { group: 'Locations', name: 'closelocation', usage: '/closelocation id', who: 'Officier', text: 'Clôturer une location.' },
   // Serveur & site
   { group: 'Serveur & site', name: 'config', usage: '/config', who: 'Officier', text: 'Panneau de configuration du serveur (rôle staff du site, salons, rôles…).' },
-  { group: 'Serveur & site', name: 'webadmin', usage: '/webadmin add|remove|list', who: 'Admin serveur, Maitre de guilde', text: 'Gérer les admins du site.' },
+  { group: 'Serveur & site', name: 'webadmin add', usage: '/webadmin add @membre', who: 'Admin serveur, Maitre de guilde', text: 'Nommer un admin du site pour CE serveur : il voit la page Admin (stats BAL, BAL par joueur, erreurs du bot) en plus des droits staff. Pris en compte sous 60 s.' },
+  { group: 'Serveur & site', name: 'webadmin remove', usage: '/webadmin remove @membre', who: 'Admin serveur, Maitre de guilde', text: 'Retirer un admin du site sur ce serveur.' },
+  { group: 'Serveur & site', name: 'webadmin list', usage: '/webadmin list', who: 'Admin serveur, Maitre de guilde', text: 'Lister les admins du site de ce serveur.' },
   { group: 'Serveur & site', name: 'errors', usage: '/errors [page] [commande] [id_erreur]', who: 'Officier', text: 'Erreurs des commandes (30 jours) — aussi dans Admin sur le site.' },
   { group: 'Serveur & site', name: 'helpliliumbot', usage: '/helpliliumbot', who: 'Tous', text: 'Liste de toutes les commandes.' },
 ];
@@ -103,6 +105,12 @@ export const SITE: Article[] = [
     'Membre : a fait /register sur le serveur et y est toujours — voit builds, compos, modèles et sa BAL.',
     'Staff : membre + rôle choisi dans /config → 🌐 Rôle staff du site web — crée, modifie, copie et publie builds et compos.',
     'Admin : nommé avec /webadmin add — tout le staff + la page Admin.',
+  ] },
+  { id: 'multi-serveur', title: 'Plusieurs serveurs Discord', paragraphs: [
+    'Le bot est public : il peut être sur autant de serveurs que tu veux, et toi tu peux être membre, staff ou admin de plusieurs serveurs à la fois.',
+    'Fais /register sur chaque serveur : ils apparaissent tous sur le site après connexion, et tu changes de serveur avec « Changer de serveur » (menu de ton compte).',
+    'Chaque serveur a ses propres builds, compos, BAL, rôle staff (/config) et admins (/webadmin add, à refaire sur chaque serveur). Rien n’est mélangé entre serveurs.',
+    'Pour réutiliser une compo d’un serveur à l’autre : « Copier vers… » sur la compo (il faut être staff des deux serveurs), ou passe par les Modèles.',
   ] },
   { id: 'builds', title: 'Builds', paragraphs: [
     'Chaque case d’équipement vaut un objet imposé, 2 ou 3 objets au choix, ou « au choix du joueur ».',

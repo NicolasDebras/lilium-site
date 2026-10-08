@@ -85,7 +85,7 @@ export function matches(query: string, ...texts: string[]): boolean {
                 <thead><tr><th>Commande</th><th>Qui</th><th>Rôle</th></tr></thead>
                 <tbody>
                   @for (c of g.commands; track c.name) {
-                    <tr [id]="c.name"><td><code>{{ c.usage }}</code></td><td class="who">{{ c.who }}</td><td>{{ c.text }}</td></tr>
+                    <tr [id]="anchor(c.name)"><td><code>{{ c.usage }}</code></td><td class="who">{{ c.who }}</td><td>{{ c.text }}</td></tr>
                   }
                 </tbody>
               </table>
@@ -156,6 +156,8 @@ export class GuidePage implements OnInit {
 
   protected readonly tutorial = TUTORIAL;
   protected readonly privacy = PRIVACY;
+  /** « webadmin add » → ancre « webadmin-add » (lien /guide#webadmin-add). */
+  protected readonly anchor = (name: string) => name.replace(/\s+/g, '-');
   protected readonly query = signal('');
   protected readonly inviteUrl = signal<string | null>(null);
   protected readonly done = signal<Set<string>>(readDone());

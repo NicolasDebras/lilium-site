@@ -47,6 +47,7 @@ describe('GuidePage', () => {
     const { f, el } = render();
     expect(el.querySelectorAll('#commandes tbody tr').length).toBe(COMMANDS.length);
     expect(el.querySelector('tr#transferbal')).not.toBeNull();
+    expect(el.querySelector('tr#webadmin-add')?.textContent).toContain('/webadmin add @membre');
     const input = el.querySelector('#guide-search') as HTMLInputElement;
     input.value = 'transferbal';
     input.dispatchEvent(new Event('input'));
