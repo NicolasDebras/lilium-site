@@ -156,17 +156,42 @@ class Database:
             """, guild_id)
         return {k: int(v) for k, v in dict(row).items()}
 
+    _BAL_EVENTS_SQL = """
+        SELECT l.id, l.ts, l.action, COALESCE(l.template, '') AS template, l.by_user,
+               elem->>'uid' AS uid, elem->>'name' AS name, (elem->>'delta')::bigint AS delta
+        FROM bal_log l, jsonb_array_elements(l.entries) AS elem
+        WHERE l.guild_id = $1 AND l.ts >= $2 {extra}
+        ORDER BY l.ts
+    """
+
     async def get_bal_events(self, guild_id: int, since) -> list[dict]:
         """Mouvements de BAL depuis `since` : une ligne par joueur et par opération du bal_log."""
         async with self._pool.acquire() as conn:
-            rows = await conn.fetch("""
-                SELECT l.id, l.ts, l.action, COALESCE(l.template, '') AS template,
-                       elem->>'uid' AS uid, elem->>'name' AS name, (elem->>'delta')::bigint AS delta
-                FROM bal_log l, jsonb_array_elements(l.entries) AS elem
-                WHERE l.guild_id = $1 AND l.ts >= $2
-                ORDER BY l.ts
-            """, guild_id, since)
+            rows = await conn.fetch(self._BAL_EVENTS_SQL.format(extra=""), guild_id, since)
         return [dict(r) for r in rows]
+
+    async def get_my_bal_events(self, guild_id: int, user_id: int, since) -> list[dict]:
+        """Mouvements de BAL d'UN joueur depuis `since` (page « Ma BAL »)."""
+        async with self._pool.acquire() as conn:
+            rows = await conn.fetch(
+                self._BAL_EVENTS_SQL.format(extra="AND elem->>'uid' = $3"), guild_id, since, str(user_id)
+            )
+        return [dict(r) for r in rows]
+
+    async def get_bal_rank(self, guild_id: int, user_id: int) -> dict:
+        """Solde du joueur, son rang parmi les BAL > 0 du serveur (None s'il n'a rien) et ce nombre de joueurs."""
+        async with self._pool.acquire() as conn:
+            row = await conn.fetchrow("""
+                SELECT COALESCE((SELECT amount FROM bal WHERE guild_id = $1 AND user_id = $2), 0) AS amount,
+                       (SELECT COUNT(*) FROM bal WHERE guild_id = $1 AND amount > 0)             AS players
+            """, guild_id, str(user_id))
+            amount, players = int(row["amount"]), int(row["players"])
+            rank = None
+            if amount > 0:
+                rank = 1 + await conn.fetchval(
+                    "SELECT COUNT(*) FROM bal WHERE guild_id = $1 AND amount > $2", guild_id, amount
+                )
+        return {"amount": amount, "rank": rank, "players": players}
 
     async def get_bal_balances(self, guild_id: int) -> list[dict]:
         """Soldes > 0 avec le meilleur nom connu : pseudo IG (/register), sinon dernier nom du bal_log."""

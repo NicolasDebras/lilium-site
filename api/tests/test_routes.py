@@ -147,16 +147,39 @@ def test_admin_overview_for_admin(login):
 
 
 def test_admin_bal_stats(login, fake_db):
-    r = login(ADMIN_ID).get(f"/api/guilds/{GUILD}/admin/bal?days=90")
+    r = login(ADMIN_ID).get(f"/api/guilds/{GUILD}/admin/bal?period=90d")
     assert r.status_code == 200
     body = r.json()
     assert body["days"] == 90 and body["bucket"] == "week"
     assert body["totals"]["due"] == 1_500_000
     assert body["top_players"] == [{"name": "Joueur1", "amount": 1_500_000}]
+    assert len(body["heatmap"]) == 7 and "previous" in body
 
 
-def test_admin_bal_rejects_out_of_range_period(login):
-    assert login(ADMIN_ID).get(f"/api/guilds/{GUILD}/admin/bal?days=400").status_code == 422
+def test_admin_bal_week_period(login):
+    body = login(ADMIN_ID).get(f"/api/guilds/{GUILD}/admin/bal?period=week").json()
+    assert body["period"] == "week" and 1 <= body["days"] <= 7
+
+
+def test_admin_bal_rejects_unknown_period(login):
+    assert login(ADMIN_ID).get(f"/api/guilds/{GUILD}/admin/bal?period=400d").status_code == 422
+
+
+def test_my_bal_history_only_reads_my_own_data(login, fake_db):
+    r = login(MEMBER_ID).get(f"/api/guilds/{GUILD}/bal/me/history?period=week")
+    assert r.status_code == 200
+    body = r.json()
+    assert (body["amount"], body["rank"], body["players"]) == (1_500_000, 1, 1)
+    assert fake_db.my_events_query == (GUILD, MEMBER_ID)
+
+
+def test_my_bal_history_without_balance_has_no_rank(login):
+    body = login(STAFF_ID).get(f"/api/guilds/{GUILD}/bal/me/history").json()
+    assert body["amount"] == 0 and body["rank"] is None and body["period"] == "30d"
+
+
+def test_my_bal_history_requires_membership(login):
+    assert login(STRANGER_ID).get(f"/api/guilds/{GUILD}/bal/me/history").status_code == 403
 
 
 def test_admin_bal_forbidden_for_staff(login):

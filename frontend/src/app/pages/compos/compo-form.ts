@@ -6,7 +6,10 @@ import { firstValueFrom } from 'rxjs';
 import { ApiService, errorMessage } from '../../core/api.service';
 import { ItemsService } from '../../core/items.service';
 import { Build, CompoInput, RoleInfo, SlotRow } from '../../core/models';
+import { ToastService } from '../../core/toast.service';
 import { Gear } from '../../shared/gear';
+import { Icon } from '../../shared/icon';
+import { RoleBar } from '../../shared/role-bar';
 
 export type Party = 'pf1' | 'pf2';
 
@@ -23,17 +26,21 @@ function emptyRow(): Row {
 
 @Component({
   selector: 'app-compo-form',
-  imports: [FormsModule, RouterLink, Gear],
+  imports: [FormsModule, RouterLink, Gear, Icon, RoleBar],
   template: `
     <div class="page-head">
-      <h1>{{ name() ? 'Modifier « ' + name() + ' »' : 'Nouvelle compo' }}</h1>
+      <div>
+        <h1>{{ name() ? 'Modifier « ' + name() + ' »' : 'Nouvelle compo' }}</h1>
+        <p class="subtitle">Chaque ligne = un build × un nombre de joueurs. Un seul build par rôle et par party.</p>
+      </div>
     </div>
 
-    <form class="form card" (ngSubmit)="save()">
+    <form class="form" (ngSubmit)="save()">
       @if (error()) {
         <p class="alert">{{ error() }}</p>
       }
 
+      <div class="card form infos">
       <div class="row two">
         <div class="field">
           <label for="name">Nom</label>
@@ -59,14 +66,19 @@ function emptyRow(): Row {
         <label for="image">Image (URL, optionnel)</label>
         <input id="image" name="image" class="input" type="url" maxlength="500" [(ngModel)]="model().image" />
       </div>
+      </div>
 
-      <p class="muted help">
-        Chaque ligne = un build × un nombre de joueurs. Un seul build par rôle et par party :
-        sur Discord, le joueur choisit son rôle et le build lui est imposé.
-      </p>
+      <div class="card preview">
+        <div class="preview-head">
+          <strong>Aperçu</strong>
+          <span class="badge">{{ total('pf1') + total('pf2') }} joueurs</span>
+        </div>
+        <app-role-bar [rows]="previewRows()" [emojis]="emojiMap()" />
+        <p class="muted help">Sur Discord, le joueur choisit son rôle et le build lui est imposé.</p>
+      </div>
 
       @for (pf of parties; track pf.key) {
-        <fieldset class="party">
+        <fieldset class="party card">
           <legend>{{ pf.label }} <span class="muted">— {{ total(pf.key) }} joueurs</span></legend>
           @for (row of model()[pf.key]; track $index; let i = $index) {
             <div class="slot" [attr.data-party]="pf.key">
@@ -108,7 +120,7 @@ function emptyRow(): Row {
               }
             </div>
           }
-          <button type="button" class="btn btn-sm add" (click)="addRow(pf.key)">+ Ajouter une ligne</button>
+          <button type="button" class="btn btn-sm btn-ghost add" (click)="addRow(pf.key)"><app-icon name="plus" [size]="14" /> Ajouter une ligne</button>
         </fieldset>
       }
 
@@ -116,20 +128,26 @@ function emptyRow(): Row {
         <p class="muted">Aucun build sur ce serveur pour l'instant : crée d'abord des builds, ou utilise des lignes « sans build ».</p>
       }
 
-      <div class="row">
+      <div class="save-bar glass">
+        <a class="btn btn-ghost" [routerLink]="['/g', guildId(), 'compos']">Annuler</a>
         <button type="submit" class="btn btn-primary" [disabled]="saving() || !model().name.trim()">
-          {{ saving() ? 'Enregistrement…' : 'Enregistrer' }}
+          <app-icon name="check" /> {{ saving() ? 'Enregistrement…' : 'Enregistrer' }}
         </button>
-        <a class="btn" [routerLink]="['/g', guildId(), 'compos']">Annuler</a>
       </div>
     </form>
   `,
   styles: `
+    .form { max-width: 860px; }
     .two { align-items: start; }
     .two .field { flex: 1 1 200px; }
     .help { margin: 0; font-size: .85rem; }
-    .party { border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; display: grid; gap: 10px; margin: 0; }
-    legend { padding: 0 6px; font-weight: 600; color: var(--lilac); }
+    .preview { display: grid; gap: 10px; }
+    .preview-head { display: flex; align-items: center; justify-content: space-between; }
+    .party { display: grid; gap: 10px; margin: 0; padding-top: 14px; }
+    legend { padding: 4px 10px; font-weight: 700; color: var(--lilac); background: var(--surface); border-radius: 8px;
+             border: 1px solid var(--border); }
+    .save-bar { position: sticky; bottom: 12px; z-index: 5; display: flex; justify-content: flex-end; gap: 10px;
+                padding: 10px; border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-lg); }
     .slot { display: grid; grid-template-columns: minmax(160px, 1fr) 80px auto; gap: 8px; align-items: center;
             padding-bottom: 10px; border-bottom: 1px solid var(--border); }
     .detail { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
@@ -142,6 +160,7 @@ export class CompoForm implements OnInit {
   private readonly api = inject(ApiService);
   private readonly router = inject(Router);
   private readonly items = inject(ItemsService);
+  private readonly toast = inject(ToastService);
 
   readonly guildId = input.required<string>();
   /** Présent en édition (/compos/:name/edit), absent en création. */
@@ -163,6 +182,14 @@ export class CompoForm implements OnInit {
   protected readonly error = signal('');
 
   private readonly buildsById = computed(() => new Map(this.builds().map((b) => [b.id, b])));
+  /** Aperçu de la composition (PF1 + PF2, lignes avec un rôle). Méthode et pas computed :
+   *  le nombre est modifié en place par ngModel, comme pour total(). */
+  previewRows(): { role: string; count: number }[] {
+    return [...this.model().pf1, ...this.model().pf2]
+      .filter((r) => r.role)
+      .map((r) => ({ role: r.role, count: Number(r.count) || 0 }));
+  }
+  protected readonly emojiMap = computed(() => Object.fromEntries(this.roles().map((r) => [r.name, r.emoji])));
   /** Builds regroupés par rôle pour le sélecteur. */
   protected readonly buildGroups = computed(() => {
     const groups = new Map<string, Build[]>();
@@ -237,6 +264,7 @@ export class CompoForm implements OnInit {
       await firstValueFrom(
         name ? this.api.updateCompo(this.guildId(), name, { ...body, name }) : this.api.createCompo(this.guildId(), body),
       );
+      this.toast.success(name ? 'Compo enregistrée.' : `Compo « ${body.name} » créée.`);
       await this.router.navigate(['/g', this.guildId(), 'compos']);
     } catch (err) {
       this.error.set(errorMessage(err));

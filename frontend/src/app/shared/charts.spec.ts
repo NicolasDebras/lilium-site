@@ -1,6 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 
-import { FlowChart, HBarChart, LineChart, columnPath, compactSilver, niceStep, shortDate } from './charts';
+import {
+  Delta, FlowChart, HBarChart, Heatmap, LineChart, columnPath, compactSilver, deltaPct, heatLevel, niceStep, shortDate,
+} from './charts';
 
 describe('formatage', () => {
   it('compactSilver', () => {
@@ -99,5 +101,65 @@ describe('HBarChart', () => {
     fixture.componentRef.setInput('empty', 'Rien.');
     fixture.detectChanges();
     expect((fixture.nativeElement as HTMLElement).textContent).toContain('Rien.');
+  });
+});
+
+describe('Delta (variation)', () => {
+  function render(current: number, previous: number, upIsGood: boolean | null = true) {
+    const fixture = TestBed.createComponent(Delta);
+    fixture.componentRef.setInput('current', current);
+    fixture.componentRef.setInput('previous', previous);
+    fixture.componentRef.setInput('upIsGood', upIsGood);
+    fixture.detectChanges();
+    const el = (fixture.nativeElement as HTMLElement).querySelector('.delta');
+    return { text: el?.textContent?.replace(/\s+/g, ' ').trim(), el };
+  }
+
+  it('deltaPct', () => {
+    expect(deltaPct(150, 100)).toBe(50);
+    expect(deltaPct(50, 100)).toBe(-50);
+    expect(deltaPct(10, 0)).toBeNull();
+  });
+
+  it('hausse bonne en vert, baisse en rouge, flèche + % toujours affichés', () => {
+    const up = render(200, 100);
+    expect(up.text).toBe('▲ 100 %');
+    expect(up.el?.classList).toContain('good');
+    const down = render(25, 100);
+    expect(down.text).toBe('▼ 75 %');
+    expect(down.el?.classList).toContain('bad');
+  });
+
+  it('neutre quand le sens n’est ni bon ni mauvais, « nouveau » sans base, rien si 0 → 0', () => {
+    expect(render(200, 100, null).el?.classList).toContain('neutral');
+    expect(render(5, 0).text).toBe('nouveau');
+    expect(render(0, 0).el).toBeNull();
+  });
+});
+
+describe('Heatmap', () => {
+  it('heatLevel : 0 vide, 1 à 5 selon le maximum', () => {
+    expect(heatLevel(0, 10)).toBe(0);
+    expect(heatLevel(1, 10)).toBe(1);
+    expect(heatLevel(10, 10)).toBe(5);
+    expect(heatLevel(6, 10)).toBe(3);
+  });
+
+  it('7 × 24 cases, niveaux, infobulles et créneau le plus actif', () => {
+    const data = Array.from({ length: 7 }, () => Array(24).fill(0));
+    data[5][21] = 4;
+    data[0][9] = 1;
+    const fixture = TestBed.createComponent(Heatmap);
+    fixture.componentRef.setInput('data', data);
+    fixture.detectChanges();
+    const el = fixture.nativeElement as HTMLElement;
+    const cells = el.querySelectorAll('.heat .cell');
+    expect(cells.length).toBe(168);
+    const sat21 = cells[5 * 24 + 21];
+    expect(sat21.getAttribute('data-level')).toBe('5');
+    expect(sat21.getAttribute('title')).toBe('Samedi 21h : 4 activités');
+    expect(cells[9].getAttribute('data-level')).toBe('2');
+    expect(el.querySelector('.peak')?.textContent).toContain('samedi 21h–22h (4)');
+    expect(el.querySelector('.heat')?.getAttribute('aria-label')).toContain('samedi 21h');
   });
 });

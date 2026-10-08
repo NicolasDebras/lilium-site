@@ -116,19 +116,32 @@ Toutes sous `/api`. `{gid}` = id du serveur Discord.
 | POST · PUT · DELETE | `/guilds/{gid}/builds[/{id}]` | staff |
 | GET | `/guilds/{gid}/compos`, `/guilds/{gid}/compos/{nom}` | membre |
 | POST · PUT · DELETE | `/guilds/{gid}/compos[/{nom}]` | staff |
-| GET | `/guilds/{gid}/bal/me`, `/guilds/{gid}/roles` | membre |
+| GET | `/guilds/{gid}/bal/me`, `/guilds/{gid}/bal/me/history?period=`, `/guilds/{gid}/roles` | membre |
 | GET | `/guilds/{gid}/admin/overview` | admin |
-| GET | `/guilds/{gid}/admin/bal?days=30` (7 à 180) | admin |
+| GET | `/guilds/{gid}/admin/bal?period=week\|7d\|30d\|90d\|180d` | admin |
 
-### Page Admin — tableau de bord BAL
+### Statistiques BAL — page Admin et page « Ma BAL »
 
-Période au choix (30 jours, 90 jours, 6 mois), lue dans `bal_log` (historique conservé 6 mois par le bot) et `bal` :
-- **BAL due** aux joueurs (en grand) + crédité, payé, solde net et nombre de fins d'activité sur la période ;
-- **Silver crédité et payé** par jour (par semaine au-delà de 31 jours) — crédité = `/finacti`, `/paybal`, `/addbal` ; payé = `/retirebal` ; les `/transferbal` ne comptent ni dans l'un ni dans l'autre ;
-- **Évolution de la BAL due**, reconstituée à rebours depuis le total actuel ;
-- **Plus grosses BAL dues** (top 10) et **silver gagné par compo**.
+**Périodes** (même sélecteur partout) : **Cette semaine** (depuis lundi 00:00, heure de Paris — comme le récap du bot), **7 jours**, **30 jours**, **90 jours**, **6 mois** (glissants). Données lues dans `bal_log` (historique conservé 6 mois par le bot) et `bal`. Crédité = `/finacti`, `/paybal`, `/addbal` ; payé = `/retirebal` ; les `/transferbal` ne comptent ni dans l'un ni dans l'autre. Jour par jour jusqu'à 31 jours, sinon par semaine.
 
-Chaque graphique a une info-bulle au survol et un tableau « Voir les données ». Les calculs sont dans `api/app/bal_stats.py` (fonctions pures testées) ; les graphiques sont des composants SVG/HTML maison (`frontend/src/app/shared/charts.ts`), sans librairie. Jours comptés à l'heure de Paris.
+**Admin** (`GET /admin/bal?period=`) :
+- **BAL due** en grand + tuiles crédité, payé, solde net, fins d'activité, **gain moyen par acti**, **joueurs moyens par acti** ; **variation vs la période précédente** de même durée (semaine : mêmes jours de la semaine d'avant) ;
+- **Silver crédité et payé** (colonnes) et **évolution de la BAL due** (reconstituée à rebours depuis le total actuel), chacun avec un tableau « Voir les données » ;
+- **Quand la guilde joue** : carte jour × heure des fins d'activité (heure de Paris) + créneau le plus actif ;
+- **Top callers** (qui lance les `/finacti`/`/paybal` : silver distribué, nb d'actis), **top gagnants** de la période, **plus grosses BAL dues**, **silver par compo**.
+
+**Ma BAL** (`GET /bal/me/history?period=`, membre — uniquement ses propres données) : solde + **rang dans la guilde**, gagné / retiré / actis payées sur la période, **courbe de son solde**, gains et retraits par jour/semaine, **15 dernières opérations** (date, type, compo, montant, par qui).
+
+Calculs dans `api/app/bal_stats.py` (fonctions pures testées) ; graphiques SVG/HTML maison (`frontend/src/app/shared/charts.ts` : colonnes, courbe, barres, carte de chaleur, badge de variation), sans librairie. Palettes (lilas/orange, couleurs de rôle, rampe de la carte) validées pour le contraste et le daltonisme.
+
+### Design
+
+Thème noir & lilas refondu (`frontend/src/styles.scss`, toutes les couleurs en variables) : halos lilas, surfaces en verre dépoli, boutons en dégradé, pastilles de filtre, sélecteur segmenté, chargements animés (shimmer), **notifications** (« Build enregistré », « Supprimé »…), icônes SVG maison (`shared/icon.ts`) et logo lys (`shared/logo.ts`, aussi en favicon). Couleur par rôle (TANK bleu, HEAL vert, DPS orange, SUPPORT violet), toujours accompagnée du nom ou de l'emoji.
+- **Barre du haut** : liens avec icônes et soulignement animé, pastille du serveur, menu du compte (changer de serveur, déconnexion), menu burger sur mobile.
+- **Builds** : cartes avec liseré de la couleur du rôle et **mini-inventaire 3×3** disposé comme en jeu ; filtres par rôle / PVP-PVE en pastilles.
+- **Compos** : **barre de composition** par rôle, lignes build + icônes par party ; aperçu en direct dans le formulaire.
+- **Formulaire de build** : inventaire grand format à gauche, champs à droite, barre d'enregistrement collante.
+- **Page 404** avec une blague Albion tirée au hasard (« Une autre blague »).
 
 La liste des **builds** a une barre de recherche instantanée (nom, rôle, arme, notes, auteur, objets de l'équipement ; accents et majuscules ignorés, tous les mots doivent correspondre) et un **pager** (12 builds par page, retour à la page 1 quand la recherche ou les filtres changent ; composant réutilisable `shared/pager.ts`).
 
@@ -224,8 +237,8 @@ lilium-site/
         ├── styles.scss      # thème noir & lilas (toutes les couleurs sont ici)
         └── app/
             ├── core/        # AuthService, ApiService, ItemsService, guards, intercepteur 401, modèles
-            ├── shared/      # item-picker (case d'équipement, 1 à 3 choix), gear (rangée d'icônes d'un build), charts (graphiques)
-            └── pages/       # login, guilds, shell (nav), builds, compos, bal, admin
+            ├── shared/      # item-picker, gear (rangée / mini-inventaire), charts, icon, logo, role-bar, period-picker, toasts, pager
+            └── pages/       # login, guilds, shell (nav), builds, compos, bal, admin, not-found (404)
 ```
 
 ## Pistes pour la suite

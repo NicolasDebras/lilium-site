@@ -4,8 +4,11 @@ import { Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
 import { ApiService, errorMessage } from '../../core/api.service';
+import { ToastService } from '../../core/toast.service';
 import { ItemsService } from '../../core/items.service';
 import { BuildInput, FREE_CHOICE, Item, RoleInfo, Slot } from '../../core/models';
+import { PAPER_DOLL } from '../../shared/gear';
+import { Icon } from '../../shared/icon';
 import { ItemPicker } from '../../shared/item-picker';
 
 /** Tolère l'ancien format {slot: "ID"} renvoyé par une vieille API. */
@@ -27,102 +30,120 @@ export function allTwoHanded(mainhand: string[], get: (id: string) => Item | und
   return weapons.length > 0 && weapons.length === mainhand.length && weapons.every((w) => !!w?.two_handed);
 }
 
-/** Disposition de l'inventaire du jeu (null = case vide). */
-const PAPER_DOLL: (Slot | null)[] = [null, 'head', 'cape', 'mainhand', 'armor', 'offhand', 'potion', 'shoes', 'food'];
-
 @Component({
   selector: 'app-build-form',
-  imports: [FormsModule, RouterLink, ItemPicker],
+  imports: [FormsModule, RouterLink, ItemPicker, Icon],
   template: `
     <div class="page-head">
-      <h1>{{ buildId() ? 'Modifier le build' : 'Nouveau build' }}</h1>
+      <div>
+        <h1>{{ buildId() ? 'Modifier le build' : 'Nouveau build' }}</h1>
+        <p class="subtitle">Choisis jusqu'à 3 objets par case, ou laisse le joueur libre (« au choix »).</p>
+      </div>
     </div>
 
-    <form class="form card" (ngSubmit)="save()">
+    <form class="build-form" (ngSubmit)="save()">
       @if (error()) {
         <p class="alert">{{ error() }}</p>
       }
 
-      <div class="field">
-        <label for="name">Nom</label>
-        <input id="name" name="name" class="input" required maxlength="100" [(ngModel)]="model().name" />
-      </div>
-
-      <div class="row two">
-        <div class="field">
-          <label for="role">Rôle</label>
-          <select id="role" name="role" class="select" required [(ngModel)]="model().role">
-            <option value="" disabled>Choisir…</option>
-            @for (r of roles(); track r.name) {
-              <option [value]="r.name">{{ r.emoji }} {{ r.name }}</option>
+      <div class="layout">
+        <fieldset class="equipment card">
+          <legend><app-icon name="shield" [size]="16" /> Équipement</legend>
+          <div class="doll">
+            @for (slot of doll; track $index) {
+              @if (slot) {
+                <app-item-picker [slot]="slot" [value]="model().items[slot] ?? []"
+                                 [disabled]="slot === 'offhand' && twoHanded()"
+                                 [disabledReason]="slot === 'offhand' && twoHanded() ? 'Toutes les armes proposées sont à deux mains : pas de main gauche' : ''"
+                                 (valueChange)="setItem(slot, $event)" />
+              } @else {
+                <span class="doll-gap"><app-icon name="sparkles" [size]="22" /></span>
+              }
             }
-          </select>
-        </div>
-        <div class="field">
-          <label for="type">Type</label>
-          <select id="type" name="type_acti" class="select" [(ngModel)]="model().type_acti">
-            <option value="PVP">PVP</option>
-            <option value="PVE">PVE</option>
-          </select>
-        </div>
-      </div>
-
-      <fieldset class="equipment">
-        <legend>Équipement</legend>
-        <div class="doll">
-          @for (slot of doll; track $index) {
-            @if (slot) {
-              <app-item-picker [slot]="slot" [value]="model().items[slot] ?? []"
-                               [disabled]="slot === 'offhand' && twoHanded()"
-                               [disabledReason]="slot === 'offhand' && twoHanded() ? 'Toutes les armes proposées sont à deux mains : pas de main gauche' : ''"
-                               (valueChange)="setItem(slot, $event)" />
-            } @else {
-              <span></span>
-            }
+          </div>
+          @if (itemsError()) {
+            <p class="error-text">{{ itemsError() }}</p>
           }
+        </fieldset>
+
+        <div class="fields card form">
+          <div class="field">
+            <label for="name">Nom</label>
+            <input id="name" name="name" class="input" required maxlength="100" placeholder="ex : Heal Sacré ZvZ"
+                   [(ngModel)]="model().name" />
+          </div>
+
+          <div class="row two">
+            <div class="field">
+              <label for="role">Rôle</label>
+              <select id="role" name="role" class="select" required [(ngModel)]="model().role">
+                <option value="" disabled>Choisir…</option>
+                @for (r of roles(); track r.name) {
+                  <option [value]="r.name">{{ r.emoji }} {{ r.name }}</option>
+                }
+              </select>
+            </div>
+            <div class="field">
+              <label for="type">Type</label>
+              <select id="type" name="type_acti" class="select" [(ngModel)]="model().type_acti">
+                <option value="PVP">PVP</option>
+                <option value="PVE">PVE</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="weapon">Précisions sur le stuff (optionnel)</label>
+            <input id="weapon" name="weapon" class="input" maxlength="200"
+                   placeholder="ex : tier 8.1 minimum, bouffe, potion, monture…"
+                   [(ngModel)]="model().weapon" />
+          </div>
+
+          <div class="field">
+            <label for="notes">Notes</label>
+            <textarea id="notes" name="notes" class="textarea" maxlength="4000" placeholder="Rotation, placement, consignes…"
+                      [(ngModel)]="model().notes"></textarea>
+          </div>
+
+          <div class="field">
+            <label for="image">Image (URL, optionnel)</label>
+            <input id="image" name="image" class="input" type="url" maxlength="500" [(ngModel)]="model().image" />
+          </div>
         </div>
-        @if (itemsError()) {
-          <p class="error-text">{{ itemsError() }}</p>
-        }
-      </fieldset>
-
-      <div class="field">
-        <label for="weapon">Précisions sur le stuff (optionnel)</label>
-        <input id="weapon" name="weapon" class="input" maxlength="200"
-               placeholder="ex : tier 8.1 minimum, bouffe, potion, monture…"
-               [(ngModel)]="model().weapon" />
       </div>
 
-      <div class="field">
-        <label for="notes">Notes</label>
-        <textarea id="notes" name="notes" class="textarea" maxlength="4000" [(ngModel)]="model().notes"></textarea>
-      </div>
-
-      <div class="field">
-        <label for="image">Image (URL, optionnel)</label>
-        <input id="image" name="image" class="input" type="url" maxlength="500" [(ngModel)]="model().image" />
-      </div>
-
-      <div class="row">
+      <div class="save-bar glass">
+        <a class="btn btn-ghost" [routerLink]="['/g', guildId(), 'builds']">Annuler</a>
         <button type="submit" class="btn btn-primary" [disabled]="saving() || !model().name.trim() || !model().role">
-          {{ saving() ? 'Enregistrement…' : 'Enregistrer' }}
+          <app-icon name="check" /> {{ saving() ? 'Enregistrement…' : 'Enregistrer' }}
         </button>
-        <a class="btn" [routerLink]="['/g', guildId(), 'builds']">Annuler</a>
       </div>
     </form>
   `,
   styles: `
-    .two { align-items: start; }
-    .two .field { flex: 1 1 200px; }
-    .equipment { border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; margin: 0; }
-    legend { padding: 0 6px; font-weight: 600; color: var(--lilac); }
-    .doll { display: grid; grid-template-columns: repeat(3, 100px); gap: 12px 16px; justify-content: center; }
+    .build-form { display: grid; gap: 18px; }
+    .layout { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 18px; align-items: start; }
+    .two { align-items: start; flex-wrap: nowrap; gap: 12px; }
+    .two .field { flex: 1 1 0; min-width: 0; }
+    .equipment { margin: 0; padding: 18px; position: sticky; top: 84px;
+                 background: radial-gradient(circle at 50% 35%, rgba(167, 123, 243, .16), transparent 65%), var(--surface); }
+    legend { display: inline-flex; align-items: center; gap: 6px; padding: 0 8px; font-weight: 700; color: var(--lilac); }
+    .doll { display: grid; grid-template-columns: repeat(3, 104px); gap: 14px 16px; justify-content: center; }
+    .doll-gap { display: grid; place-items: center; color: var(--lilac); opacity: .25; }
+    .save-bar { position: sticky; bottom: 12px; z-index: 5; display: flex; justify-content: flex-end; gap: 10px;
+                padding: 10px; border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-lg); }
+    @media (max-width: 820px) {
+      .layout { grid-template-columns: minmax(0, 1fr); }
+      .equipment { position: static; }
+      .doll { grid-template-columns: repeat(3, minmax(0, 100px)); gap: 10px; }
+    }
   `,
 })
 export class BuildForm implements OnInit {
   private readonly api = inject(ApiService);
   private readonly router = inject(Router);
   private readonly items = inject(ItemsService);
+  private readonly toast = inject(ToastService);
   protected readonly doll = PAPER_DOLL;
 
   readonly guildId = input.required<string>();
@@ -173,6 +194,7 @@ export class BuildForm implements OnInit {
       await firstValueFrom(
         id ? this.api.updateBuild(this.guildId(), +id, this.model()) : this.api.createBuild(this.guildId(), this.model()),
       );
+      this.toast.success(id ? 'Build enregistré.' : `Build « ${this.model().name} » créé.`);
       await this.router.navigate(['/g', this.guildId(), 'builds']);
     } catch (err) {
       this.error.set(errorMessage(err));

@@ -42,17 +42,21 @@ describe('BuildsList', () => {
     expect(cards[0].textContent).toContain('🛡️ TANK');
   });
 
-  it('affiche les icônes d’équipement du build, dans l’ordre des emplacements', async () => {
+  it('affiche l’équipement en mini-inventaire 3×3, disposé comme en jeu', async () => {
     const { el } = await render('member');
     const [first, second] = el.querySelectorAll('article.build');
-    const icons = [...first.querySelectorAll<HTMLImageElement>('.gear img')].map((i) => i.alt);
-    expect(icons).toEqual(['Épée large', 'Bouclier', 'Casque de soldat']);
-    expect(first.querySelector('.gear img')?.getAttribute('src')).toContain('render.albiononline.com');
+    const cells = first.querySelectorAll('.doll .cell');
+    expect(cells.length).toBe(9);
+    // ligne 1 : (vide) tête cape · ligne 2 : arme armure main gauche
+    const icons = [...first.querySelectorAll<HTMLImageElement>('.doll img')].map((i) => i.alt);
+    expect(icons).toEqual(['Casque de soldat', 'Épée large', 'Bouclier']);
+    expect(first.querySelector('.doll img')?.getAttribute('src')).toContain('render.albiononline.com');
+    expect(first.querySelectorAll('.doll .empty').length).toBe(4);   // armure, potion, bottes, bouffe
     expect(first.querySelector('.more')?.textContent).toContain('+1');
     expect(first.querySelector('.free')).not.toBeNull();
     expect(first.querySelector('.gear-names')?.textContent).toContain("Casque de soldat ou Capuchon d'ecclésiastique");
     expect(first.querySelector('.gear-names')?.textContent).toContain('Cape au choix');
-    expect(second.querySelector('.gear')).toBeNull();
+    expect(second.querySelector('.doll')).toBeNull();   // build sans équipement : pas d'inventaire
   });
 
   it('un membre ne voit pas les boutons d’édition', async () => {
@@ -71,6 +75,26 @@ describe('BuildsList', () => {
   it('un admin a aussi les droits staff', async () => {
     const { el } = await render('admin');
     expect(el.textContent).toContain('Nouveau build');
+  });
+
+  it('filtres en pastilles : rôles (rangés TANK, HEAL…) et PVP/PVE rechargent la liste', async () => {
+    const { fixture, http, el } = await render('member');
+    const chips = [...el.querySelectorAll<HTMLButtonElement>('.chips .chip')];
+    expect(chips.map((c) => c.textContent?.trim())).toEqual(['Tous', '🛡️ TANK', '💚 HEAL']);
+
+    chips[2].click();
+    fixture.detectChanges();
+    let req = http.expectOne((r) => r.url === '/api/guilds/111/builds');
+    expect(req.request.params.get('role')).toBe('HEAL');
+    req.flush([BUILDS[1]]);
+    await fixture.whenStable();
+    expect(el.querySelector('.chips .chip.on')?.textContent?.trim()).toBe('💚 HEAL');
+
+    el.querySelectorAll<HTMLButtonElement>('.segmented button')[2].click();   // PVE
+    fixture.detectChanges();
+    req = http.expectOne((r) => r.url === '/api/guilds/111/builds');
+    expect(req.request.params.get('type_acti')).toBe('PVE');
+    req.flush([]);
   });
 
   it('filtrer par rôle recharge avec le paramètre', async () => {

@@ -103,6 +103,16 @@ class FakeDB:
         self.bal_events_since = since
         return []
 
+    async def get_my_bal_events(self, guild_id, user_id, since):
+        self.my_events_query = (guild_id, user_id)
+        return []
+
+    async def get_bal_rank(self, guild_id, user_id):
+        amount = self.bal.get((guild_id, user_id), 0)
+        players = sum(1 for (g, _), a in self.bal.items() if g == guild_id and a > 0)
+        rank = 1 + sum(1 for (g, _), a in self.bal.items() if g == guild_id and a > amount) if amount > 0 else None
+        return {"amount": amount, "rank": rank, "players": players}
+
     async def get_bal_balances(self, guild_id):
         return [{"uid": str(u), "name": f"Joueur{u}", "amount": a}
                 for (g, u), a in self.bal.items() if g == guild_id and a > 0]

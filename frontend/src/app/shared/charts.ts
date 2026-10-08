@@ -100,8 +100,8 @@ export interface FlowPoint { start: string; credited: number; withdrawn: number 
   selector: 'app-flow-chart',
   template: `
     <div class="legend" aria-hidden="true">
-      <span><i class="key" style="background: var(--series-1)"></i>Crédité aux joueurs</span>
-      <span><i class="key" style="background: var(--series-2)"></i>Retiré (BAL payée)</span>
+      <span><i class="key" style="background: var(--series-1)"></i>{{ creditLabel() }}</span>
+      <span><i class="key" style="background: var(--series-2)"></i>{{ withdrawLabel() }}</span>
     </div>
     <svg [attr.width]="width()" [attr.height]="H" role="img" [attr.aria-label]="ariaLabel()">
       @for (t of geo().ticks; track t.v) {
@@ -138,6 +138,8 @@ export interface FlowPoint { start: string; credited: number; withdrawn: number 
 export class FlowChart {
   readonly data = input.required<FlowPoint[]>();
   readonly bucket = input<'day' | 'week'>('day');
+  readonly creditLabel = input('Crédité aux joueurs');
+  readonly withdrawLabel = input('Retiré (BAL payée)');
 
   protected readonly H = 260;
   protected readonly M = { top: 10, right: 8, bottom: 26, left: 56 };
@@ -325,5 +327,119 @@ export class HBarChart {
   private readonly max = computed(() => Math.max(1, ...this.rows().map((r) => r.value)));
   pct(v: number): number {
     return (v / this.max()) * 100;
+  }
+}
+
+// ── Variation vs période précédente ──────────────────────────────────────────
+
+/** Variation en % (arrondie) ; null si la période précédente est vide (pas de base de comparaison). */
+export function deltaPct(current: number, previous: number): number | null {
+  if (!previous) return null;
+  return Math.round(((current - previous) / previous) * 100);
+}
+
+/** « ▲ 12 % » / « ▼ 30 % » / « = » / « nouveau » — `upIsGood` choisit la couleur (une hausse des
+ *  retraits n'est ni bonne ni mauvaise : neutre). La flèche et le texte portent le sens, pas la couleur seule. */
+@Component({
+  selector: 'app-delta',
+  template: `
+    @if (pct() === null) {
+      @if (current() > 0) { <span class="delta neutral" title="Rien sur la période précédente">nouveau</span> }
+    } @else {
+      <span class="delta" [class.good]="tone() === 'good'" [class.bad]="tone() === 'bad'" [class.neutral]="tone() === 'neutral'"
+            [title]="'vs période précédente : ' + previousLabel()">
+        {{ pct()! > 0 ? '▲' : pct()! < 0 ? '▼' : '=' }} {{ pct() === 0 ? '' : abs(pct()!) + ' %' }}
+      </span>
+    }
+  `,
+  styles: `
+    .delta { display: inline-flex; align-items: center; gap: 3px; padding: 1px 7px; border-radius: 999px; font-size: .72rem;
+             font-weight: 700; font-variant-numeric: tabular-nums; background: var(--surface-3); color: var(--text-muted); }
+    .good { background: var(--success-soft); color: var(--success); }
+    .bad { background: var(--danger-soft); color: var(--danger); }
+  `,
+})
+export class Delta {
+  readonly current = input.required<number>();
+  readonly previous = input.required<number>();
+  readonly upIsGood = input<boolean | null>(true);
+  readonly format = input<(n: number) => string>(compactSilver);
+  protected readonly abs = Math.abs;
+  protected readonly pct = computed(() => deltaPct(this.current(), this.previous()));
+  protected readonly previousLabel = computed(() => this.format()(this.previous()));
+  protected readonly tone = computed(() => {
+    const p = this.pct();
+    if (!p || this.upIsGood() === null) return 'neutral';
+    return (p > 0) === this.upIsGood() ? 'good' : 'bad';
+  });
+}
+
+// ── Carte jour × heure ───────────────────────────────────────────────────────
+
+export const WEEKDAYS = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
+
+/** Niveau 0 (vide) à 5 d'une case, relatif au maximum de la carte. */
+export function heatLevel(value: number, max: number): number {
+  if (value <= 0 || max <= 0) return 0;
+  return Math.max(1, Math.ceil((value / max) * 5));
+}
+
+@Component({
+  selector: 'app-heatmap',
+  template: `
+    <div class="heat" role="img" [attr.aria-label]="summary()">
+      <span></span>
+      @for (h of hours; track h) {
+        <span class="hour">{{ h % 3 === 0 ? h + 'h' : '' }}</span>
+      }
+      @for (row of data(); track $index; let d = $index) {
+        <span class="day">{{ days[d].slice(0, 3) }}</span>
+        @for (v of row; track $index; let h = $index) {
+          <span class="cell" [attr.data-level]="level(v)" [title]="days[d] + ' ' + h + 'h : ' + v + ' ' + unit() + (v > 1 ? 's' : '')"></span>
+        }
+      }
+    </div>
+    <div class="scale">
+      <span>moins</span>
+      @for (l of [1, 2, 3, 4, 5]; track l) { <i class="cell" [attr.data-level]="l"></i> }
+      <span>plus</span>
+      @if (peak(); as p) { <span class="peak">Créneau le plus actif : <b>{{ p }}</b></span> }
+    </div>
+  `,
+  styles: `
+    :host { display: grid; gap: 10px; min-width: 0; }
+    .heat { display: grid; grid-template-columns: 34px repeat(24, minmax(0, 1fr)); gap: 3px; align-items: center; }
+    .hour { font-size: .62rem; color: var(--text-faint); text-align: left; white-space: nowrap; }
+    .day { font-size: .72rem; color: var(--text-muted); }
+    .cell { aspect-ratio: 1; border-radius: 3px; background: var(--surface-2); min-width: 0; }
+    .cell[data-level='1'] { background: var(--heat-1); }
+    .cell[data-level='2'] { background: var(--heat-2); }
+    .cell[data-level='3'] { background: var(--heat-3); }
+    .cell[data-level='4'] { background: var(--heat-4); }
+    .cell[data-level='5'] { background: var(--heat-5); }
+    .heat .cell:hover { outline: 2px solid var(--text); outline-offset: 1px; }
+    .scale { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; font-size: .72rem; color: var(--text-muted); }
+    .scale .cell { width: 12px; display: inline-block; }
+    .peak { margin-left: auto; }
+    .peak b { color: var(--text); }
+  `,
+})
+export class Heatmap {
+  readonly data = input.required<number[][]>();
+  readonly unit = input('activité');
+  protected readonly days = WEEKDAYS;
+  protected readonly hours = Array.from({ length: 24 }, (_, h) => h);
+  private readonly max = computed(() => Math.max(0, ...this.data().flat()));
+  protected readonly peak = computed(() => {
+    let best: [number, number, number] | null = null;
+    this.data().forEach((row, d) => row.forEach((v, h) => { if (v > 0 && (!best || v > best[2])) best = [d, h, v]; }));
+    const b = best as [number, number, number] | null;
+    return b ? `${WEEKDAYS[b[0]].toLowerCase()} ${b[1]}h–${b[1] + 1}h (${b[2]})` : '';
+  });
+  protected readonly summary = computed(() =>
+    `Fins d'activité par jour et par heure. ${this.peak() ? 'Créneau le plus actif : ' + this.peak() : 'Aucune activité.'}`);
+
+  protected level(v: number): number {
+    return heatLevel(v, this.max());
   }
 }

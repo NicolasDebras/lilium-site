@@ -7,40 +7,53 @@ import { ApiService, errorMessage } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
 import { ItemsService, normalize } from '../../core/items.service';
 import { Build, RoleInfo, hasLevel } from '../../core/models';
+import { ToastService } from '../../core/toast.service';
 import { Gear, describeGear } from '../../shared/gear';
+import { Icon } from '../../shared/icon';
 import { Pager } from '../../shared/pager';
+import { roleColor, sortByRole } from '../../shared/roles';
 
 @Component({
   selector: 'app-builds-list',
-  imports: [FormsModule, RouterLink, Gear, Pager],
+  imports: [FormsModule, RouterLink, Gear, Icon, Pager],
   template: `
     <div class="page-head">
-      <h1>Builds</h1>
+      <div>
+        <h1>Builds</h1>
+        <p class="subtitle">L'équipement imposé pour chaque rôle — utilisé par les compos et envoyé en MP par <code>/massup</code>.</p>
+      </div>
       @if (canEdit()) {
-        <a class="btn btn-primary" [routerLink]="['/g', guildId(), 'builds', 'new']">+ Nouveau build</a>
+        <a class="btn btn-primary" [routerLink]="['/g', guildId(), 'builds', 'new']">
+          <app-icon name="plus" /> Nouveau build
+        </a>
       }
     </div>
 
-    <div class="row filters">
-      <input
-        class="input search"
-        type="search"
-        placeholder="Rechercher un build, une arme, un objet…"
-        aria-label="Rechercher un build"
-        [ngModel]="query()"
-        (ngModelChange)="query.set($event); page.set(1)"
-      />
-      <select class="select" aria-label="Filtrer par rôle" [ngModel]="role()" (ngModelChange)="role.set($event); load()">
-        <option value="">Tous les rôles</option>
+    <div class="toolbar card glass">
+      <label class="input-icon search-box">
+        <app-icon name="search" />
+        <input
+          class="input search"
+          type="search"
+          placeholder="Rechercher un build, une arme, un objet…"
+          aria-label="Rechercher un build"
+          [ngModel]="query()"
+          (ngModelChange)="query.set($event); page.set(1)"
+        />
+      </label>
+      <div class="chips" role="group" aria-label="Filtrer par rôle">
+        <button type="button" class="chip" [class.on]="!role()" [attr.aria-pressed]="!role()" (click)="setRole('')">Tous</button>
         @for (r of roles(); track r.name) {
-          <option [value]="r.name">{{ r.emoji }} {{ r.name }}</option>
+          <button type="button" class="chip role-chip" [class.on]="role() === r.name" [attr.aria-pressed]="role() === r.name"
+                  [style.--role-color]="color(r.name)" (click)="setRole(r.name)">{{ r.emoji }} {{ r.name }}</button>
         }
-      </select>
-      <select class="select" aria-label="Filtrer par type" [ngModel]="typeActi()" (ngModelChange)="typeActi.set($event); load()">
-        <option value="">PVP et PVE</option>
-        <option value="PVP">PVP</option>
-        <option value="PVE">PVE</option>
-      </select>
+      </div>
+      <div class="segmented" role="group" aria-label="Filtrer par type">
+        @for (t of types; track t.value) {
+          <button type="button" [class.on]="typeActi() === t.value" [attr.aria-pressed]="typeActi() === t.value"
+                  (click)="setType(t.value)">{{ t.label }}</button>
+        }
+      </div>
     </div>
 
     @if (error()) {
@@ -48,68 +61,100 @@ import { Pager } from '../../shared/pager';
     }
 
     @if (loading()) {
-      <p class="muted">Chargement…</p>
-    } @else if (visible().length) {
       <div class="grid">
-        @for (b of pageBuilds(); track b.id) {
-          <article class="card build">
+        @for (s of [1, 2, 3]; track s) { <div class="skeleton tall"></div> }
+      </div>
+    } @else if (visible().length) {
+      <p class="count muted">{{ visible().length }} build{{ visible().length > 1 ? 's' : '' }}</p>
+      <div class="grid">
+        @for (b of pageBuilds(); track b.id; let i = $index) {
+          <article class="card card-hover build fade-up" [style.--role-color]="color(b.role)" [style.animation-delay.ms]="i * 40">
             @if (b.image) {
               <img [src]="b.image" alt="" class="thumb" />
             }
-            <div class="row">
-              <span class="badge">{{ emoji(b.role) }} {{ b.role }}</span>
+            <div class="row tags">
+              <span class="role-tag">{{ emoji(b.role) }} {{ b.role }}</span>
               <span class="badge badge-outline">{{ b.type_acti }}</span>
             </div>
             <h2>{{ b.name }}</h2>
-            <app-gear [items]="b.items" />
-            @if (gearNames(b); as names) {
-              <p class="gear-names muted">{{ names }}</p>
+            @if (hasGear(b)) {
+              <div class="body">
+                <app-gear [items]="b.items" layout="doll" size="small" />
+                @if (gearNames(b); as names) {
+                  <p class="gear-names muted">{{ names }}</p>
+                }
+              </div>
             }
             @if (b.weapon) {
-              <p class="weapon">{{ b.weapon }}</p>
+              <p class="weapon"><app-icon name="info" [size]="14" /> {{ b.weapon }}</p>
             }
             @if (b.notes) {
               <p class="muted notes">{{ b.notes }}</p>
             }
-            <p class="muted by">par {{ b.created_by_name }}</p>
-            @if (canEdit()) {
-              <div class="row actions">
-                <a class="btn btn-sm" [routerLink]="['/g', guildId(), 'builds', b.id, 'edit']">Modifier</a>
-                <button type="button" class="btn btn-sm btn-danger" (click)="remove(b)">Supprimer</button>
-              </div>
-            }
+            <div class="foot">
+              <span class="faint by">par {{ b.created_by_name }}</span>
+              @if (canEdit()) {
+                <div class="row actions">
+                  <a class="btn btn-sm btn-ghost" [routerLink]="['/g', guildId(), 'builds', b.id, 'edit']">
+                    <app-icon name="edit" [size]="14" /> Modifier
+                  </a>
+                  <button type="button" class="btn btn-sm btn-danger" (click)="remove(b)">
+                    <app-icon name="trash" [size]="14" /> Supprimer
+                  </button>
+                </div>
+              }
+            </div>
           </article>
         }
       </div>
       <app-pager [page]="currentPage()" [pageSize]="pageSize" [total]="visible().length" label="builds"
                  (pageChange)="goToPage($event)" />
     } @else if (builds().length) {
-      <div class="empty">Aucun build ne correspond à « {{ query() }} ».</div>
+      <div class="empty"><app-icon name="search" [size]="32" /><p>Aucun build ne correspond à « {{ query() }} ».</p></div>
     } @else {
-      <div class="empty">Aucun build pour l'instant.</div>
+      <div class="empty"><app-icon name="sword" [size]="32" /><p>Aucun build pour l'instant.</p></div>
     }
   `,
   styles: `
-    .filters { margin-bottom: 18px; }
-    .filters .select { width: auto; min-width: 170px; }
-    .filters .search { flex: 1 1 260px; width: auto; }
-    .build { display: grid; gap: 8px; align-content: start; }
-    .build h2 { margin: 0; }
-    .thumb { width: 100%; max-height: 160px; object-fit: cover; border-radius: 8px; }
-    .weapon, .notes, .by, .gear-names { margin: 0; }
-    .gear-names { font-size: .8rem; }
-    .notes { white-space: pre-line; }
-    .by { font-size: .8rem; }
-    .actions { margin-top: 4px; }
+    code { color: var(--lilac); }
+    .toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 12px; margin-bottom: 18px; }
+    .search-box { flex: 1 1 260px; }
+    .search { width: 100%; }
+    .count { margin: 0 0 10px; font-size: .85rem; }
+    .role-chip.on { background: var(--role-color); color: #fff; }
+    .tall { min-height: 280px; }
+
+    .build { display: grid; gap: 10px; align-content: start; overflow: hidden; padding-top: 22px; }
+    .build::before { content: ''; position: absolute; inset: 0 0 auto; height: 3px;
+                     background: linear-gradient(90deg, var(--role-color), transparent); }
+    .build h2 { margin: 0; font-size: 1.15rem; }
+    .tags { gap: 6px; }
+    .thumb { width: calc(100% + 40px); margin: -22px -20px 4px; max-height: 150px; object-fit: cover; }
+    .body { display: flex; gap: 14px; align-items: flex-start; }
+    .gear-names { margin: 0; font-size: .8rem; line-height: 1.55; }
+    .weapon { margin: 0; display: flex; gap: 6px; align-items: baseline; font-size: .88rem; }
+    .weapon app-icon { color: var(--lilac); }
+    .notes { margin: 0; white-space: pre-line; font-size: .88rem; }
+    .foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px;
+            margin-top: 4px; padding-top: 12px; border-top: 1px solid var(--border-soft); }
+    .by { font-size: .78rem; }
+    .actions { gap: 6px; }
+    @media (max-width: 420px) { .body { flex-direction: column; } }
   `,
 })
 export class BuildsList implements OnInit {
   private readonly api = inject(ApiService);
   private readonly auth = inject(AuthService);
   private readonly items = inject(ItemsService);
+  private readonly toast = inject(ToastService);
 
   readonly guildId = input.required<string>();
 
+  protected readonly types = [
+    { value: '', label: 'Tous' },
+    { value: 'PVP', label: 'PVP' },
+    { value: 'PVE', label: 'PVE' },
+  ];
   protected readonly builds = signal<Build[]>([]);
   protected readonly roles = signal<RoleInfo[]>([]);
   protected readonly role = signal('');
@@ -148,8 +193,21 @@ export class BuildsList implements OnInit {
 
   async ngOnInit(): Promise<void> {
     this.items.load().catch(() => {});
-    this.api.roles(this.guildId()).subscribe({ next: (r) => this.roles.set(r), error: () => {} });
+    this.api.roles(this.guildId()).subscribe({
+      next: (r) => this.roles.set(sortByRole(r, (x) => x.name)),
+      error: () => {},
+    });
     await this.load();
+  }
+
+  setRole(role: string): void {
+    this.role.set(this.role() === role ? '' : role);
+    void this.load();
+  }
+
+  setType(type: string): void {
+    this.typeActi.set(type);
+    void this.load();
   }
 
   async load(): Promise<void> {
@@ -167,6 +225,10 @@ export class BuildsList implements OnInit {
     }
   }
 
+  hasGear(build: Build): boolean {
+    return describeGear(build.items, (id) => this.items.get(id)).length > 0;
+  }
+
   /** « Épée large ou Hallebarde · Bouclier · Cape au choix » */
   gearNames(build: Build): string {
     return describeGear(build.items, (id) => this.items.get(id))
@@ -178,11 +240,16 @@ export class BuildsList implements OnInit {
     return this.roles().find((r) => r.name === role)?.emoji ?? '';
   }
 
+  color(role: string): string {
+    return roleColor(role);
+  }
+
   async remove(build: Build): Promise<void> {
     if (!confirm(`Supprimer le build « ${build.name} » ?`)) return;
     try {
       await firstValueFrom(this.api.deleteBuild(this.guildId(), build.id));
       this.builds.update((list) => list.filter((b) => b.id !== build.id));
+      this.toast.success(`Build « ${build.name} » supprimé.`);
     } catch (err) {
       this.error.set(errorMessage(err));
     }

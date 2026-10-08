@@ -119,13 +119,51 @@ export interface AdminOverview {
   total_bal: number;
 }
 
-/** GET /admin/bal?days= — graphiques BAL de la page Admin. */
+/** Périodes BAL : « week » = semaine en cours (depuis lundi, heure de Paris), les autres glissantes. */
+export type BalPeriod = 'week' | '7d' | '30d' | '90d' | '180d';
+
+export interface BalTotals {
+  credited: number;
+  withdrawn: number;
+  activities: number;
+}
+
+export interface FlowPoint {
+  start: string;
+  credited: number;
+  withdrawn: number;
+}
+
+/** GET /admin/bal?period= — tableau de bord BAL de la page Admin. */
 export interface BalStats {
+  period: BalPeriod;
   days: number;
+  start: string;
   bucket: 'day' | 'week';
-  totals: { due: number; players: number; credited: number; withdrawn: number; activities: number };
-  flow: { start: string; credited: number; withdrawn: number }[];
+  totals: BalTotals & { due: number; players: number; avg_per_activity: number; avg_players_per_activity: number };
+  /** Même durée juste avant (semaine : mêmes jours de la semaine d'avant), pour les variations. */
+  previous: BalTotals;
+  flow: FlowPoint[];
   due: { date: string; total: number }[];
   top_players: { name: string; amount: number }[];
+  top_earners: { name: string; amount: number }[];
+  top_callers: { name: string; silver: number; activities: number }[];
   by_template: { template: string; silver: number; activities: number }[];
+  /** 7 lignes (lundi → dimanche) × 24 heures : nombre de fins d'activité, heure de Paris. */
+  heatmap: number[][];
+}
+
+/** GET /bal/me/history?period= — page « Ma BAL ». */
+export interface MyBalHistory {
+  period: BalPeriod;
+  days: number;
+  start: string;
+  bucket: 'day' | 'week';
+  amount: number;
+  rank: number | null;
+  players: number;
+  totals: BalTotals;
+  flow: FlowPoint[];
+  curve: { date: string; total: number }[];
+  recent: { ts: string; action: string; template: string; delta: number; by: string }[];
 }
