@@ -39,6 +39,16 @@
   --heat-3: #9373e8;
   --heat-4: #b697f6;
   --heat-5: #dcc6ff;
+  /* Catégorielle (camembert) — ordre fixe, validée sur --surface en mode sombre :
+     daltonisme ΔE ≥ 8,4 entre voisines, vision normale ≥ 19,3, contraste ≥ 3:1.
+     7 teintes max : au-delà, « Autres » en --text-faint. */
+  --cat-1: #3987e5;
+  --cat-2: #d95926;
+  --cat-3: #199e70;
+  --cat-4: #c98500;
+  --cat-5: #d55181;
+  --cat-6: #008300;
+  --cat-7: #9085e9;
 
   /* Couleurs des rôles (identité) — validées en paires voisines dans l'ordre
      TANK, HEAL, DPS, SUPPORT ; toujours accompagnées du nom ou de l'emoji. */

@@ -118,7 +118,17 @@ describe('AdminPage', () => {
     expect(el.textContent).toContain('Coskko');
     expect(el.textContent).toContain('12 activités');
     expect(el.textContent).toContain('Top gagnants');
-    expect(el.querySelectorAll('details table tbody tr').length).toBe(6);   // 3 jours × 2 tableaux
+    expect(el.querySelectorAll('.chart > details table tbody tr').length).toBe(6);   // 3 jours × 2 tableaux
+  });
+
+  it('montre les plus grosses BAL dues en donut, avec la part « Autres »', async () => {
+    const { el } = await loaded();
+    const donut = el.querySelector('app-donut-chart')!;
+    expect(donut.querySelectorAll('path.slice').length).toBe(3);   // RE0, Cocoloig, Autres
+    const keys = [...donut.querySelectorAll('.keys li .name')].map((n) => n.textContent?.trim());
+    expect(keys).toEqual(['RE0', 'Cocoloig', 'Autres']);
+    expect(donut.querySelector('.keys li .pct')?.textContent?.trim()).toBe('28 %');   // 48,4 M / 174,9 M
+    expect(donut.querySelector('.center strong')?.textContent?.trim()).toBe('175 M');
   });
 
   it('propose « Cette semaine » et « 7 jours », et garde l’ancien rendu estompé pendant le rechargement', async () => {

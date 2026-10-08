@@ -5,7 +5,8 @@ import { firstValueFrom } from 'rxjs';
 import { ApiService, errorMessage } from '../../core/api.service';
 import { AdminOverview, BalPeriod, BalStats } from '../../core/models';
 import {
-  Delta, FlowChart, HBarChart, HBarRow, Heatmap, LineChart, compactSilver, fullSilver, longDate,
+  Delta, DonutChart, DonutSlice, FlowChart, HBarChart, HBarRow, Heatmap, LineChart, compactSilver, donutSlices,
+  fullSilver, longDate,
 } from '../../shared/charts';
 import { Icon, IconName } from '../../shared/icon';
 import { PeriodPicker } from '../../shared/period-picker';
@@ -25,7 +26,7 @@ interface Tile {
  *  chiffres clés + tableau de bord complet de la BAL. */
 @Component({
   selector: 'app-admin',
-  imports: [BotErrors, DecimalPipe, Delta, FlowChart, HBarChart, Heatmap, Icon, LineChart, PeriodPicker],
+  imports: [BotErrors, DecimalPipe, Delta, DonutChart, FlowChart, HBarChart, Heatmap, Icon, LineChart, PeriodPicker],
   template: `
     <div class="page-head">
       <div>
@@ -138,8 +139,9 @@ interface Tile {
           </div>
 
           <div class="card chart span-6">
-            <h3><app-icon name="crown" [size]="16" /> Plus grosses BAL dues</h3>
-            <app-hbar-chart [rows]="topPlayers(b)" empty="Aucun joueur n'a de BAL." />
+            <h3><app-icon name="crown" [size]="16" /> Plus grosses BAL dues <span class="muted">— part de la BAL due</span></h3>
+            <app-donut-chart [slices]="topPlayers(b)" label="BAL due par joueur" centerLabel="BAL due"
+                             empty="Aucun joueur n'a de BAL." />
           </div>
 
           <div class="card chart wide">
@@ -256,8 +258,9 @@ export class AdminPage implements OnInit {
     ];
   }
 
-  topPlayers(b: BalStats): HBarRow[] {
-    return b.top_players.map((p) => ({ label: p.name, value: p.amount }));
+  /** 7 plus grosses BAL dues + « Autres » (reste de la BAL due totale). */
+  topPlayers(b: BalStats): DonutSlice[] {
+    return donutSlices(b.top_players.map((p) => ({ label: p.name, value: p.amount })), b.totals.due);
   }
 
   earners(b: BalStats): HBarRow[] {

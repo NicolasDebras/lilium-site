@@ -144,7 +144,7 @@ Toutes sous `/api`. `{gid}` = id du serveur Discord.
 - **BAL due** en grand + tuiles crédité, payé, solde net, fins d'activité, **gain moyen par acti**, **joueurs moyens par acti** ; **variation vs la période précédente** de même durée (semaine : mêmes jours de la semaine d'avant) ;
 - **Silver crédité et payé** (colonnes) et **évolution de la BAL due** (reconstituée à rebours depuis le total actuel), chacun avec un tableau « Voir les données » ;
 - **Quand la guilde joue** : carte jour × heure des fins d'activité (heure de Paris) + créneau le plus actif ;
-- **Top callers** (qui lance les `/finacti`/`/paybal` : silver distribué, nb d'actis), **top gagnants** de la période, **plus grosses BAL dues**, **silver par compo**.
+- **Top callers** (qui lance les `/finacti`/`/paybal` : silver distribué, nb d'actis), **top gagnants** de la période, **plus grosses BAL dues** en **donut** (les 7 plus grosses + « Autres », part de la BAL due au survol, palette catégorielle `--cat-1…7` validée daltonisme), **silver par compo**.
 
 **Ma BAL** (`GET /bal/me/history?period=`, membre — uniquement ses propres données) : solde + **rang dans la guilde**, gagné / retiré / actis payées sur la période, **courbe de son solde**, gains et retraits par jour/semaine, **15 dernières opérations** (date, type, compo, montant, par qui).
 

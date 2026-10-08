@@ -1,7 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 
 import {
-  Delta, FlowChart, HBarChart, Heatmap, LineChart, columnPath, compactSilver, deltaPct, heatLevel, niceStep, shortDate,
+  DONUT_MAX_SLICES, Delta, DonutChart, FlowChart, HBarChart, Heatmap, LineChart, arcPath, columnPath, compactSilver,
+  deltaPct, donutSlices, heatLevel, niceStep, shortDate,
 } from './charts';
 
 describe('formatage', () => {
@@ -161,5 +162,58 @@ describe('Heatmap', () => {
     expect(cells[9].getAttribute('data-level')).toBe('2');
     expect(el.querySelector('.peak')?.textContent).toContain('samedi 21h–22h (4)');
     expect(el.querySelector('.heat')?.getAttribute('aria-label')).toContain('samedi 21h');
+  });
+});
+
+describe('DonutChart', () => {
+  const rows = Array.from({ length: 10 }, (_, i) => ({ label: `J${i + 1}`, value: (10 - i) * 100 }));
+
+  it('donutSlices : 7 parts max + « Autres » = reste du total', () => {
+    const slices = donutSlices(rows, 6000);
+    expect(slices.length).toBe(DONUT_MAX_SLICES + 1);
+    expect(slices.at(-1)).toEqual({ label: 'Autres', value: 6000 - (1000 + 900 + 800 + 700 + 600 + 500 + 400), other: true });
+    expect(slices.reduce((s, x) => s + x.value, 0)).toBe(6000);
+  });
+
+  it('donutSlices : pas de part « Autres » quand elle vaut 0', () => {
+    expect(donutSlices([{ label: 'A', value: 60 }, { label: 'B', value: 40 }], 100).map((s) => s.label)).toEqual(['A', 'B']);
+  });
+
+  it('arcPath : un seul secteur fait un anneau complet', () => {
+    expect(arcPath(90, 90, 88, 55, 0, Math.PI * 2)).toMatch(/^M90\.00,2\.00A88,88 0 1 1 /);
+  });
+
+  function render(slices: { label: string; value: number; other?: boolean }[]) {
+    TestBed.configureTestingModule({ imports: [DonutChart] });
+    const f = TestBed.createComponent(DonutChart);
+    f.componentRef.setInput('slices', slices);
+    f.detectChanges();
+    return { f, el: f.nativeElement as HTMLElement };
+  }
+
+  it('un secteur par part, couleurs fixes, « Autres » en gris, tableau des données', () => {
+    const { el } = render(donutSlices(rows, 6000));
+    const paths = [...el.querySelectorAll<SVGPathElement>('path.slice')];
+    expect(paths.length).toBe(8);
+    expect(paths[0].style.fill).toBe('var(--cat-1)');
+    expect(paths[6].style.fill).toBe('var(--cat-7)');
+    expect(paths[7].style.fill).toBe('var(--text-faint)');
+    expect(el.querySelectorAll('details tbody tr').length).toBe(8);
+    expect(el.querySelector('.center strong')?.textContent?.trim()).toBe('6 k');
+  });
+
+  it('le survol affiche la part au centre et estompe les autres secteurs', () => {
+    const { f, el } = render([{ label: 'A', value: 75 }, { label: 'B', value: 25 }]);
+    el.querySelectorAll('path.slice')[1].dispatchEvent(new Event('mouseenter'));
+    f.detectChanges();
+    expect(el.querySelector('.center strong')?.textContent?.trim()).toBe('25 %');
+    expect(el.querySelector('.center span')?.textContent?.trim()).toBe('B');
+    expect(el.querySelectorAll('path.slice.dim').length).toBe(1);
+  });
+
+  it('message vide sans données', () => {
+    const { el } = render([]);
+    expect(el.querySelector('svg')).toBeNull();
+    expect(el.textContent).toContain('Aucune donnée.');
   });
 });

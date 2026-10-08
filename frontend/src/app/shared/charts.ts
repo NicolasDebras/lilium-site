@@ -330,6 +330,144 @@ export class HBarChart {
   }
 }
 
+// ── Donut (part de chaque élément dans un total) ─────────────────────────────
+
+export interface DonutSlice { label: string; value: number; other?: boolean }
+
+/** 7 couleurs catégorielles au plus (palette validée daltonisme sur fond sombre) :
+ *  au-delà, le reste est replié dans une part « Autres » neutre — jamais de 8e teinte générée. */
+export const DONUT_MAX_SLICES = 7;
+
+/** Les `max` plus grosses valeurs + « Autres » (total − leur somme) si > 0. */
+export function donutSlices(rows: { label: string; value: number }[], total: number, max = DONUT_MAX_SLICES): DonutSlice[] {
+  const top = rows.filter((r) => r.value > 0).slice(0, max).map((r) => ({ label: r.label, value: r.value }));
+  const rest = total - top.reduce((s, r) => s + r.value, 0);
+  return rest > 0 ? [...top, { label: 'Autres', value: rest, other: true }] : top;
+}
+
+/** Secteur d'anneau entre les angles a0 et a1 (radians, 0 = midi, sens horaire). */
+export function arcPath(cx: number, cy: number, r: number, ri: number, a0: number, a1: number): string {
+  const full = a1 - a0 >= Math.PI * 2 - 1e-6;
+  if (full) a1 = a0 + Math.PI * 2 - 1e-4; // un seul secteur : anneau complet
+  const pt = (rad: number, a: number) => `${(cx + rad * Math.sin(a)).toFixed(2)},${(cy - rad * Math.cos(a)).toFixed(2)}`;
+  const large = a1 - a0 > Math.PI ? 1 : 0;
+  return `M${pt(r, a0)}A${r},${r} 0 ${large} 1 ${pt(r, a1)}L${pt(ri, a1)}A${ri},${ri} 0 ${large} 0 ${pt(ri, a0)}Z`;
+}
+
+const DONUT_SIZE = 180;
+
+@Component({
+  selector: 'app-donut-chart',
+  template: `
+    @if (arcs().length) {
+      <div class="donut">
+        <div class="ring">
+          <svg [attr.width]="size" [attr.height]="size" [attr.viewBox]="'0 0 ' + size + ' ' + size" role="img"
+               [attr.aria-label]="label() + ' : ' + compact(sum()) + ' silver au total'">
+            @for (a of arcs(); track a.label; let i = $index) {
+              <path class="slice" [attr.d]="a.d" [style.fill]="a.color" [class.dim]="hover() !== null && hover() !== i"
+                    tabindex="0" (mouseenter)="hover.set(i)" (mouseleave)="hover.set(null)"
+                    (focus)="hover.set(i)" (blur)="hover.set(null)" />
+            }
+          </svg>
+          <div class="center">
+            @if (hover() !== null) {
+              <strong class="num">{{ pct(arcs()[hover()!].value) }} %</strong>
+              <span class="muted">{{ arcs()[hover()!].label }}</span>
+            } @else {
+              <strong class="num">{{ compact(sum()) }}</strong>
+              <span class="muted">{{ centerLabel() }}</span>
+            }
+          </div>
+        </div>
+        <ul class="keys">
+          @for (a of arcs(); track a.label; let i = $index) {
+            <li [class.on]="hover() === i" (mouseenter)="hover.set(i)" (mouseleave)="hover.set(null)"
+                [title]="a.label + ' : ' + full(a.value) + ' silver'">
+              <span class="key" [style.background]="a.color"></span>
+              <span class="name">{{ a.label }}</span>
+              <span class="val num">{{ compact(a.value) }}</span>
+              <span class="pct num muted">{{ pct(a.value) }} %</span>
+            </li>
+          }
+        </ul>
+      </div>
+      <details>
+        <summary>Voir les données</summary>
+        <table class="table">
+          <thead><tr><th>Joueur</th><th>Silver</th><th>Part</th></tr></thead>
+          <tbody>
+            @for (a of arcs(); track a.label) {
+              <tr><td>{{ a.label }}</td><td>{{ full(a.value) }}</td><td>{{ pct(a.value) }} %</td></tr>
+            }
+          </tbody>
+        </table>
+      </details>
+    } @else {
+      <p class="muted empty-chart">{{ empty() }}</p>
+    }
+  `,
+  styles: `
+    :host { display: block; }
+    .donut { display: flex; flex-wrap: wrap; align-items: center; gap: 20px; }
+    .ring { position: relative; flex: none; }
+    svg { display: block; }
+    /* 2 px de fond entre les secteurs : chaque part reste lisible même à couleurs proches. */
+    .slice { stroke: var(--surface); stroke-width: 2; outline: none; transition: opacity .15s; cursor: default; }
+    .slice.dim { opacity: .35; }
+    .slice:focus-visible { stroke: var(--text); }
+    .center { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; pointer-events: none; }
+    .center strong { font-size: 1.25rem; font-weight: 700; }
+    .center span { font-size: .72rem; max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .keys { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; flex: 1; min-width: 200px; }
+    .keys li { display: grid; grid-template-columns: auto minmax(0, 1fr) auto 3.5em; align-items: center; gap: 8px;
+               padding: 3px 6px; border-radius: 6px; font-size: .85rem; }
+    .keys li.on, .keys li:hover { background: rgba(255, 255, 255, 0.04); }
+    .key { width: 10px; height: 10px; border-radius: 3px; }
+    .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .val { font-weight: 600; }
+    .pct { text-align: right; font-size: .78rem; }
+    .num { font-variant-numeric: tabular-nums; }
+    details { font-size: .85rem; margin-top: 10px; }
+    summary { cursor: pointer; color: var(--text-muted); width: max-content; }
+    summary:hover { color: var(--lilac); }
+    details .table { margin-top: 8px; }
+    details .table th:not(:first-child), details .table td:not(:first-child) { text-align: right; }
+    .empty-chart { margin: 0; font-size: .85rem; }
+  `,
+})
+export class DonutChart {
+  readonly slices = input.required<DonutSlice[]>();
+  readonly label = input('Répartition');
+  readonly centerLabel = input('au total');
+  readonly empty = input('Aucune donnée.');
+  protected readonly size = DONUT_SIZE;
+  protected readonly hover = signal<number | null>(null);
+  protected readonly compact = compactSilver;
+  protected readonly full = fullSilver;
+  protected readonly sum = computed(() => this.slices().reduce((s, x) => s + x.value, 0));
+
+  /** Couleur fixe par rang (jamais recyclée), « Autres » en gris neutre. */
+  protected readonly arcs = computed(() => {
+    const total = this.sum();
+    if (total <= 0) return [];
+    const c = DONUT_SIZE / 2;
+    let angle = 0;
+    let rank = 0;
+    return this.slices().filter((s) => s.value > 0).map((s) => {
+      const a0 = angle;
+      angle += (s.value / total) * Math.PI * 2;
+      const color = s.other ? 'var(--text-faint)' : `var(--cat-${++rank})`;
+      return { ...s, color, d: arcPath(c, c, c - 2, c * 0.62, a0, angle) };
+    });
+  });
+
+  pct(v: number): string {
+    const p = (v / this.sum()) * 100;
+    return p.toLocaleString('fr-FR', { maximumFractionDigits: p < 10 ? 1 : 0 });
+  }
+}
+
 // ── Variation vs période précédente ──────────────────────────────────────────
 
 /** Variation en % (arrondie) ; null si la période précédente est vide (pas de base de comparaison). */
