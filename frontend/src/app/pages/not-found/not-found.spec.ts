@@ -14,7 +14,8 @@ describe('NotFoundPage (404)', () => {
   it('affiche 404, une blague Albion et un lien vers l’accueil', () => {
     const { el } = render();
     expect(el.querySelector('.code')?.textContent).toBe('404');
-    const joke = el.querySelector('.joke')?.textContent?.replace(/[«»]/g, '').trim();
+    // seuls les guillemets extérieurs : certaines blagues en contiennent elles-mêmes
+    const joke = el.querySelector('.joke')?.textContent?.trim().replace(/^«\s*|\s*»$/g, '');
     expect(JOKES).toContain(joke);
     expect(el.querySelector('a.btn-primary')?.getAttribute('href')).toBe('/');
   });

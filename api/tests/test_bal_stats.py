@@ -184,3 +184,16 @@ def test_my_history_week_period():
 def test_every_period_works(period):
     s = compute_bal_stats(EVENTS, BALANCES, period, NOW)
     assert s["period"] == period and s["flow"] and s["due"]
+
+
+# ── Export CSV ───────────────────────────────────────────────────────────────
+
+def test_bal_operations_csv_neutralises_formulas():
+    from datetime import datetime, timezone
+    from app.bal_stats import bal_operations_csv
+    rows = [{"ts": datetime(2026, 10, 1, 18, 0, tzinfo=timezone.utc), "action": "finacti",
+             "template": "=HYPERLINK(\"http://x\")", "by_user": "@Officier", "delta": -5, "total": 10}]
+    lines = bal_operations_csv(rows).strip().split("\r\n")
+    assert lines[1].split(";")[:2] == ["2026-10-01T20:00+02:00", "finacti"]
+    assert "'=HYPERLINK" in lines[1] and "'@Officier" in lines[1]
+    assert ";-5;10;" in lines[1]  # les nombres négatifs restent des nombres

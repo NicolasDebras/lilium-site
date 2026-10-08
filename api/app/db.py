@@ -211,3 +211,50 @@ class Database:
                 ORDER BY b.amount DESC
             """, guild_id)
         return [dict(r) for r in rows]
+
+    # ── Historique BAL complet d'un joueur (page « Ma BAL ») ──────────────────
+    _MY_OPS_FROM = """
+        FROM bal_log l, jsonb_array_elements(l.entries) AS elem
+        WHERE l.guild_id = $1 AND elem->>'uid' = $2 AND ($3::text IS NULL OR l.action = $3)
+    """
+
+    async def get_my_bal_operations(self, guild_id: int, user_id: int, action: str | None,
+                                    limit: int | None = None, offset: int = 0) -> tuple[list[dict], int]:
+        """Opérations BAL d'UN joueur (plus récentes d'abord) + leur nombre total. `limit=None` = toutes."""
+        async with self._pool.acquire() as conn:
+            total = await conn.fetchval(f"SELECT COUNT(*) {self._MY_OPS_FROM}", guild_id, str(user_id), action)
+            rows = await conn.fetch(f"""
+                SELECT l.ts, l.action, COALESCE(l.template, '') AS template, l.by_user,
+                       (elem->>'delta')::bigint AS delta, (elem->>'total')::bigint AS total
+                {self._MY_OPS_FROM}
+                ORDER BY l.ts DESC, l.id DESC
+                LIMIT $4 OFFSET $5
+            """, guild_id, str(user_id), action, limit, offset)
+        return [dict(r) for r in rows], int(total)
+
+    # ── Erreurs du bot (table error_log, écrite par le bot) ────────────────────
+    async def get_error_logs(self, guild_id: int, command: str | None, limit: int,
+                             offset: int) -> tuple[list[dict], int, list[str]]:
+        """Erreurs du serveur (sans traceback), plus récentes d'abord + nombre total + commandes concernées."""
+        where = "WHERE guild_id = $1 AND ($2::text IS NULL OR command = $2)"
+        async with self._pool.acquire() as conn:
+            total = await conn.fetchval(f"SELECT COUNT(*) FROM error_log {where}", guild_id, command)
+            rows = await conn.fetch(f"""
+                SELECT id, ts, command, user_id, error_type, error_message
+                FROM error_log {where}
+                ORDER BY ts DESC, id DESC
+                LIMIT $3 OFFSET $4
+            """, guild_id, command, limit, offset)
+            commands = await conn.fetch(
+                "SELECT DISTINCT command FROM error_log WHERE guild_id = $1 ORDER BY command", guild_id
+            )
+        return [dict(r) for r in rows], int(total), [r["command"] for r in commands]
+
+    async def get_error_log(self, guild_id: int, error_id: int) -> dict | None:
+        """Une erreur avec son traceback — seulement si elle appartient à ce serveur."""
+        async with self._pool.acquire() as conn:
+            row = await conn.fetchrow(
+                "SELECT id, ts, command, user_id, error_type, error_message, traceback "
+                "FROM error_log WHERE id = $1 AND guild_id = $2", error_id, guild_id
+            )
+        return dict(row) if row else None

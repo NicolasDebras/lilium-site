@@ -302,3 +302,74 @@ def test_changing_role_of_unused_build_is_fine(login):
     c = login(STAFF_ID)
     b = _make_build(c, "Libre", "TANK")
     assert c.put(f"/api/guilds/{GUILD}/builds/{b}", json={**BUILD, "role": "HEAL"}).status_code == 200
+
+
+# ── Ma BAL : historique complet + export CSV ─────────────────────────────────
+
+def test_my_bal_operations_paginated_and_only_mine(login):
+    r = login(MEMBER_ID).get(f"/api/guilds/{GUILD}/bal/me/operations")
+    body = r.json()
+    assert r.status_code == 200
+    assert body["total"] == 35 and body["page_size"] == 25 and len(body["items"]) == 25
+    assert body["items"][0]["action"] == "retirebal"  # plus récente d'abord
+    assert all(op["delta"] not in (999, 777) for op in body["items"])  # ni un autre joueur ni un autre serveur
+    assert len(login(MEMBER_ID).get(f"/api/guilds/{GUILD}/bal/me/operations?page=2").json()["items"]) == 10
+
+
+def test_my_bal_operations_filter_by_action(login):
+    body = login(MEMBER_ID).get(f"/api/guilds/{GUILD}/bal/me/operations?action=retirebal").json()
+    assert body["total"] == 5 and {op["action"] for op in body["items"]} == {"retirebal"}
+
+
+def test_my_bal_operations_rejects_bad_params(login):
+    c = login(MEMBER_ID)
+    assert c.get(f"/api/guilds/{GUILD}/bal/me/operations?action=drop").status_code == 422
+    assert c.get(f"/api/guilds/{GUILD}/bal/me/operations?page=0").status_code == 422
+    assert c.get(f"/api/guilds/{GUILD}/bal/me/operations?page=99999999").status_code == 422
+
+
+def test_my_bal_operations_requires_membership(login):
+    assert login(STRANGER_ID).get(f"/api/guilds/{GUILD}/bal/me/operations").status_code == 403
+    assert login(STRANGER_ID).get(f"/api/guilds/{GUILD}/bal/me/operations.csv").status_code == 403
+
+
+def test_my_bal_csv_export(login):
+    r = login(MEMBER_ID).get(f"/api/guilds/{GUILD}/bal/me/operations.csv")
+    assert r.status_code == 200
+    assert r.headers["content-type"].startswith("text/csv")
+    assert "attachment" in r.headers["content-disposition"]
+    lines = r.content.decode("utf-8-sig").strip().split("\r\n")
+    assert lines[0] == "date;operation;compo;montant;solde_apres;par"
+    assert len(lines) == 1 + 35
+    assert "999" not in r.text and "777" not in r.text
+
+
+# ── Admin : erreurs du bot ───────────────────────────────────────────────────
+
+def test_admin_errors_forbidden_for_member_and_staff(login):
+    assert login(MEMBER_ID).get(f"/api/guilds/{GUILD}/admin/errors").status_code == 403
+    assert login(STAFF_ID).get(f"/api/guilds/{GUILD}/admin/errors").status_code == 403
+    assert login(STAFF_ID).get(f"/api/guilds/{GUILD}/admin/errors/1").status_code == 403
+
+
+def test_admin_errors_list_only_this_guild_without_traceback(login, fake_db):
+    body = login(ADMIN_ID).get(f"/api/guilds/{GUILD}/admin/errors").json()
+    mine = [e for e in fake_db.errors if e["guild_id"] == GUILD]
+    assert body["total"] == len(mine) and len(body["items"]) == 25
+    assert all("traceback" not in e for e in body["items"])
+    assert {e["id"] for e in body["items"]} <= {e["id"] for e in mine}
+    assert body["commands"] == ["acti", "finacti"]
+
+
+def test_admin_errors_filter_by_command(login):
+    body = login(ADMIN_ID).get(f"/api/guilds/{GUILD}/admin/errors?command=acti").json()
+    assert body["items"] and {e["command"] for e in body["items"]} == {"acti"}
+
+
+def test_admin_error_detail_and_other_guild_is_404(login, fake_db):
+    mine = next(e for e in fake_db.errors if e["guild_id"] == GUILD)
+    other = next(e for e in fake_db.errors if e["guild_id"] != GUILD)
+    c = login(ADMIN_ID)
+    r = c.get(f"/api/guilds/{GUILD}/admin/errors/{mine['id']}")
+    assert r.status_code == 200 and r.json()["traceback"] == mine["traceback"]
+    assert c.get(f"/api/guilds/{GUILD}/admin/errors/{other['id']}").status_code == 404

@@ -167,3 +167,49 @@ export interface MyBalHistory {
   curve: { date: string; total: number }[];
   recent: { ts: string; action: string; template: string; delta: number; by: string }[];
 }
+
+/** Types d'opération du bal_log (commandes du bot). */
+export type BalAction = 'finacti' | 'paybal' | 'addbal' | 'retirebal' | 'transferbal';
+
+export interface BalOperation {
+  ts: string;
+  action: string;
+  template: string;
+  delta: number;
+  /** Solde après l'opération (absent sur les très vieilles lignes). */
+  total: number | null;
+  by: string;
+}
+
+/** GET /bal/me/operations?action=&page= — historique complet, paginé. */
+export interface BalOperationsPage {
+  items: BalOperation[];
+  total: number;
+  page: number;
+  page_size: number;
+}
+
+/** Une erreur du bot (table error_log), sans traceback. */
+export interface BotError {
+  id: number;
+  ts: string;
+  command: string;
+  user_id: string | null;
+  error_type: string;
+  error_message: string;
+}
+
+/** GET /admin/errors?command=&page= */
+export interface BotErrorsPage {
+  items: BotError[];
+  total: number;
+  page: number;
+  page_size: number;
+  /** Commandes ayant au moins une erreur sur ce serveur (filtre). */
+  commands: string[];
+}
+
+/** GET /admin/errors/{id} */
+export interface BotErrorDetail extends BotError {
+  traceback: string;
+}

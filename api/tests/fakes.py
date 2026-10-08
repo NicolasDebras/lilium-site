@@ -1,4 +1,6 @@
 """Doubles en mémoire de la base et de Discord — aucune vraie connexion."""
+from datetime import datetime, timedelta, timezone
+
 from app.discord_rest import DiscordUnavailable
 from app.settings import Settings
 
@@ -35,6 +37,24 @@ class FakeDB:
         self.templates: dict[int, dict[str, dict]] = {}
         self._next_id = 1
         self.access_queries = 0
+        t0 = datetime(2026, 10, 1, 18, 0, tzinfo=timezone.utc)
+        # Lignes du bal_log « à plat » (une par joueur et par opération), plus récentes en dernier
+        self.bal_ops = [
+            {"guild_id": GUILD, "uid": str(MEMBER_ID), "ts": t0 + timedelta(hours=i), "action": a,
+             "template": "ZvZ" if a == "finacti" else "", "by_user": "Officier", "delta": d, "total": 1_000_000 + i}
+            for i, (a, d) in enumerate([("finacti", 300_000)] * 30 + [("retirebal", -200_000)] * 5)
+        ] + [
+            {"guild_id": GUILD, "uid": str(STAFF_ID), "ts": t0, "action": "finacti", "template": "=SECRET()",
+             "by_user": "x", "delta": 999, "total": 999},
+            {"guild_id": OTHER_GUILD, "uid": str(MEMBER_ID), "ts": t0, "action": "finacti", "template": "",
+             "by_user": "x", "delta": 777, "total": 777},
+        ]
+        self.errors = [
+            {"id": i, "guild_id": GUILD if i % 3 else OTHER_GUILD, "ts": t0 + timedelta(minutes=i),
+             "command": "acti" if i % 2 else "finacti", "user_id": "1", "error_type": "KeyError",
+             "error_message": f"boom {i}", "traceback": f"Traceback {i}"}
+            for i in range(1, 61)
+        ]
 
     async def ping(self):
         return True
@@ -116,6 +136,24 @@ class FakeDB:
     async def get_bal_balances(self, guild_id):
         return [{"uid": str(u), "name": f"Joueur{u}", "amount": a}
                 for (g, u), a in self.bal.items() if g == guild_id and a > 0]
+
+    async def get_my_bal_operations(self, guild_id, user_id, action, limit=None, offset=0):
+        rows = [r for r in self.bal_ops if r["guild_id"] == guild_id and r["uid"] == str(user_id)
+                and (action is None or r["action"] == action)]
+        rows.sort(key=lambda r: r["ts"], reverse=True)
+        page = rows[offset:] if limit is None else rows[offset:offset + limit]
+        return page, len(rows)
+
+    async def get_error_logs(self, guild_id, command, limit, offset):
+        rows = [{k: v for k, v in e.items() if k not in ("traceback", "guild_id")} for e in self.errors
+                if e["guild_id"] == guild_id and (command is None or e["command"] == command)]
+        rows.sort(key=lambda e: e["ts"], reverse=True)
+        commands = sorted({e["command"] for e in self.errors if e["guild_id"] == guild_id})
+        return rows[offset:offset + limit], len(rows), commands
+
+    async def get_error_log(self, guild_id, error_id):
+        e = next((e for e in self.errors if e["id"] == error_id and e["guild_id"] == guild_id), None)
+        return {k: v for k, v in e.items() if k != "guild_id"} if e else None
 
 
 class FakeDiscord:

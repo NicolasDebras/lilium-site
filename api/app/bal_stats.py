@@ -4,6 +4,8 @@ Entrées : les mouvements du bal_log (un par joueur et par opération) et les so
 Le bot écrit dans bal_log à chaque /finacti, /paybal, /addbal, /retirebal, /transferbal
 (historique conservé 6 mois). Les jours sont comptés à l'heure de Paris.
 """
+import csv
+import io
 from datetime import date, datetime, time, timedelta
 from zoneinfo import ZoneInfo
 
@@ -17,6 +19,7 @@ TOP_TEMPLATES = 8
 TOP_CALLERS = 8
 RECENT_OPS = 15
 NO_TEMPLATE = "Sans compo"
+BAL_ACTIONS = ("finacti", "paybal", "addbal", "retirebal", "transferbal")
 
 # Périodes proposées : « week » = semaine en cours (depuis lundi, comme le récap du bot).
 PERIODS = ("week", "7d", "30d", "90d", "180d")
@@ -204,3 +207,37 @@ def my_bal_history(events: list[dict], amount: int, rank: int | None, players: i
             for e in recent
         ],
     }
+
+
+# ── Historique complet (liste paginée + export CSV) ──────────────────────────
+
+def bal_operation(row: dict) -> dict:
+    """Une ligne du bal_log d'un joueur → format renvoyé au front (heure de Paris)."""
+    return {
+        "ts": row["ts"].astimezone(PARIS).isoformat(timespec="minutes"),
+        "action": row["action"],
+        "template": row["template"] or "",
+        "delta": int(row["delta"] or 0),
+        "total": int(row["total"]) if row.get("total") is not None else None,
+        "by": row.get("by_user") or "",
+    }
+
+
+def _csv_safe(value: str) -> str:
+    """Neutralise l'injection de formules (Excel/LibreOffice) : un nom de compo ou de joueur
+    commençant par = + - @ serait sinon exécuté comme formule à l'ouverture du fichier."""
+    return "'" + value if value[:1] in ("=", "+", "-", "@", "\t", "\r") else value
+
+
+def bal_operations_csv(rows: list[dict]) -> str:
+    """Export CSV (séparateur « ; » pour Excel FR) des opérations d'un joueur."""
+    out = io.StringIO()
+    writer = csv.writer(out, delimiter=";", lineterminator="\r\n")
+    writer.writerow(["date", "operation", "compo", "montant", "solde_apres", "par"])
+    for row in rows:
+        op = bal_operation(row)
+        writer.writerow([
+            op["ts"], op["action"], _csv_safe(op["template"]), op["delta"],
+            "" if op["total"] is None else op["total"], _csv_safe(op["by"]),
+        ])
+    return out.getvalue()

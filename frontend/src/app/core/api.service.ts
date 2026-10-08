@@ -2,7 +2,10 @@ import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http'
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
-import { AdminOverview, Bal, BalPeriod, BalStats, Build, BuildInput, Compo, CompoInput, CompoList, MyBalHistory, RoleInfo } from './models';
+import {
+  AdminOverview, Bal, BalAction, BalOperationsPage, BalPeriod, BalStats, BotErrorDetail, BotErrorsPage, Build, BuildInput,
+  Compo, CompoInput, CompoList, MyBalHistory, RoleInfo,
+} from './models';
 
 /** Message lisible à partir d'une erreur HTTP de l'API (champ "detail" de FastAPI). */
 export function errorMessage(err: unknown): string {
@@ -87,5 +90,28 @@ export class ApiService {
 
   myBalHistory(guildId: string, period: BalPeriod): Observable<MyBalHistory> {
     return this.http.get<MyBalHistory>(`${this.g(guildId)}/bal/me/history`, { params: { period } });
+  }
+
+  myBalOperations(guildId: string, page: number, action: BalAction | null): Observable<BalOperationsPage> {
+    let params = new HttpParams().set('page', page);
+    if (action) params = params.set('action', action);
+    return this.http.get<BalOperationsPage>(`${this.g(guildId)}/bal/me/operations`, { params });
+  }
+
+  /** Lien de téléchargement direct (cookie de session, même domaine) de l'export CSV. */
+  myBalCsvUrl(guildId: string, action: BalAction | null): string {
+    const query = action ? `?action=${encodeURIComponent(action)}` : '';
+    return `${this.g(guildId)}/bal/me/operations.csv${query}`;
+  }
+
+  // ── Admin : erreurs du bot ────────────────────────────────────────────────
+  botErrors(guildId: string, page: number, command: string | null): Observable<BotErrorsPage> {
+    let params = new HttpParams().set('page', page);
+    if (command) params = params.set('command', command);
+    return this.http.get<BotErrorsPage>(`${this.g(guildId)}/admin/errors`, { params });
+  }
+
+  botError(guildId: string, id: number): Observable<BotErrorDetail> {
+    return this.http.get<BotErrorDetail>(`${this.g(guildId)}/admin/errors/${id}`);
   }
 }

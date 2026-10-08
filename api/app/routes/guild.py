@@ -3,9 +3,12 @@ import asyncio
 from datetime import datetime, timezone
 from typing import Literal
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi.responses import Response
 
-from app.bal_stats import compute_bal_stats, fetch_since, my_bal_history
+from app.bal_stats import (
+    BAL_ACTIONS, bal_operation, bal_operations_csv, compute_bal_stats, fetch_since, my_bal_history,
+)
 from app.constants import ROLES
 from app.permissions import require_admin, require_member
 
@@ -13,6 +16,10 @@ router = APIRouter(prefix="/guilds/{guild_id}", tags=["guild"])
 
 # « week » = semaine en cours (depuis lundi, heure de Paris) ; les autres sont glissantes.
 Period = Literal["week", "7d", "30d", "90d", "180d"]
+BalAction = Literal[BAL_ACTIONS]
+OPS_PAGE_SIZE = 25
+ERRORS_PAGE_SIZE = 25
+MAX_PAGE = 10_000
 
 
 @router.get("/bal/me")
@@ -36,6 +43,28 @@ async def my_bal_history_route(guild_id: int, request: Request, period: Period =
     return my_bal_history(events, rank["amount"], rank["rank"], rank["players"], period, now)
 
 
+@router.get("/bal/me/operations")
+async def my_bal_operations(guild_id: int, request: Request, action: BalAction | None = None,
+                            page: int = Query(1, ge=1, le=MAX_PAGE), user: dict = Depends(require_member)):
+    """Historique complet de la BAL de l'utilisateur connecté (paginé, filtrable par type)."""
+    rows, total = await request.app.state.db.get_my_bal_operations(
+        guild_id, int(user["id"]), action, OPS_PAGE_SIZE, (page - 1) * OPS_PAGE_SIZE
+    )
+    return {"items": [bal_operation(r) for r in rows], "total": total, "page": page, "page_size": OPS_PAGE_SIZE}
+
+
+@router.get("/bal/me/operations.csv")
+async def my_bal_operations_csv(guild_id: int, request: Request, action: BalAction | None = None,
+                                user: dict = Depends(require_member)):
+    """Export CSV de l'historique BAL de l'utilisateur connecté (uniquement ses lignes)."""
+    rows, _ = await request.app.state.db.get_my_bal_operations(guild_id, int(user["id"]), action)
+    return Response(
+        content="\ufeff" + bal_operations_csv(rows),  # BOM : accents corrects dans Excel
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": 'attachment; filename="ma-bal.csv"'},
+    )
+
+
 @router.get("/roles")
 async def roles(guild_id: int, user: dict = Depends(require_member)):
     return [{"name": name, "emoji": emoji} for name, emoji in sorted(ROLES.items())]
@@ -57,3 +86,27 @@ async def admin_bal(guild_id: int, request: Request, period: Period = "30d",
         db.get_bal_events(guild_id, fetch_since(period, now)), db.get_bal_balances(guild_id)
     )
     return compute_bal_stats(events, balances, period, now)
+
+
+def _error_row(row: dict) -> dict:
+    return {**row, "ts": row["ts"].isoformat(timespec="seconds")}
+
+
+@router.get("/admin/errors")
+async def admin_errors(guild_id: int, request: Request, command: str | None = Query(None, max_length=100),
+                       page: int = Query(1, ge=1, le=MAX_PAGE), user: dict = Depends(require_admin)):
+    """Erreurs du bot sur ce serveur (équivalent de /errors), sans traceback."""
+    rows, total, commands = await request.app.state.db.get_error_logs(
+        guild_id, command, ERRORS_PAGE_SIZE, (page - 1) * ERRORS_PAGE_SIZE
+    )
+    return {"items": [_error_row(r) for r in rows], "total": total, "page": page,
+            "page_size": ERRORS_PAGE_SIZE, "commands": commands}
+
+
+@router.get("/admin/errors/{error_id}")
+async def admin_error(guild_id: int, error_id: int, request: Request, user: dict = Depends(require_admin)):
+    """Détail d'une erreur avec son traceback — 404 si elle appartient à un autre serveur."""
+    row = await request.app.state.db.get_error_log(guild_id, error_id)
+    if not row:
+        raise HTTPException(404, "Erreur introuvable.")
+    return _error_row(row)

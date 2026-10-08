@@ -4,17 +4,11 @@ import { firstValueFrom } from 'rxjs';
 
 import { ApiService, errorMessage } from '../../core/api.service';
 import { Bal, BalPeriod, MyBalHistory } from '../../core/models';
-import { FlowChart, LineChart, compactSilver, fullSilver, longDate } from '../../shared/charts';
-import { Icon, IconName } from '../../shared/icon';
+import { FlowChart, LineChart, compactSilver, fullSilver } from '../../shared/charts';
+import { Icon } from '../../shared/icon';
 import { PeriodPicker } from '../../shared/period-picker';
-
-const ACTIONS: Record<string, { label: string; icon: IconName }> = {
-  finacti: { label: "Fin d'activité", icon: 'flag' },
-  paybal: { label: 'Paiement BAL', icon: 'flag' },
-  addbal: { label: 'Ajout', icon: 'plus' },
-  retirebal: { label: 'Retrait (payé)', icon: 'coins' },
-  transferbal: { label: 'Transfert', icon: 'swap' },
-};
+import { BalOperations } from './bal-operations';
+import { balAction, opWhen } from './bal-actions';
 
 /** « 1er » / « 2e » / « 13e » */
 export function ordinal(n: number): string {
@@ -24,7 +18,7 @@ export function ordinal(n: number): string {
 /** Page « Ma BAL » : solde, rang dans la guilde, courbe, gains par période et dernières opérations. */
 @Component({
   selector: 'app-bal',
-  imports: [DecimalPipe, FlowChart, Icon, LineChart, PeriodPicker],
+  imports: [BalOperations, DecimalPipe, FlowChart, Icon, LineChart, PeriodPicker],
   template: `
     <div class="page-head">
       <div>
@@ -104,6 +98,8 @@ export function ordinal(n: number): string {
       @if (historyError()) {
         <p class="alert">{{ historyError() }}</p>
       }
+
+      <app-bal-operations [guildId]="guildId()" />
     } @else {
       <div class="top"><div class="skeleton hero-sk"></div></div>
     }
@@ -195,13 +191,6 @@ export class BalPage implements OnInit {
     }
   }
 
-  protected action(name: string): { label: string; icon: IconName } {
-    return ACTIONS[name] ?? { label: name, icon: 'info' };
-  }
-
-  /** « 2026-10-07T22:17+02:00 » → « mer. 7 oct. · 22:17 » (heure de Paris fournie par l'API). */
-  protected when(ts: string): string {
-    const [date, time = ''] = ts.split('T');
-    return `${longDate(date)} · ${time.slice(0, 5)}`;
-  }
+  protected readonly action = balAction;
+  protected readonly when = opWhen;
 }
