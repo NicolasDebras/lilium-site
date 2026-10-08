@@ -117,6 +117,9 @@ Toutes sous `/api`. `{gid}` = id du serveur Discord.
 | POST · PUT · DELETE | `/guilds/{gid}/builds[/{id}]` | staff |
 | GET | `/guilds/{gid}/compos`, `/guilds/{gid}/compos/{nom}`, `/guilds/{gid}/compos/{nom}/image.png` (404 si aucun rôle n'a de build) | membre |
 | POST | `/guilds/{gid}/compos/preview-image` (aperçu PNG d'une compo non enregistrée) | staff |
+| POST | `/guilds/{gid}/compos/import` `{source_guild_id, name, new_name?}` (copie depuis un autre de mes serveurs, staff des deux côtés) · `/guilds/{gid}/compos/{nom}/publish` · `/guilds/{gid}/compos/import-public` `{public_id, new_name?}` | staff |
+| GET | `/public/compos?q=&type_acti=&page=`, `/public/compos/{id}`, `/public/compos/{id}/image.png` | — (public) |
+| DELETE | `/public/compos/{id}` | auteur, admin du serveur d'origine ou `SITE_OWNER_IDS` |
 | POST · PUT · DELETE | `/guilds/{gid}/compos[/{nom}]` | staff |
 | GET | `/guilds/{gid}/bal/me`, `/guilds/{gid}/bal/me/history?period=`, `/guilds/{gid}/roles` | membre |
 | GET | `/guilds/{gid}/bal/me/operations?action=&page=` (25 par page), `/guilds/{gid}/bal/me/operations.csv?action=` | membre (ses propres lignes uniquement) |
@@ -187,6 +190,14 @@ Détails :
 - Images : CDN officiel `https://render.albiononline.com/v1/item/{id}.png`. Si une image manque (objet trop récent), une icône « ? » s'affiche à la place.
 - Le champ texte « Précisions sur le stuff » reste disponible (tier minimum, monture…).
 
+### Bibliothèque de compos (page « Modèles »)
+
+- **Copier vers…** (staff) : sur une compo, choisir un autre de ses serveurs où l'on est staff → la compo y est recréée **avec ses builds**.
+- **Publier comme modèle** (staff) : instantané de la compo et de ses builds dans la table `public_compos` (créée par le bot), visible par **toutes** les guildes ; 20 modèles max par serveur.
+- **Modèles** : recherche, filtre PvP/PvE, image à la demande, **Importer dans ce serveur** (staff ; nom déjà pris → un autre nom est proposé), compteur d'imports.
+- À la copie ou à l'import, un build identique (nom, rôle, équipement) déjà présent est réutilisé, sinon il est recréé ; la compo est revalidée (mêmes règles que le formulaire) **avant** toute écriture ; quotas de builds/compos respectés.
+- Retrait d'un modèle : son auteur, un admin du serveur d'origine, ou un propriétaire du site (variable optionnelle `SITE_OWNER_IDS` = ids Discord séparés par des virgules).
+
 ### Compos = ensemble de builds
 
 **Image de la compo depuis le site** : bouton **Image** sur chaque compo de guilde qui a au moins un build (visible par tous les membres), et **Aperçu de l'image** dans le formulaire (avant même d'enregistrer, staff). C'est la même image que celle postée sous `/acti` (seuls les rôles liés à un build y figurent) ; boutons Télécharger et Copier pour la coller dans Discord.
@@ -229,6 +240,7 @@ Toute URL hors `/api` renvoie `index.html` (routes Angular). Healthcheck : `/api
    | `FRONTEND_URL` | `https://<domaine>` |
    | `SESSION_SECRET` | longue chaîne aléatoire, 16 caractères minimum (différente de celle du local) |
    | `COOKIE_SECURE` | `true` (valeur par défaut en prod de toute façon) |
+   | `SITE_OWNER_IDS` | optionnel : tes ids Discord (virgules), pour pouvoir retirer n'importe quel modèle public |
 
 3. Portail Discord → ton application → **OAuth2 → Redirects** : ajouter `https://<domaine>/api/auth/callback` (garder celle de localhost pour le dev).
 4. Chaque push sur `main` redéploie.

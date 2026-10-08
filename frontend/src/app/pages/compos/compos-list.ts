@@ -106,6 +106,14 @@ import { roleColor, sortByRole } from '../../shared/roles';
             @if (canEdit()) {
               <a class="btn btn-sm btn-ghost" [routerLink]="['/g', guildId(), 'compos', c.name, 'edit']"><app-icon name="edit" [size]="14" /> Modifier</a>
               <button type="button" class="btn btn-sm btn-danger" (click)="remove(c)"><app-icon name="trash" [size]="14" /> Supprimer</button>
+              <button type="button" class="btn btn-sm btn-ghost" (click)="publish(c)"><app-icon name="book" [size]="14" /> Publier comme modèle</button>
+              @if (copyTargets().length) {
+                <label class="sr-only" [attr.for]="'copy-' + i">Copier vers un autre serveur</label>
+                <select class="select copy" [id]="'copy-' + i" (change)="copyTo(c, $any($event.target))">
+                  <option value="">Copier vers…</option>
+                  @for (g of copyTargets(); track g.id) { <option [value]="g.id">{{ g.name }}</option> }
+                </select>
+              }
             }
           </div>
           @if (imageOf() === c.name) {
@@ -132,7 +140,9 @@ import { roleColor, sortByRole } from '../../shared/roles';
                 border-left: 3px solid var(--role-color); }
     .times { color: var(--text-muted); font-weight: 600; font-size: .85rem; }
     .build-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .9rem; }
-    .foot { padding-top: 12px; border-top: 1px solid var(--border-soft); }
+    .foot { padding-top: 12px; border-top: 1px solid var(--border-soft); flex-wrap: wrap; }
+    .copy { width: auto; }
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
     @media (max-width: 560px) {
       .lines li { grid-template-columns: auto auto minmax(0, 1fr); }
       .lines li app-gear { grid-column: 1 / -1; }
@@ -143,6 +153,32 @@ export class ComposList implements OnInit {
   private readonly api = inject(ApiService);
   private readonly auth = inject(AuthService);
   private readonly items = inject(ItemsService);
+  /** Mes autres serveurs où je suis staff : cibles possibles d'une copie. */
+  protected readonly copyTargets = computed(() =>
+    this.auth.guilds().filter((g) => g.id !== this.guildId() && hasLevel(g.level, 'staff')));
+
+  async copyTo(c: Compo, select: HTMLSelectElement): Promise<void> {
+    const target = this.copyTargets().find((g) => g.id === select.value);
+    select.value = '';
+    if (!target) return;
+    try {
+      const { name } = await firstValueFrom(this.api.copyCompo(target.id, this.guildId(), c.name));
+      this.toast.success(`« ${name} » copiée vers ${target.name}, avec ses builds.`);
+    } catch (err) {
+      this.toast.error(errorMessage(err));
+    }
+  }
+
+  async publish(c: Compo): Promise<void> {
+    if (!confirm(`Publier « ${c.name} » dans la bibliothèque ? Elle sera visible par toutes les guildes (instantané : tes modifications futures ne la changeront pas).`)) return;
+    try {
+      await firstValueFrom(this.api.publishCompo(this.guildId(), c.name));
+      this.toast.success('Compo publiée dans les Modèles.');
+    } catch (err) {
+      this.toast.error(errorMessage(err));
+    }
+  }
+
   /** Compo dont l'image est affichée (une à la fois). */
   protected readonly imageOf = signal<string | null>(null);
   protected readonly slug = fileSlug;

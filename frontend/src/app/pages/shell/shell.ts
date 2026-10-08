@@ -19,6 +19,7 @@ interface NavLink {
 export const NAV_LINKS: NavLink[] = [
   { path: 'builds', label: 'Builds', icon: 'sword' },
   { path: 'compos', label: 'Compos', icon: 'users' },
+  { path: 'modeles', label: 'Modèles', icon: 'book' },
   { path: 'bal', label: 'Ma BAL', icon: 'coins' },
   { path: 'admin', label: 'Admin', icon: 'shield', admin: true },
 ];

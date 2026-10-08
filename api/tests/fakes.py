@@ -123,6 +123,33 @@ class FakeDB:
         self.bal_events_since = since
         return [e for e in getattr(self, "bal_events", []) if e["guild_id"] == guild_id and e["ts"] >= since]
 
+    # ── Bibliothèque (public_compos) ──
+    async def add_public_compo(self, name, description, type_acti, image, data, source_guild_id, author_id, author_name):
+        self.public = getattr(self, "public", {})
+        pid = len(self.public) + 1
+        self.public[pid] = {"id": pid, "name": name, "description": description, "type_acti": type_acti,
+                            "image": image, "data": data, "source_guild_id": source_guild_id, "author_id": author_id,
+                            "author_name": author_name, "created_at": datetime(2026, 10, 8, tzinfo=timezone.utc),
+                            "imports": 0}
+        return pid
+
+    async def count_public_compos(self, source_guild_id):
+        return sum(1 for r in getattr(self, "public", {}).values() if r["source_guild_id"] == source_guild_id)
+
+    async def list_public_compos(self, q, type_acti, limit, offset):
+        rows = [r for r in getattr(self, "public", {}).values()
+                if q.lower() in (r["name"] + r["description"]).lower() and (type_acti is None or r["type_acti"] == type_acti)]
+        return rows[offset:offset + limit], len(rows)
+
+    async def get_public_compo(self, public_id):
+        return getattr(self, "public", {}).get(public_id)
+
+    async def delete_public_compo(self, public_id):
+        return getattr(self, "public", {}).pop(public_id, None) is not None
+
+    async def count_public_import(self, public_id):
+        self.public[public_id]["imports"] += 1
+
     async def get_bal_players(self, guild_id):
         uids = {r["uid"] for r in self.bal_ops if r["guild_id"] == guild_id}
         uids |= {str(u) for (g, u) in self.bal if g == guild_id}

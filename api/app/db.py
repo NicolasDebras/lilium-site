@@ -280,3 +280,51 @@ class Database:
                 "FROM error_log WHERE id = $1 AND guild_id = $2", error_id, guild_id
             )
         return dict(row) if row else None
+
+    # ── Bibliothèque : modèles de compos publics (table public_compos, créée par le bot) ─
+    def _public_row(self, row) -> dict:
+        out = dict(row)
+        if "data" in out:
+            out["data"] = _jloads(out["data"]) or {}
+        return out
+
+    async def add_public_compo(self, name: str, description: str, type_acti: str, image: str, data: dict,
+                               source_guild_id: int, author_id: str, author_name: str) -> int:
+        async with self._pool.acquire() as conn:
+            return await conn.fetchval("""
+                INSERT INTO public_compos (name, description, type_acti, image, data, source_guild_id, author_id, author_name)
+                VALUES ($1, $2, $3, $4, $5::jsonb, $6, $7, $8) RETURNING id
+            """, name, description, type_acti, image, json.dumps(data, ensure_ascii=False),
+                source_guild_id, author_id, author_name)
+
+    async def count_public_compos(self, source_guild_id: int) -> int:
+        async with self._pool.acquire() as conn:
+            return await conn.fetchval(
+                "SELECT COUNT(*) FROM public_compos WHERE source_guild_id = $1", source_guild_id
+            )
+
+    async def list_public_compos(self, q: str, type_acti: str | None, limit: int, offset: int) -> tuple[list[dict], int]:
+        """Modèles publics, les plus importés puis les plus récents d'abord. `q` cherche dans le nom et la description."""
+        where = "WHERE ($1 = '' OR name ILIKE '%' || $1 || '%' OR description ILIKE '%' || $1 || '%') " \
+                "AND ($2::text IS NULL OR type_acti = $2)"
+        async with self._pool.acquire() as conn:
+            total = await conn.fetchval(f"SELECT COUNT(*) FROM public_compos {where}", q, type_acti)
+            rows = await conn.fetch(f"""
+                SELECT * FROM public_compos {where}
+                ORDER BY imports DESC, created_at DESC, id DESC LIMIT $3 OFFSET $4
+            """, q, type_acti, limit, offset)
+        return [self._public_row(r) for r in rows], int(total)
+
+    async def get_public_compo(self, public_id: int) -> dict | None:
+        async with self._pool.acquire() as conn:
+            row = await conn.fetchrow("SELECT * FROM public_compos WHERE id = $1", public_id)
+        return self._public_row(row) if row else None
+
+    async def delete_public_compo(self, public_id: int) -> bool:
+        async with self._pool.acquire() as conn:
+            result = await conn.execute("DELETE FROM public_compos WHERE id = $1", public_id)
+        return result.endswith(" 1")
+
+    async def count_public_import(self, public_id: int) -> None:
+        async with self._pool.acquire() as conn:
+            await conn.execute("UPDATE public_compos SET imports = imports + 1 WHERE id = $1", public_id)

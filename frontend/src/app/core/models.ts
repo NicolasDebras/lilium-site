@@ -194,6 +194,29 @@ export interface BalOperationsPage {
   page_size: number;
 }
 
+/** Modèle de compo public (bibliothèque partagée entre tous les serveurs). */
+export interface PublicCompo {
+  id: number;
+  name: string;
+  description: string;
+  type_acti: TypeActi;
+  image: string;
+  author_name: string;
+  created_at: string;
+  imports: number;
+  total: number;
+  pf1: { role: string; count: number }[];
+  pf2: { role: string; count: number }[];
+  builds: number;
+}
+
+export interface PublicComposPage {
+  items: PublicCompo[];
+  total: number;
+  page: number;
+  page_size: number;
+}
+
 /** GET /admin/bal/players?q= — un joueur de la BAL du serveur. */
 export interface BalPlayer {
   uid: string;

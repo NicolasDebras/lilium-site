@@ -38,8 +38,8 @@ describe('Shell', () => {
   it('liens de navigation avec icônes ; Admin seulement pour un admin', async () => {
     const member = await render('member');
     const labels = [...member.el.querySelectorAll('.links a')].map((a) => a.textContent?.trim());
-    expect(labels).toEqual(['Builds', 'Compos', 'Ma BAL']);
-    expect(member.el.querySelectorAll('.links a app-icon').length).toBe(3);
+    expect(labels).toEqual(['Builds', 'Compos', 'Modèles', 'Ma BAL']);
+    expect(member.el.querySelectorAll('.links a app-icon').length).toBe(4);
   });
 
   it('un admin voit le lien Admin', async () => {

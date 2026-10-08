@@ -38,6 +38,8 @@ class Settings:
     cookie_secure: bool = False
     # Front Angular compilé servi par l'API (prod : image Docker). Vide en local (ng serve + proxy).
     static_dir: str = ""
+    # Ids Discord des propriétaires du site : peuvent retirer n'importe quel modèle public.
+    site_owner_ids: frozenset[str] = frozenset()
 
 
 def load_settings(env: dict[str, str] | None = None) -> Settings:
@@ -77,4 +79,7 @@ def load_settings(env: dict[str, str] | None = None) -> Settings:
         frontend_url=env.get("FRONTEND_URL", "http://localhost:4200").rstrip("/"),
         cookie_secure=cookie_secure,
         static_dir=static_dir,
+        site_owner_ids=frozenset(
+            x.strip() for x in env.get("SITE_OWNER_IDS", "").replace(";", ",").split(",") if x.strip().isdigit()
+        ),
     )

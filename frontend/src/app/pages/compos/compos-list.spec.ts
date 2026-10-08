@@ -61,4 +61,32 @@ describe('ComposList — image de la compo', () => {
     fixture.detectChanges();
     expect(card(el, 'ZvZ').querySelector('app-image-share')).toBeNull();
   });
+
+  it('le staff peut publier et copier vers ses autres serveurs staff', async () => {
+    TestBed.configureTestingModule({
+      imports: [ComposList],
+      providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting(),
+                  fakeAuth({ levels: { '111': 'staff', '222': 'staff', '333': 'member' } })],
+    });
+    const fixture = TestBed.createComponent(ComposList);
+    fixture.componentRef.setInput('guildId', '111');
+    fixture.detectChanges();
+    const http = TestBed.inject(HttpTestingController);
+    http.match(() => true).forEach((req) =>
+      req.flush(req.request.url === '/api/guilds/111/compos' ? { custom: [compo('ZvZ', true)], defaults: [] } : []));
+    await settle(fixture);
+    const el = fixture.nativeElement as HTMLElement;
+    const options = [...el.querySelectorAll('select.copy option')].map((o) => o.textContent);
+    expect(options).toEqual(['Copier vers…', 'Serveur 222']);   // ni le serveur courant ni un serveur membre
+
+    const select = el.querySelector('select.copy') as HTMLSelectElement;
+    select.value = '222';
+    select.dispatchEvent(new Event('change'));
+    const req = http.expectOne('/api/guilds/222/compos/import');
+    expect(req.request.body).toEqual({ source_guild_id: 111, name: 'ZvZ', new_name: null });
+
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    [...el.querySelectorAll('button')].find((b) => b.textContent?.includes('Publier'))!.click();
+    http.expectOne('/api/guilds/111/compos/ZvZ/publish');
+  });
 });

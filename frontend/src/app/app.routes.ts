@@ -41,6 +41,7 @@ export const routes: Routes = [
             canActivate: [levelGuard('staff')],
             loadComponent: () => import('./pages/compos/compo-form').then((m) => m.CompoForm),
           },
+          { path: 'modeles', loadComponent: () => import('./pages/library/library').then((m) => m.LibraryPage) },
           { path: 'bal', loadComponent: () => import('./pages/bal/bal').then((m) => m.BalPage) },
           {
             path: 'admin',

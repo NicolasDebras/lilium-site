@@ -4,7 +4,7 @@ import { Observable } from 'rxjs';
 
 import {
   AdminOverview, Bal, BalAction, BalOperationsPage, BalPeriod, BalPlayer, BalStats, BotErrorDetail, BotErrorsPage, Build, BuildDetail, BuildInput,
-  Compo, CompoInput, CompoList, MyBalHistory, RoleInfo,
+  Compo, CompoInput, CompoList, MyBalHistory, PublicComposPage, RoleInfo,
 } from './models';
 
 /** Message lisible à partir d'une erreur HTTP de l'API (champ "detail" de FastAPI). */
@@ -125,6 +125,35 @@ export class ApiService {
   myBalCsvUrl(guildId: string, action: BalAction | null): string {
     const query = action ? `?action=${encodeURIComponent(action)}` : '';
     return `${this.g(guildId)}/bal/me/operations.csv${query}`;
+  }
+
+  // ── Bibliothèque de compos ───────────────────────────────────────────────
+  copyCompo(guildId: string, sourceGuildId: string, name: string, newName?: string): Observable<{ name: string }> {
+    return this.http.post<{ name: string }>(`${this.g(guildId)}/compos/import`,
+      { source_guild_id: Number(sourceGuildId), name, new_name: newName || null });
+  }
+
+  publishCompo(guildId: string, name: string): Observable<{ id: number }> {
+    return this.http.post<{ id: number }>(`${this.g(guildId)}/compos/${encodeURIComponent(name)}/publish`, {});
+  }
+
+  publicCompos(page: number, q: string, typeActi: string | null): Observable<PublicComposPage> {
+    let params = new HttpParams().set('page', page).set('q', q);
+    if (typeActi) params = params.set('type_acti', typeActi);
+    return this.http.get<PublicComposPage>('/api/public/compos', { params });
+  }
+
+  publicCompoImageUrl(id: number): string {
+    return `/api/public/compos/${id}/image.png`;
+  }
+
+  importPublicCompo(guildId: string, publicId: number, newName?: string): Observable<{ name: string }> {
+    return this.http.post<{ name: string }>(`${this.g(guildId)}/compos/import-public`,
+      { public_id: publicId, new_name: newName || null });
+  }
+
+  deletePublicCompo(id: number): Observable<void> {
+    return this.http.delete<void>(`/api/public/compos/${id}`);
   }
 
   // ── Admin : BAL par joueur ────────────────────────────────────────────────

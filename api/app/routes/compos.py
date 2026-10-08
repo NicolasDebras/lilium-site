@@ -8,14 +8,12 @@ from app.compos import InvalidCompo, build_template_entry, template_to_compo
 from app.constants import DEFAULT_TEMPLATES, default_templates_for
 from app.images import compo_png
 from app.permissions import require_member, require_staff
-from app.validation import https_url_or_empty
+from app.validation import clean_compo_name, https_url_or_empty
 
 router = APIRouter(prefix="/guilds/{guild_id}/compos", tags=["compos"])
 
 MAX_ROWS = 20          # lignes par party (au-delà : embed Discord et image de compo ingérables)
 MAX_COMPOS = 100       # compos par serveur (la base est partagée avec le bot)
-# Le nom sert de clé côté bot et d'URL côté site : pas de / \ ? # % ni de caractère de contrôle
-_FORBIDDEN_NAME_CHARS = set("/\\?#%")
 
 
 class SlotRow(BaseModel):
@@ -42,10 +40,7 @@ class CompoIn(BaseModel):
     @field_validator("name")
     @classmethod
     def _clean_name(cls, v: str) -> str:
-        v = v.strip()
-        if not v or any(c in _FORBIDDEN_NAME_CHARS or not c.isprintable() for c in v):
-            raise ValueError("Nom invalide : pas de / \\ ? # % ni de caractère spécial invisible.")
-        return v
+        return clean_compo_name(v)
 
 
 async def _entry(db, guild_id: int, body: CompoIn) -> dict:
@@ -104,19 +99,23 @@ async def preview_compo_image(guild_id: int, body: CompoIn, request: Request, us
     return await _png_response(db, guild_id, body.name, await _entry(db, guild_id, body))
 
 
-@router.post("", status_code=201)
-async def create_compo(guild_id: int, body: CompoIn, request: Request, user: dict = Depends(require_staff)):
-    name = body.name
+async def check_new_compo_name(db, guild_id: int, name: str) -> None:
+    """Nouvelle compo : nom libre (casse ignorée, templates par défaut compris) et quota non atteint."""
     if name.casefold() in {n.casefold() for n in DEFAULT_TEMPLATES}:
         raise HTTPException(status_code=409, detail=f"« {name} » est un template par défaut, choisis un autre nom.")
-    db = request.app.state.db
     existing = await db.get_custom_templates(guild_id)
     if name.casefold() in {n.casefold() for n in existing}:
         raise HTTPException(status_code=409, detail=f"Une compo « {name} » existe déjà.")
     if len(existing) >= MAX_COMPOS:
         raise HTTPException(status_code=409, detail=f"{MAX_COMPOS} compos maximum par serveur : supprimes-en d'abord.")
-    await db.save_custom_template(guild_id, name, await _entry(db, guild_id, body))
-    return {"name": name}
+
+
+@router.post("", status_code=201)
+async def create_compo(guild_id: int, body: CompoIn, request: Request, user: dict = Depends(require_staff)):
+    db = request.app.state.db
+    await check_new_compo_name(db, guild_id, body.name)
+    await db.save_custom_template(guild_id, body.name, await _entry(db, guild_id, body))
+    return {"name": body.name}
 
 
 @router.put("/{name}")

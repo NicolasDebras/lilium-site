@@ -15,7 +15,7 @@ from app import auth
 from app.db import Database
 from app.discord_rest import DiscordRest, DiscordUnavailable
 from app.permissions import LevelCache
-from app.routes import auth as auth_routes, builds, compos, guild, items, me
+from app.routes import auth as auth_routes, builds, compos, guild, items, library, me
 from app.security import content_security_policy, inline_script_hashes, install_security
 from app.settings import Settings, load_settings
 
@@ -56,7 +56,7 @@ def create_app(settings: Settings | None = None, *, db=None, discord=None, oauth
     async def health(request: Request):
         return {"status": "ok", "database": await request.app.state.db.ping()}
 
-    for module in (auth_routes, me, items, builds, compos, guild):
+    for module in (auth_routes, me, items, builds, library, compos, guild):
         api.include_router(module.router)
     app.include_router(api)
     if settings.static_dir:

@@ -1,6 +1,17 @@
 """Règles de validation partagées par les routes (logique pure)."""
 
 
+# Le nom d'une compo sert de clé côté bot et d'URL côté site : pas de / \ ? # % ni de caractère de contrôle
+_FORBIDDEN_NAME_CHARS = set("/\\?#%")
+
+
+def clean_compo_name(value: str) -> str:
+    value = value.strip()
+    if not value or len(value) > 100 or any(c in _FORBIDDEN_NAME_CHARS or not c.isprintable() for c in value):
+        raise ValueError("Nom invalide : 1 à 100 caractères, sans / \\ ? # % ni caractère spécial invisible.")
+    return value
+
+
 def duplicate_name(name: str, taken: set[str], max_length: int = 100) -> str:
     """« Tank » → « Tank (copie) », puis « Tank (copie 2) »… sans collision (casse ignorée)
     et dans la longueur maximale d'un nom."""
