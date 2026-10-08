@@ -125,7 +125,9 @@ export function allTwoHanded(mainhand: string[], get: (id: string) => Item | und
     .layout { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 18px; align-items: start; }
     .two { align-items: start; flex-wrap: nowrap; gap: 12px; }
     .two .field { flex: 1 1 0; min-width: 0; }
-    .equipment { margin: 0; padding: 18px; position: sticky; top: 84px;
+    /* sticky crée un contexte d'empilement : le panneau de choix d'objets (position fixed, z-index 50)
+       y reste enfermé. z-index 30 > barre du haut (20), barre d'enregistrement (5) et carte des champs. */
+    .equipment { margin: 0; padding: 18px; position: sticky; top: 84px; z-index: 30;
                  background: radial-gradient(circle at 50% 35%, rgba(167, 123, 243, .16), transparent 65%), var(--surface); }
     legend { display: inline-flex; align-items: center; gap: 6px; padding: 0 8px; font-weight: 700; color: var(--lilac); }
     .doll { display: grid; grid-template-columns: repeat(3, 104px); gap: 14px 16px; justify-content: center; }
