@@ -58,17 +58,29 @@ describe('CompoForm', () => {
     expect(el.querySelector('.detail app-gear img')?.getAttribute('alt')).toBe('Grand bâton béni');
   });
 
-  it('un rôle déjà pris dans la party est désactivé pour les autres lignes', async () => {
+  it('2 tanks avec des builds différents : permis ; un même build deux fois : désactivé', async () => {
     const { fixture, cmp, el } = await render();
     cmp.setSource('pf1', 0, '12');
     cmp.addRow('pf1');
     await fixture.whenStable();
-    expect(cmp.isRoleTaken('pf1', 'TANK', 1)).toBe(true);
-    expect(cmp.isRoleTaken('pf1', 'TANK', 0)).toBe(false);
-    expect(cmp.isRoleTaken('pf2', 'TANK', 0)).toBe(false);
-    const secondSelect = el.querySelectorAll('select.source')[1];
-    const tankOption = [...secondSelect.querySelectorAll<HTMLOptionElement>('option')].find((o) => o.value === '13');
-    expect(tankOption?.disabled).toBe(true);
+    expect(cmp.isBuildTaken('pf1', 12, 1)).toBe(true);
+    expect(cmp.isBuildTaken('pf1', 12, 0)).toBe(false);
+    expect(cmp.isBuildTaken('pf2', 12, 0)).toBe(false);
+    const options = [...el.querySelectorAll('select.source')[1].querySelectorAll<HTMLOptionElement>('option')];
+    expect(options.find((o) => o.value === '12')?.disabled).toBe(true);    // Tank Masse déjà là
+    expect(options.find((o) => o.value === '13')?.disabled).toBe(false);   // l'autre tank : OK
+  });
+
+  it('les lignes se trient toutes seules par rôle (TANK, HEAL, DPS…)', async () => {
+    const { fixture, cmp } = await render();
+    cmp.setSource('pf1', 0, '15');   // HEAL
+    cmp.addRow('pf1');
+    cmp.setSource('pf1', 1, '12');   // TANK → remonte
+    cmp.addRow('pf1');
+    cmp.setSource('pf1', 2, '13');   // 2e TANK → après le 1er
+    cmp.addRow('pf1');               // ligne vide → reste en bas
+    await fixture.whenStable();
+    expect(cmp['model']().pf1.map((r) => r.build_id)).toEqual([12, 13, 15, null]);
   });
 
   it('« sans build » affiche les champs rôle + armes', async () => {
@@ -183,22 +195,4 @@ describe('CompoForm', () => {
     expect(el.querySelector('.image-preview .alert')?.textContent).toContain("n'a de build");
   });
 
-  it('plusieurs builds au choix pour un rôle : seulement le même rôle, envoyés en build_ids', async () => {
-    const { fixture, cmp, http, el } = await render();
-    cmp['model'].update((m) => ({ ...m, name: 'ZvZ' }));
-    cmp.setSource('pf1', 0, '12');
-    await fixture.whenStable();
-    const add = el.querySelector('select.add-build') as HTMLSelectElement;
-    const options = [...add.options].map((o) => o.textContent?.trim());
-    expect(options.slice(1)).toEqual(['Tank Bouclier']);       // pas le Heal, pas Tank Masse déjà choisi
-    add.value = '13';
-    add.dispatchEvent(new Event('change'));
-    await fixture.whenStable();
-    expect(el.querySelector('.detail.extra')?.textContent).toContain('Tank Bouclier');
-    expect(el.querySelector('select.add-build')).toBeNull();   // plus rien à ajouter
-
-    cmp.save();
-    const req = http.expectOne('/api/guilds/111/compos');
-    expect(req.request.body.pf1[0]).toEqual({ build_id: 12, build_ids: [12, 13], role: 'TANK', count: 1, weapon: 'Tank Masse' });
-  });
 });

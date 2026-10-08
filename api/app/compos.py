@@ -27,15 +27,46 @@ class InvalidCompo(ValueError):
     pass
 
 
+ROLE_ORDER = ("TANK", "HEAL", "DPS", "SUPPORT")
+MAX_KEY = 100
+
+
+def base_role(key: str) -> str:
+    """Rôle de base d'une clé de ligne : « TANK · Main tank » → « TANK », « DPS 2 » → « DPS »
+    (même règle que le bot, Service/activites.py → base_role)."""
+    role = key.split(" · ", 1)[0].strip()
+    parts = role.rsplit(" ", 1)
+    if len(parts) == 2 and parts[1].isdigit() and parts[0] in ROLE_ORDER:
+        return parts[0]
+    return role
+
+
+def role_rank(role: str) -> int:
+    base = base_role(role)
+    return ROLE_ORDER.index(base) if base in ROLE_ORDER else len(ROLE_ORDER)
+
+
+def _unique_key(base: str, wanted: str, taken: set[str]) -> str:
+    key = wanted[:MAX_KEY].rstrip()
+    n = 2
+    while key in taken:
+        suffix = f" {n}"
+        key = wanted[: MAX_KEY - len(suffix)].rstrip() + suffix
+        n += 1
+    return key
+
+
 def _party(rows: list[dict], builds_by_id: dict[int, dict], label: str
            ) -> tuple[dict[str, int], dict[str, str], dict[str, int]]:
-    counts: dict[str, int] = {}
-    weapons: dict[str, str] = {}
-    builds: dict[str, int] = {}
+    """Lignes du formulaire → (places, hints, builds) par clé de ligne, triées par rôle.
+    Plusieurs lignes du même rôle sont permises (ex. 2 tanks avec des builds différents) :
+    la 1re garde la clé « TANK », les autres deviennent « TANK · Nom du build » (ou « TANK 2 »
+    pour une ligne libre), car le bot range les inscriptions par clé."""
+    parsed = []   # (rôle de base, build_id | None, nombre, hint)
+    used_builds: set[int] = set()
     for row in rows:
-        raw_count = row.get("count")
         try:
-            count = int(raw_count)
+            count = int(row.get("count"))
         except (TypeError, ValueError):
             continue
         if count <= 0:
@@ -43,58 +74,48 @@ def _party(rows: list[dict], builds_by_id: dict[int, dict], label: str
         if count > MAX_COUNT:
             raise InvalidCompo(f"{MAX_COUNT} joueurs maximum par ligne ({label}).")
 
-        ids = row_build_ids(row)
-        if ids:
-            if len(ids) > MAX_BUILDS_PER_ROW:
-                raise InvalidCompo(f"{MAX_BUILDS_PER_ROW} builds au choix maximum par ligne ({label}).")
-            if len(set(ids)) != len(ids):
-                raise InvalidCompo(f"Même build proposé deux fois sur une ligne ({label}).")
-            chosen = []
-            for bid in ids:
-                build = builds_by_id.get(bid)
-                if build is None:
-                    raise InvalidCompo(f"Build introuvable (n°{bid}) : il a peut-être été supprimé.")
-                chosen.append(build)
-            roles = {b["role"].strip().upper() for b in chosen}
-            if len(roles) > 1:
-                raise InvalidCompo(f"Les builds au choix d'une ligne doivent avoir le même rôle ({label}).")
-            role = roles.pop()
-            # Plusieurs builds : le bot propose ce hint comme liste de choix à l'inscription /acti
-            weapon = chosen[0]["name"] if len(chosen) == 1 else " · ".join(f"{b['name']} (×{count})" for b in chosen)
+        build_id = row.get("build_id")
+        if build_id is not None:
+            build_id = int(build_id)
+            build = builds_by_id.get(build_id)
+            if build is None:
+                raise InvalidCompo(f"Build introuvable (n°{build_id}) : il a peut-être été supprimé.")
+            if build_id in used_builds:
+                raise InvalidCompo(
+                    f"« {build['name']} » est deux fois en {label} : augmente plutôt le nombre de joueurs de sa ligne."
+                )
+            used_builds.add(build_id)
+            role, weapon = base_role(build["role"].strip().upper()), build["name"]
         else:
-            role = str(row.get("role") or "").strip().upper()
+            role = base_role(str(row.get("role") or "").strip().upper())
             weapon = str(row.get("weapon") or "").strip()
-        if not role:
-            continue
+        if role:
+            parsed.append((role, build_id, count, weapon))
 
-        if role in counts:
-            raise InvalidCompo(
-                f"{role} est déjà sur une autre ligne en {label} : ajoute tes builds au choix sur la même ligne."
-            )
-        counts[role] = count
+    parsed.sort(key=lambda p: role_rank(p[0]))   # tri stable : ordre de saisie gardé à rôle égal
+    counts: dict[str, int] = {}
+    weapons: dict[str, str] = {}
+    builds: dict[str, int] = {}
+    for role, build_id, count, weapon in parsed:
+        if role not in counts:
+            key = role
+        else:
+            wanted = f"{role} · {weapon}" if build_id is not None and weapon else f"{role} 2"
+            key = _unique_key(role, wanted, set(counts))
+        counts[key] = count
         if weapon:
-            weapons[role] = weapon
-        if ids:
-            builds[role] = ids[0] if len(ids) == 1 else ids
+            weapons[key] = weapon
+        if build_id is not None:
+            builds[key] = build_id
     return counts, weapons, builds
 
 
-MAX_BUILDS_PER_ROW = 10
-
-
-def row_build_ids(row: dict) -> list[int]:
-    """Builds d'une ligne : `build_ids` (plusieurs au choix) ou `build_id` (un seul, ancien format)."""
-    ids = row.get("build_ids")
-    if ids:
-        return [int(i) for i in ids]
-    return [int(row["build_id"])] if row.get("build_id") is not None else []
-
-
 def stored_ids(value) -> list[int]:
-    """Valeur de `builds[rôle]` en base : un id (ancien format) ou une liste d'ids."""
+    """Valeur de `builds[clé]` en base : un id, ou une liste (format éphémère « builds au choix » :
+    seul le premier compte)."""
     if value is None:
         return []
-    return [int(v) for v in (value if isinstance(value, list) else [value])]
+    return [int(v) for v in (value if isinstance(value, list) else [value])][:1]
 
 
 def build_template_entry(body: dict, builds_by_id: dict[int, dict] | None = None) -> dict:
@@ -127,11 +148,12 @@ def template_to_compo(name: str, data: dict, *, custom: bool) -> dict:
         weapons = data.get(weapon_key) or {}
         builds = data.get(builds_key) or {}
         rows = []
-        for role, count in (data.get(count_key) or {}).items():
-            ids = stored_ids(builds.get(role))
-            rows.append({"role": role, "count": count, "weapon": weapons.get(role, ""),
-                         "build_id": ids[0] if ids else None, "build_ids": ids})
-        compo[site_key] = rows
+        for key, count in (data.get(count_key) or {}).items():
+            ids = stored_ids(builds.get(key))
+            # role = rôle de base (formulaire) ; slot_key = clé réelle (« TANK · Main tank »), pour l'affichage
+            rows.append({"role": base_role(key), "slot_key": key, "count": count, "weapon": weapons.get(key, ""),
+                         "build_id": ids[0] if ids else None})
+        compo[site_key] = sorted(rows, key=lambda r: role_rank(r["role"]))
     compo["total"] = sum(r["count"] for r in compo["pf1"] + compo["pf2"])
     return compo
 
@@ -145,22 +167,11 @@ def compos_using_build(templates: dict[str, dict], build_id: int) -> list[str]:
 
 
 def rename_build(data: dict, build_id: int, new_name: str) -> dict:
-    """Le hint affiché dans l'embed de /acti = nom du build : on le suit quand le build est renommé."""
+    """Le hint affiché dans l'embed de /acti = nom du build : on le suit quand le build est renommé.
+    La clé de la ligne (« TANK · Ancien nom ») ne change pas : une acti en cours garde ses inscrits."""
     data = {**data}
-    for _, count_key, weapon_key, builds_key, _ in PARTIES:
-        for role, value in (data.get(builds_key) or {}).items():
-            ids = stored_ids(value)
-            if build_id not in ids:
-                continue
-            if len(ids) == 1:
-                hint = new_name
-            else:   # liste de choix « Nom (×N) · … » : on remplace la bonne entrée
-                parts = str((data.get(weapon_key) or {}).get(role, "")).split(" · ")
-                count = (data.get(count_key) or {}).get(role, 1)
-                i = ids.index(build_id)
-                if len(parts) != len(ids):
-                    parts = [""] * len(ids)
-                parts[i] = f"{new_name} (×{count})"
-                hint = " · ".join(parts)
-            data[weapon_key] = {**(data.get(weapon_key) or {}), role: hint}
+    for _, _, weapon_key, builds_key, _ in PARTIES:
+        for key, value in (data.get(builds_key) or {}).items():
+            if build_id in stored_ids(value):
+                data[weapon_key] = {**(data.get(weapon_key) or {}), key: new_name}
     return data

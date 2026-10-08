@@ -207,7 +207,7 @@ Détails :
 
 ### Compos = ensemble de builds
 
-**Plusieurs builds au choix pour un rôle** : une ligne (ex. TANK ×2) peut proposer jusqu'à 10 builds du même rôle (« + Ajouter un build au choix »). Stocké `builds: {rôle: [id, id…]}` (un seul build : ancien format `{rôle: id}`), hint `« Nom (×N) · Nom (×N) »` : à l'inscription `/acti` le joueur choisit son build, et `/massup` lui envoie l'image du build choisi. Toujours **une ligne par rôle et par party**.
+**Plusieurs lignes pour un même rôle** (ex. 2 tanks avec des builds différents) : « Ajouter une ligne » autant de fois que voulu ; les lignes se **trient toutes seules** par rôle (TANK, HEAL, DPS, SUPPORT, puis le reste). Le bot range les inscriptions par clé de rôle : la 1re ligne garde `TANK`, les suivantes deviennent `TANK · Nom du build` (ou `TANK 2` pour une ligne libre) — dans `/acti` ce sont des rôles séparés, chacun avec ses places et son build. Un même build ne peut être qu'une fois par party (augmenter le nombre).
 
 **Image de la compo depuis le site** : bouton **Image** sur chaque compo de guilde qui a au moins un build (visible par tous les membres), et **Aperçu de l'image** dans le formulaire (avant même d'enregistrer, staff). C'est la même image que celle postée sous `/acti` (seuls les rôles liés à un build y figurent) ; boutons Télécharger et Copier pour la coller dans Discord.
 

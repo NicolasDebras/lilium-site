@@ -6,7 +6,7 @@ builds (snapshot), puis on la recrée dans le serveur cible :
 - un build identique (même nom, rôle et équipement) déjà présent est réutilisé ;
 - sinon il est recréé ;
 - la compo repasse par `build_template_entry` (mêmes règles que le formulaire : 50 joueurs
-  max par ligne, un build par rôle et par party…), même si elle vient d'un /addtemplate du bot.
+  max par ligne, un même build une seule fois par party…), même si elle vient d'un /addtemplate du bot.
 """
 from app.catalog import normalize_items
 from app.compos import build_ids_of, build_template_entry, template_to_compo
@@ -56,8 +56,9 @@ def rebuild_template(snap: dict, name: str, id_map: dict[str, int], target_build
     for key in ("pf1", "pf2"):
         rows = []
         for row in compo[key]:
-            new = [id_map[str(old)] for old in row.get("build_ids") or [] if str(old) in id_map]
-            rows.append({**row, "build_ids": new, "build_id": new[0] if new else None})
+            old = row.get("build_id")
+            new = id_map.get(str(old)) if old is not None else None
+            rows.append({**row, "build_id": new})
         compo[key] = rows
     return build_template_entry(compo, target_builds_by_id)
 

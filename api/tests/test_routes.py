@@ -260,12 +260,20 @@ def test_compo_with_builds(login, fake_db):
     assert [r["build_id"] for r in rows] == [tank, heal]
 
 
-def test_compo_two_builds_same_role_is_422(login):
+def test_compo_two_tanks_with_different_builds(login):
     c = login(STAFF_ID)
     a, b = _make_build(c, "Tank A", "TANK"), _make_build(c, "Tank B", "TANK")
     r = c.post(f"/api/guilds/{GUILD}/compos", json={**COMPO, "pf1": [{"build_id": a, "count": 1}, {"build_id": b, "count": 1}]})
-    assert r.status_code == 422
-    assert "TANK est déjà sur une autre ligne" in r.json()["detail"]
+    assert r.status_code == 201
+    rows = c.get(f"/api/guilds/{GUILD}/compos/ZvZ").json()["pf1"]
+    assert [(r["role"], r["build_id"]) for r in rows] == [("TANK", a), ("TANK", b)]
+
+
+def test_compo_same_build_twice_is_422(login):
+    c = login(STAFF_ID)
+    a = _make_build(c, "Tank A", "TANK")
+    r = c.post(f"/api/guilds/{GUILD}/compos", json={**COMPO, "pf1": [{"build_id": a, "count": 1}, {"build_id": a, "count": 1}]})
+    assert r.status_code == 422 and "deux fois" in r.json()["detail"]
 
 
 def test_compo_with_unknown_build_is_422(login):
