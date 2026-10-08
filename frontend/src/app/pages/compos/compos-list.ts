@@ -86,7 +86,7 @@ import { roleColor, sortByRole } from '../../shared/roles';
                     <span class="role-tag">{{ emojis()[r.role] ?? '' }} {{ r.role }}</span>
                     <span class="times num">×{{ r.count }}</span>
                     @if (buildOf(r); as b) {
-                      <span class="build-name">{{ b.name }}</span>
+                      <span class="build-name">{{ b.name }}@for (x of otherBuilds(r); track x.id) { <span class="muted"> ou </span>{{ x.name }} }</span>
                       <app-gear [items]="b.items" size="small" />
                     } @else {
                       <span class="muted build-name">{{ r.weapon || 'Rôle libre' }}</span>
@@ -207,6 +207,11 @@ export class ComposList implements OnInit {
   protected readonly loading = signal(true);
   protected readonly error = signal('');
   protected readonly canEdit = computed(() => hasLevel(this.auth.levelFor(this.guildId()), 'staff'));
+
+  /** Autres builds proposés au choix sur la ligne (après le premier). */
+  otherBuilds(r: SlotRow): Build[] {
+    return (r.build_ids ?? []).slice(1).map((id) => this.buildsById().get(id)).filter((b): b is Build => !!b);
+  }
 
   buildOf(row: SlotRow): Build | undefined {
     return row.build_id != null ? this.buildsById().get(row.build_id) : undefined;

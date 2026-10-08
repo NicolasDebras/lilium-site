@@ -47,7 +47,7 @@ def test_entry_with_pf2():
 
 
 def test_same_role_twice_in_a_party_is_rejected():
-    with pytest.raises(InvalidCompo, match="TANK en double en PF1"):
+    with pytest.raises(InvalidCompo, match="TANK est déjà sur une autre ligne en PF1"):
         build_template_entry({"pf1": [{"role": "TANK", "count": 1}, {"role": "tank", "count": 2}]})
 
 
@@ -82,7 +82,7 @@ def test_mixed_build_and_free_rows():
 
 def test_two_builds_with_same_role_rejected():
     builds = {**BUILDS, 13: {"id": 13, "name": "Tank Hallebarde", "role": "TANK"}}
-    with pytest.raises(InvalidCompo, match="TANK en double"):
+    with pytest.raises(InvalidCompo, match="TANK est déjà sur une autre ligne"):
         build_template_entry({"pf1": [{"build_id": 12, "count": 1}, {"build_id": 13, "count": 1}]}, builds)
 
 
@@ -103,17 +103,17 @@ def test_template_to_compo_roundtrip_with_builds():
             "pf2": [{"build_id": 20, "count": 5}]}
     compo = template_to_compo("ZvZ", build_template_entry(body, BUILDS), custom=True)
     assert compo["pf1"] == [
-        {"role": "TANK", "count": 2, "weapon": "Tank Masse", "build_id": 12},
-        {"role": "CALLER", "count": 1, "weapon": "Libre", "build_id": None},
+        {"role": "TANK", "count": 2, "weapon": "Tank Masse", "build_id": 12, "build_ids": [12]},
+        {"role": "CALLER", "count": 1, "weapon": "Libre", "build_id": None, "build_ids": []},
     ]
-    assert compo["pf2"] == [{"role": "DPS", "count": 5, "weapon": "DPS Arc", "build_id": 20}]
+    assert compo["pf2"] == [{"role": "DPS", "count": 5, "weapon": "DPS Arc", "build_id": 20, "build_ids": [20]}]
     assert compo["total"] == 8
     assert compo["custom"] is True
 
 
 def test_template_to_compo_handles_bot_format_without_weapons():
     compo = template_to_compo("Donjon", {"pf_1": {"TANK": 1, "DPS": 3}}, custom=False)
-    assert compo["pf1"][1] == {"role": "DPS", "count": 3, "weapon": "", "build_id": None}
+    assert compo["pf1"][1] == {"role": "DPS", "count": 3, "weapon": "", "build_id": None, "build_ids": []}
     assert compo["pf2"] == [] and compo["description"] == ""
 
 
@@ -134,3 +134,43 @@ def test_rename_build_updates_hint_in_both_parties():
     assert renamed["weapon"]["TANK"] == "Tank Nouveau"
     assert renamed["weapon_pf2"]["TANK"] == "Tank Nouveau"
     assert data["weapon"]["TANK"] == "Tank Masse"  # l'original n'est pas modifié
+
+
+# ── Plusieurs builds au choix pour un rôle ───────────────────────────────────
+
+from app.compos import build_ids_of, build_template_entry, rename_build, template_to_compo  # noqa: E402
+from app.compos import InvalidCompo as _Invalid  # noqa: E402
+
+_B = {
+    1: {"id": 1, "name": "Def tank", "role": "TANK"},
+    2: {"id": 2, "name": "Main tank", "role": "TANK"},
+    3: {"id": 3, "name": "Heal", "role": "HEAL"},
+}
+
+
+def _body(rows):
+    return {"pf1": rows, "pf2": []}
+
+
+def test_one_role_with_several_builds_to_choose():
+    entry = build_template_entry(_body([{"build_ids": [1, 2], "count": 2}, {"build_id": 3, "count": 1}]), _B)
+    assert entry["pf_1"] == {"TANK": 2, "HEAL": 1}
+    assert entry["builds"] == {"TANK": [1, 2], "HEAL": 3}           # un seul build : ancien format gardé
+    assert entry["weapon"]["TANK"] == "Def tank (×2) · Main tank (×2)"
+    assert build_ids_of(entry) == {1, 2, 3}
+    row = template_to_compo("X", entry, custom=True)["pf1"][0]
+    assert row["build_ids"] == [1, 2] and row["build_id"] == 1
+
+
+def test_several_builds_rules():
+    with pytest.raises(_Invalid):   # rôles différents sur une même ligne
+        build_template_entry(_body([{"build_ids": [1, 3], "count": 2}]), _B)
+    with pytest.raises(_Invalid):   # même build deux fois
+        build_template_entry(_body([{"build_ids": [1, 1], "count": 2}]), _B)
+    with pytest.raises(_Invalid):   # 2 lignes TANK : il faut une seule ligne avec plusieurs builds
+        build_template_entry(_body([{"build_id": 1, "count": 1}, {"build_id": 2, "count": 1}]), _B)
+
+
+def test_rename_one_of_several_builds_updates_its_choice():
+    entry = build_template_entry(_body([{"build_ids": [1, 2], "count": 2}]), _B)
+    assert rename_build(entry, 2, "Off tank")["weapon"]["TANK"] == "Def tank (×2) · Off tank (×2)"

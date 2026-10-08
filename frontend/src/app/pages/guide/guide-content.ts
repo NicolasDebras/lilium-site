@@ -119,6 +119,7 @@ export const SITE: Article[] = [
   ] },
   { id: 'compos', title: 'Compos', paragraphs: [
     'Une compo = des lignes « build × nombre de joueurs » en Party 1 et/ou Party 2. Elle apparaît dans /acti sous 2 minutes.',
+    'Plusieurs builds pour un rôle (ex. TANK : Def tank ou Main tank) : sur la ligne TANK, « + Ajouter un build au choix ». À l’inscription /acti, le joueur choisit son rôle puis son build, et /massup lui envoie l’image du build choisi.',
     'Bouton Image : l’image postée sous /acti, à télécharger ou copier. Copier vers… : la recrée dans un autre de tes serveurs.',
   ] },
   { id: 'modeles', title: 'Modèles (bibliothèque)', paragraphs: [

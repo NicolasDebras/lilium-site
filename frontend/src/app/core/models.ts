@@ -86,6 +86,8 @@ export interface BuildDetail extends Build {
 export interface SlotRow {
   /** Ligne liée à un build : le rôle et l'arme viennent du build. null = ligne libre. */
   build_id: number | null;
+  /** Plusieurs builds au choix pour ce rôle (le joueur choisit à l'inscription /acti). */
+  build_ids?: number[];
   role: string;
   count: number | null;
   weapon: string;

@@ -182,4 +182,23 @@ describe('CompoForm', () => {
     fixture.detectChanges();
     expect(el.querySelector('.image-preview .alert')?.textContent).toContain("n'a de build");
   });
+
+  it('plusieurs builds au choix pour un rôle : seulement le même rôle, envoyés en build_ids', async () => {
+    const { fixture, cmp, http, el } = await render();
+    cmp['model'].update((m) => ({ ...m, name: 'ZvZ' }));
+    cmp.setSource('pf1', 0, '12');
+    await fixture.whenStable();
+    const add = el.querySelector('select.add-build') as HTMLSelectElement;
+    const options = [...add.options].map((o) => o.textContent?.trim());
+    expect(options.slice(1)).toEqual(['Tank Bouclier']);       // pas le Heal, pas Tank Masse déjà choisi
+    add.value = '13';
+    add.dispatchEvent(new Event('change'));
+    await fixture.whenStable();
+    expect(el.querySelector('.detail.extra')?.textContent).toContain('Tank Bouclier');
+    expect(el.querySelector('select.add-build')).toBeNull();   // plus rien à ajouter
+
+    cmp.save();
+    const req = http.expectOne('/api/guilds/111/compos');
+    expect(req.request.body.pf1[0]).toEqual({ build_id: 12, build_ids: [12, 13], role: 'TANK', count: 1, weapon: 'Tank Masse' });
+  });
 });

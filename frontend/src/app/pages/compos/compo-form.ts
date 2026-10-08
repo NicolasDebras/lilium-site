@@ -20,7 +20,8 @@ const PICK = '';
 const FREE = 'free';
 
 /** Ligne du formulaire : `free` (côté écran seulement) = l'utilisateur a choisi « sans build ». */
-type Row = SlotRow & { free?: boolean };
+/** `extra` : builds supplémentaires proposés au choix (même rôle que build_id). */
+type Row = SlotRow & { free?: boolean; extra?: number[] };
 
 function emptyRow(): Row {
   return { build_id: null, role: '', count: 1, weapon: '' };
@@ -91,7 +92,7 @@ function emptyRow(): Row {
                   <optgroup [label]="group.role">
                     @for (b of group.builds; track b.id) {
                       <option [value]="'' + b.id" [disabled]="isRoleTaken(pf.key, b.role, i)">
-                        {{ b.name }}{{ isRoleTaken(pf.key, b.role, i) ? ' (rôle déjà pris)' : '' }}
+                        {{ b.name }}{{ isRoleTaken(pf.key, b.role, i) ? ' (rôle déjà sur une ligne : ajoute-le « au choix » dessus)' : '' }}
                       </option>
                     }
                   </optgroup>
@@ -108,6 +109,24 @@ function emptyRow(): Row {
                   <span class="badge">{{ emoji(b.role) }} {{ b.role }}</span>
                   <app-gear [items]="b.items" size="small" />
                 </div>
+                @for (x of extraBuilds(row); track x.id) {
+                  <div class="detail extra">
+                    <span class="muted or">ou</span>
+                    <strong class="extra-name">{{ x.name }}</strong>
+                    <app-gear [items]="x.items" size="small" />
+                    <button type="button" class="btn btn-sm btn-ghost" [attr.aria-label]="'Retirer ' + x.name"
+                            (click)="removeExtra(pf.key, i, x.id)">✕</button>
+                  </div>
+                }
+                @if (addableBuilds(row).length) {
+                  <div class="detail">
+                    <select class="select add-build" [name]="pf.key + '-extra-' + i" aria-label="Ajouter un build au choix"
+                            (change)="addExtra(pf.key, i, $any($event.target))">
+                      <option value="">+ Ajouter un build au choix ({{ b.role }})…</option>
+                      @for (o of addableBuilds(row); track o.id) { <option [value]="o.id">{{ o.name }}</option> }
+                    </select>
+                  </div>
+                }
               } @else if (row.free) {
                 <div class="detail free-row">
                   <select class="select" [name]="pf.key + '-role-' + i" aria-label="Rôle" [(ngModel)]="row.role">
@@ -172,6 +191,10 @@ function emptyRow(): Row {
     .free-row .select { width: auto; min-width: 150px; }
     .free-row .input { flex: 1 1 200px; }
     .add { justify-self: start; }
+    .extra { padding-left: 12px; border-left: 2px solid var(--lilac-soft); }
+    .or { font-size: .8rem; }
+    .extra-name { font-size: .85rem; }
+    .add-build { width: auto; }
     .image-preview { display: grid; gap: 10px; margin: 16px 0; }
     .image-preview h3 { margin: 0; font-size: 1rem; }
     .image-preview h3 .muted { font-weight: 400; font-size: .85rem; }
@@ -234,12 +257,35 @@ export class CompoForm implements OnInit {
     if (name) {
       try {
         const { total: _t, custom: _c, ...compo } = await firstValueFrom(this.api.compo(this.guildId(), name));
-        const withMode = (rows: SlotRow[]): Row[] => rows.map((r) => ({ ...r, free: r.build_id == null }));
+        const withMode = (rows: SlotRow[]): Row[] =>
+          rows.map(({ build_ids, ...r }) => ({ ...r, free: r.build_id == null, extra: (build_ids ?? []).slice(1) }));
         this.model.set({ ...compo, pf1: withMode(compo.pf1), pf2: withMode(compo.pf2) });
       } catch (err) {
         this.error.set(errorMessage(err));
       }
     }
+  }
+
+  extraBuilds(row: Row): Build[] {
+    return (row.extra ?? []).map((id) => this.buildsById().get(id)).filter((b): b is Build => !!b);
+  }
+
+  /** Builds du même rôle pas encore proposés sur cette ligne. */
+  addableBuilds(row: Row): Build[] {
+    const first = this.buildOf(row);
+    if (!first) return [];
+    const taken = new Set([first.id, ...(row.extra ?? [])]);
+    return this.builds().filter((b) => b.role === first.role && !taken.has(b.id));
+  }
+
+  addExtra(party: Party, index: number, select: HTMLSelectElement): void {
+    const id = Number(select.value);
+    select.value = '';
+    if (id) this.updateRow(party, index, (row) => ({ ...row, extra: [...(row.extra ?? []), id] }));
+  }
+
+  removeExtra(party: Party, index: number, id: number): void {
+    this.updateRow(party, index, (row) => ({ ...row, extra: (row.extra ?? []).filter((x) => x !== id) }));
   }
 
   buildOf(row: Row): Build | undefined {
@@ -254,9 +300,9 @@ export class CompoForm implements OnInit {
   /** Choix dans le sélecteur : un build (id), ou « sans build ». */
   setSource(party: Party, index: number, value: string): void {
     this.updateRow(party, index, (row) => {
-      if (value === FREE) return { ...row, build_id: null, free: true, role: '', weapon: '' };
+      if (value === FREE) return { ...row, build_id: null, free: true, role: '', weapon: '', extra: [] };
       const build = this.buildsById().get(Number(value));
-      return build ? { ...row, build_id: build.id, free: false, role: build.role, weapon: build.name } : row;
+      return build ? { ...row, build_id: build.id, free: false, role: build.role, weapon: build.name, extra: [] } : row;
     });
   }
 
@@ -285,7 +331,8 @@ export class CompoForm implements OnInit {
   /** Corps envoyé à l'API (sans l'état d'interface « free »). */
   private body(): CompoInput {
     const { pf1, pf2, ...rest } = this.model();
-    const clean = (rows: Row[]): SlotRow[] => rows.map(({ free: _f, ...r }) => r);
+    const clean = (rows: Row[]): SlotRow[] => rows.map(({ free: _f, extra, ...r }) =>
+      extra?.length && r.build_id != null ? { ...r, build_ids: [r.build_id, ...extra] } : r);
     return { ...rest, pf1: clean(pf1), pf2: clean(pf2) };
   }
 

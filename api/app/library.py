@@ -9,7 +9,7 @@ builds (snapshot), puis on la recrée dans le serveur cible :
   max par ligne, un build par rôle et par party…), même si elle vient d'un /addtemplate du bot.
 """
 from app.catalog import normalize_items
-from app.compos import build_template_entry, template_to_compo
+from app.compos import build_ids_of, build_template_entry, template_to_compo
 
 BUILD_FIELDS = ("name", "role", "type_acti", "weapon", "notes", "image")
 
@@ -22,9 +22,7 @@ def frozen_build(build: dict) -> dict:
 def snapshot(template: dict, builds_by_id: dict[int, dict]) -> dict:
     """{"template": données de la compo, "builds": {id d'origine: build figé}}.
     Seuls les builds réellement utilisés et encore existants sont gardés."""
-    used = {
-        int(bid) for key in ("builds", "builds_pf2") for bid in (template.get(key) or {}).values()
-    }
+    used = build_ids_of(template)
     return {
         "template": template,
         "builds": {str(bid): frozen_build(builds_by_id[bid]) for bid in sorted(used) if bid in builds_by_id},
@@ -58,9 +56,8 @@ def rebuild_template(snap: dict, name: str, id_map: dict[str, int], target_build
     for key in ("pf1", "pf2"):
         rows = []
         for row in compo[key]:
-            old = row.get("build_id")
-            new = id_map.get(str(old)) if old is not None else None
-            rows.append({**row, "build_id": new} if new is not None else {**row, "build_id": None})
+            new = [id_map[str(old)] for old in row.get("build_ids") or [] if str(old) in id_map]
+            rows.append({**row, "build_ids": new, "build_id": new[0] if new else None})
         compo[key] = rows
     return build_template_entry(compo, target_builds_by_id)
 

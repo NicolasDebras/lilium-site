@@ -265,7 +265,7 @@ def test_compo_two_builds_same_role_is_422(login):
     a, b = _make_build(c, "Tank A", "TANK"), _make_build(c, "Tank B", "TANK")
     r = c.post(f"/api/guilds/{GUILD}/compos", json={**COMPO, "pf1": [{"build_id": a, "count": 1}, {"build_id": b, "count": 1}]})
     assert r.status_code == 422
-    assert "TANK en double" in r.json()["detail"]
+    assert "TANK est déjà sur une autre ligne" in r.json()["detail"]
 
 
 def test_compo_with_unknown_build_is_422(login):

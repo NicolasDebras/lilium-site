@@ -43,12 +43,24 @@ def _party(rows: list[dict], builds_by_id: dict[int, dict], label: str
         if count > MAX_COUNT:
             raise InvalidCompo(f"{MAX_COUNT} joueurs maximum par ligne ({label}).")
 
-        build_id = row.get("build_id")
-        if build_id is not None:
-            build = builds_by_id.get(int(build_id))
-            if build is None:
-                raise InvalidCompo(f"Build introuvable (n°{build_id}) : il a peut-être été supprimé.")
-            role, weapon = build["role"].strip().upper(), build["name"]
+        ids = row_build_ids(row)
+        if ids:
+            if len(ids) > MAX_BUILDS_PER_ROW:
+                raise InvalidCompo(f"{MAX_BUILDS_PER_ROW} builds au choix maximum par ligne ({label}).")
+            if len(set(ids)) != len(ids):
+                raise InvalidCompo(f"Même build proposé deux fois sur une ligne ({label}).")
+            chosen = []
+            for bid in ids:
+                build = builds_by_id.get(bid)
+                if build is None:
+                    raise InvalidCompo(f"Build introuvable (n°{bid}) : il a peut-être été supprimé.")
+                chosen.append(build)
+            roles = {b["role"].strip().upper() for b in chosen}
+            if len(roles) > 1:
+                raise InvalidCompo(f"Les builds au choix d'une ligne doivent avoir le même rôle ({label}).")
+            role = roles.pop()
+            # Plusieurs builds : le bot propose ce hint comme liste de choix à l'inscription /acti
+            weapon = chosen[0]["name"] if len(chosen) == 1 else " · ".join(f"{b['name']} (×{count})" for b in chosen)
         else:
             role = str(row.get("role") or "").strip().upper()
             weapon = str(row.get("weapon") or "").strip()
@@ -56,13 +68,33 @@ def _party(rows: list[dict], builds_by_id: dict[int, dict], label: str
             continue
 
         if role in counts:
-            raise InvalidCompo(f"Un seul build par rôle et par party : {role} en double en {label}.")
+            raise InvalidCompo(
+                f"{role} est déjà sur une autre ligne en {label} : ajoute tes builds au choix sur la même ligne."
+            )
         counts[role] = count
         if weapon:
             weapons[role] = weapon
-        if build_id is not None:
-            builds[role] = int(build_id)
+        if ids:
+            builds[role] = ids[0] if len(ids) == 1 else ids
     return counts, weapons, builds
+
+
+MAX_BUILDS_PER_ROW = 10
+
+
+def row_build_ids(row: dict) -> list[int]:
+    """Builds d'une ligne : `build_ids` (plusieurs au choix) ou `build_id` (un seul, ancien format)."""
+    ids = row.get("build_ids")
+    if ids:
+        return [int(i) for i in ids]
+    return [int(row["build_id"])] if row.get("build_id") is not None else []
+
+
+def stored_ids(value) -> list[int]:
+    """Valeur de `builds[rôle]` en base : un id (ancien format) ou une liste d'ids."""
+    if value is None:
+        return []
+    return [int(v) for v in (value if isinstance(value, list) else [value])]
 
 
 def build_template_entry(body: dict, builds_by_id: dict[int, dict] | None = None) -> dict:
@@ -94,16 +126,18 @@ def template_to_compo(name: str, data: dict, *, custom: bool) -> dict:
     for site_key, count_key, weapon_key, builds_key, _ in PARTIES:
         weapons = data.get(weapon_key) or {}
         builds = data.get(builds_key) or {}
-        compo[site_key] = [
-            {"role": role, "count": count, "weapon": weapons.get(role, ""), "build_id": builds.get(role)}
-            for role, count in (data.get(count_key) or {}).items()
-        ]
+        rows = []
+        for role, count in (data.get(count_key) or {}).items():
+            ids = stored_ids(builds.get(role))
+            rows.append({"role": role, "count": count, "weapon": weapons.get(role, ""),
+                         "build_id": ids[0] if ids else None, "build_ids": ids})
+        compo[site_key] = rows
     compo["total"] = sum(r["count"] for r in compo["pf1"] + compo["pf2"])
     return compo
 
 
 def build_ids_of(data: dict) -> set[int]:
-    return {int(b) for _, _, _, builds_key, _ in PARTIES for b in (data.get(builds_key) or {}).values()}
+    return {i for _, _, _, builds_key, _ in PARTIES for v in (data.get(builds_key) or {}).values() for i in stored_ids(v)}
 
 
 def compos_using_build(templates: dict[str, dict], build_id: int) -> list[str]:
@@ -113,8 +147,20 @@ def compos_using_build(templates: dict[str, dict], build_id: int) -> list[str]:
 def rename_build(data: dict, build_id: int, new_name: str) -> dict:
     """Le hint affiché dans l'embed de /acti = nom du build : on le suit quand le build est renommé."""
     data = {**data}
-    for _, _, weapon_key, builds_key, _ in PARTIES:
-        for role, bid in (data.get(builds_key) or {}).items():
-            if int(bid) == build_id:
-                data[weapon_key] = {**(data.get(weapon_key) or {}), role: new_name}
+    for _, count_key, weapon_key, builds_key, _ in PARTIES:
+        for role, value in (data.get(builds_key) or {}).items():
+            ids = stored_ids(value)
+            if build_id not in ids:
+                continue
+            if len(ids) == 1:
+                hint = new_name
+            else:   # liste de choix « Nom (×N) · … » : on remplace la bonne entrée
+                parts = str((data.get(weapon_key) or {}).get(role, "")).split(" · ")
+                count = (data.get(count_key) or {}).get(role, 1)
+                i = ids.index(build_id)
+                if len(parts) != len(ids):
+                    parts = [""] * len(ids)
+                parts[i] = f"{new_name} (×{count})"
+                hint = " · ".join(parts)
+            data[weapon_key] = {**(data.get(weapon_key) or {}), role: hint}
     return data
