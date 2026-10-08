@@ -1,29 +1,22 @@
-# Instructions pour Claude Code — lilium-site
+# lilium-site
 
-Monorepo du site de la guilde : `api/` (FastAPI + asyncpg) et `frontend/` (Angular 22, standalone + signals, zoneless).
-Même base Postgres que le bot `botDiscord` : **le bot est propriétaire du schéma** (tables créées/migrées par son `init_db`).
-Une nouvelle table ou colonne se crée donc dans `botDiscord/db.py`, jamais ici.
+Règles communes (invariants, workflow git, lecture économe) : `../CLAUDE.md`.
+Schéma = bot (`botDiscord/db.py`) ; `api/app/constants.py` est une copie de `botDiscord/config.py` (resynchroniser).
 
-## README
-Mettre à jour `README.md` à chaque modification visible (nouvelle page, nouvelle route, nouvelle variable d'env, changement du lancement local), dans le même commit que le code.
+## Carte
+- `api/app/main.py` — app, front servi via `STATIC_DIR` ; `security.py` — taille des corps, origine, en-têtes/CSP
+- `api/app/auth.py` + `routes/auth.py` — OAuth Discord (`state`), cookie de session signé
+- `api/app/permissions.py` — `require_member/staff/admin` (`member < staff < admin`), cache 60 s
+- `api/app/db.py` — requêtes ; `bal_stats.py`, `compos.py`, `catalog.py` — logique pure
+- `api/app/routes/` — builds, compos, guild (BAL, admin, erreurs du bot), items, me
+- `frontend/src/app/core/` — `api.service.ts`, `models.ts`, guards (`levelGuard`, `hasLevel`)
+- `frontend/src/app/pages/` — builds, compos, bal, admin… ; `shared/` — charts, pager, icon, item-picker
+
+## À chaque changement
+- README.md mis à jour si visible (page, route, variable d'env, lancement local).
+- Design : uniquement les variables CSS de `frontend/src/styles.scss`.
 
 ## Tests (obligatoires)
-- Toute nouvelle route, logique ou règle de permission côté API vient avec ses tests dans `api/tests/` (faux db/Discord dans `tests/fakes.py`, jamais de vraie base).
-- Tout nouveau service, garde ou composant côté frontend vient avec son `*.spec.ts` (Vitest via `ng test`, `HttpTestingController`, `testing/fake-auth.ts`).
-- Ne pas supprimer un test qui échoue après un changement volontaire : corriger l'assertion consciemment.
-
-Commandes :
-```powershell
-cd api;      .venv\Scripts\python -m pytest
-cd frontend; npm test -- --watch=false; npx ng build
-```
-
-## Workflow git
-- **Avant tout `git push`** : `pytest` (api) et `npm test` + `ng build` (frontend) doivent passer. Un test rouge bloque le push.
-- **Chaque fonctionnalité/fix terminé doit être poussé** — un commit propre et un push dès que c'est complet et testé, pas d'accumulation en local.
-
-## Conventions
-- Design noir & lilas : **uniquement** les variables CSS de `frontend/src/styles.scss` (pas de couleur en dur dans les composants).
-- Niveaux d'accès : `member < staff < admin` (admin ⊇ staff). Côté API : dépendances `require_member/staff/admin` (`app/permissions.py`). Côté front : `levelGuard(...)` + `hasLevel(...)`.
-- Les admins sont nommés sur Discord via `/webadmin` (table `web_admins`, bot).
-- `app/constants.py` (ROLES, DEFAULT_TEMPLATES) est une copie de `botDiscord/config.py` : la resynchroniser si le bot change.
+- API : toute route/logique/permission testée dans `api/tests/` (doubles `tests/fakes.py`, jamais de vraie base).
+- Front : tout service/garde/composant a son `*.spec.ts` (Vitest, `HttpTestingController`, `src/testing/fake-auth.ts`).
+- Test rouge après un changement voulu : corriger l'assertion, jamais supprimer le test.
