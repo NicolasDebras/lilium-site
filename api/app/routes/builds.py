@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field, field_validator
@@ -6,8 +6,12 @@ from pydantic import BaseModel, Field, field_validator
 from app.catalog import InvalidItems, normalize_items, validate_build_items
 from app.compos import compos_using_build, rename_build
 from app.permissions import require_member, require_staff
+from app.validation import https_url_or_empty
 
 router = APIRouter(prefix="/guilds/{guild_id}/builds", tags=["builds"])
+
+MAX_BUILDS = 500  # builds par serveur (la base est partagée avec le bot)
+ItemId = Annotated[str, Field(max_length=80)]
 
 
 class BuildIn(BaseModel):
@@ -19,12 +23,25 @@ class BuildIn(BaseModel):
     image: str = Field(default="", max_length=500)
     # Équipement : {slot: [1 à 3 ids de /api/items]} ou {slot: ["*"]} = au choix du joueur.
     # Une chaîne seule (ancien format) est aussi acceptée.
-    items: dict[str, str | list[str]] = {}
+    # Bornes avant tout traitement : un corps géant ne doit pas geler l'API (dédoublonnage).
+    items: dict[Annotated[str, Field(max_length=20)], ItemId | list[ItemId]] = Field(default={}, max_length=12)
 
-    @field_validator("name", "weapon", "notes", "image")
+    @field_validator("items")
+    @classmethod
+    def _bounded_choices(cls, v: dict) -> dict:
+        if any(isinstance(c, list) and len(c) > 10 for c in v.values()):
+            raise ValueError("Trop de choix pour une case.")
+        return v
+
+    @field_validator("name", "weapon", "notes")
     @classmethod
     def _strip(cls, v: str) -> str:
         return v.strip()
+
+    @field_validator("image")
+    @classmethod
+    def _https_image(cls, v: str) -> str:
+        return https_url_or_empty(v)
 
     @field_validator("role")
     @classmethod
@@ -72,6 +89,8 @@ async def get_build(guild_id: int, build_id: int, request: Request, user: dict =
 
 @router.post("", status_code=201)
 async def create_build(guild_id: int, body: BuildIn, request: Request, user: dict = Depends(require_staff)):
+    if len(await request.app.state.db.get_builds(guild_id)) >= MAX_BUILDS:
+        raise HTTPException(status_code=409, detail=f"{MAX_BUILDS} builds maximum par serveur : supprimes-en d'abord.")
     build_id = await request.app.state.db.add_build(guild_id, _data(body), user["id"], user["username"])
     return {"id": build_id}
 

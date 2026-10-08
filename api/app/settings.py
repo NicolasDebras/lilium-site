@@ -21,6 +21,11 @@ class MissingSettings(RuntimeError):
     pass
 
 
+# Valeurs d'exemple publiques (dépôt public) : avec elles, n'importe qui forgerait un cookie de session admin.
+WEAK_SECRETS = {"change-moi", "changeme", "change-me", "secret", "session-secret"}
+MIN_SECRET_LENGTH = 16
+
+
 @dataclass(frozen=True)
 class Settings:
     database_url: str
@@ -51,14 +56,25 @@ def load_settings(env: dict[str, str] | None = None) -> Settings:
             + " — en local : api/.env (voir api/.env.example) ; sur Railway : onglet Variables du service"
         )
 
+    secret = env["SESSION_SECRET"]
+    if secret.lower() in WEAK_SECRETS or len(secret) < MIN_SECRET_LENGTH:
+        raise MissingSettings(
+            f"SESSION_SECRET trop faible : au moins {MIN_SECRET_LENGTH} caractères aléatoires, jamais la valeur "
+            "d'exemple (ex. python -c \"import secrets; print(secrets.token_urlsafe(48))\")"
+        )
+
+    static_dir = env.get("STATIC_DIR", "")
+    # Prod (front servi par l'API, donc HTTPS) : cookie Secure sauf COOKIE_SECURE=false explicite
+    cookie_secure = env.get("COOKIE_SECURE", "true" if static_dir else "false").lower() == "true"
+
     return Settings(
         database_url=env["DATABASE_URL"],
         discord_token=env["DISCORD_TOKEN"],
         discord_client_id=env["DISCORD_CLIENT_ID"],
         discord_client_secret=env["DISCORD_CLIENT_SECRET"],
         discord_redirect_uri=env["DISCORD_REDIRECT_URI"],
-        session_secret=env["SESSION_SECRET"],
+        session_secret=secret,
         frontend_url=env.get("FRONTEND_URL", "http://localhost:4200").rstrip("/"),
-        cookie_secure=env.get("COOKIE_SECURE", "false").lower() == "true",
-        static_dir=env.get("STATIC_DIR", ""),
+        cookie_secure=cookie_secure,
+        static_dir=static_dir,
     )

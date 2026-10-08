@@ -6,12 +6,11 @@
 - staff  : member + rôle configuré via /config → 🌐 Rôle staff du site web
 - admin  : member + nommé via /webadmin (table web_admins) — inclut les droits staff
 """
-import asyncio
 import time
 from enum import IntEnum
 from typing import Callable
 
-from fastapi import Depends, HTTPException, Request
+from fastapi import Depends, HTTPException, Path, Request
 
 from app.auth import require_user
 
@@ -57,20 +56,24 @@ class LevelCache:
             return hit[1]
         return None
 
+    MAX_ENTRIES = 10_000
+
     def set(self, guild_id: int, user_id: int, level: Level) -> None:
-        self._data[(guild_id, user_id)] = (self._clock(), level)
+        now = self._clock()
+        if len(self._data) >= self.MAX_ENTRIES:  # purge des entrées expirées : pas de croissance sans fin
+            self._data = {k: v for k, v in self._data.items() if now - v[0] < self._ttl}
+        self._data[(guild_id, user_id)] = (now, level)
 
 
 async def access_level(db, discord, guild_id: int, user_id: int, cache: LevelCache | None = None) -> Level:
     if cache and (cached := cache.get(guild_id, user_id)) is not None:
         return cached
 
-    # Base et Discord interrogés en parallèle : une seule requête SQL pour
-    # profil + rôle staff + admin, et l'appel Discord a son propre cache.
-    info, member = await asyncio.gather(
-        db.get_access_info(guild_id, user_id),
-        discord.get_member(guild_id, user_id),
-    )
+    # Base d'abord (profil + rôle staff + admin en une requête) ; Discord seulement si le
+    # joueur a un profil sur ce serveur. Sinon n'importe quel compte pourrait, avec des ids
+    # de serveurs au hasard, faire consommer le quota du token du bot (partagé avec le bot).
+    info = await db.get_access_info(guild_id, user_id)
+    member = await discord.get_member(guild_id, user_id) if info["has_profile"] else None
     level = compute_level(
         has_profile=info["has_profile"],
         member=member,
@@ -83,7 +86,8 @@ async def access_level(db, discord, guild_id: int, user_id: int, cache: LevelCac
 
 
 def _require(minimum: Level):
-    async def dependency(guild_id: int, request: Request, user: dict = Depends(require_user)) -> dict:
+    async def dependency(request: Request, guild_id: int = Path(gt=0, lt=2**63),
+                         user: dict = Depends(require_user)) -> dict:
         state = request.app.state
         level = await access_level(state.db, state.discord, guild_id, int(user["id"]), state.levels)
         if level < minimum:

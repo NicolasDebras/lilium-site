@@ -1,21 +1,27 @@
-from typing import Literal
+from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Request
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from app.compos import InvalidCompo, build_template_entry, template_to_compo
 from app.constants import DEFAULT_TEMPLATES, default_templates_for
 from app.permissions import require_member, require_staff
+from app.validation import https_url_or_empty
 
 router = APIRouter(prefix="/guilds/{guild_id}/compos", tags=["compos"])
+
+MAX_ROWS = 20          # lignes par party (au-delà : embed Discord et image de compo ingérables)
+MAX_COMPOS = 100       # compos par serveur (la base est partagée avec le bot)
+# Le nom sert de clé côté bot et d'URL côté site : pas de / \ ? # % ni de caractère de contrôle
+_FORBIDDEN_NAME_CHARS = set("/\\?#%")
 
 
 class SlotRow(BaseModel):
     # build_id renseigné → rôle et arme viennent du build ; sinon ligne libre (rôle + arme en texte).
     build_id: int | None = None
-    role: str = ""
-    count: int | str | None = None
-    weapon: str = ""
+    role: str = Field(default="", max_length=50)
+    count: int | Annotated[str, Field(max_length=6)] | None = None
+    weapon: str = Field(default="", max_length=200)
 
 
 class CompoIn(BaseModel):
@@ -23,8 +29,21 @@ class CompoIn(BaseModel):
     description: str = Field(default="", max_length=2000)
     type_acti: Literal["PVP", "PVE"] = "PVP"
     image: str = Field(default="", max_length=500)
-    pf1: list[SlotRow] = []
-    pf2: list[SlotRow] = []
+    pf1: list[SlotRow] = Field(default=[], max_length=MAX_ROWS)
+    pf2: list[SlotRow] = Field(default=[], max_length=MAX_ROWS)
+
+    @field_validator("image")
+    @classmethod
+    def _https_image(cls, v: str) -> str:
+        return https_url_or_empty(v)
+
+    @field_validator("name")
+    @classmethod
+    def _clean_name(cls, v: str) -> str:
+        v = v.strip()
+        if not v or any(c in _FORBIDDEN_NAME_CHARS or not c.isprintable() for c in v):
+            raise ValueError("Nom invalide : pas de / \\ ? # % ni de caractère spécial invisible.")
+        return v
 
 
 async def _entry(db, guild_id: int, body: CompoIn) -> dict:
@@ -57,12 +76,15 @@ async def get_compo(guild_id: int, name: str, request: Request, user: dict = Dep
 
 @router.post("", status_code=201)
 async def create_compo(guild_id: int, body: CompoIn, request: Request, user: dict = Depends(require_staff)):
-    name = body.name.strip()
-    if name in DEFAULT_TEMPLATES:
+    name = body.name
+    if name.casefold() in {n.casefold() for n in DEFAULT_TEMPLATES}:
         raise HTTPException(status_code=409, detail=f"« {name} » est un template par défaut, choisis un autre nom.")
     db = request.app.state.db
-    if name in await db.get_custom_templates(guild_id):
+    existing = await db.get_custom_templates(guild_id)
+    if name.casefold() in {n.casefold() for n in existing}:
         raise HTTPException(status_code=409, detail=f"Une compo « {name} » existe déjà.")
+    if len(existing) >= MAX_COMPOS:
+        raise HTTPException(status_code=409, detail=f"{MAX_COMPOS} compos maximum par serveur : supprimes-en d'abord.")
     await db.save_custom_template(guild_id, name, await _entry(db, guild_id, body))
     return {"name": name}
 

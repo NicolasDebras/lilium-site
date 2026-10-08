@@ -16,6 +16,7 @@ from app.db import Database
 from app.discord_rest import DiscordRest, DiscordUnavailable
 from app.permissions import LevelCache
 from app.routes import auth as auth_routes, builds, compos, guild, items, me
+from app.security import content_security_policy, inline_script_hashes, install_security
 from app.settings import Settings, load_settings
 
 
@@ -33,7 +34,10 @@ def create_app(settings: Settings | None = None, *, db=None, discord=None, oauth
         if owns_db:
             await db.close()
 
-    app = FastAPI(title="Lilium API", lifespan=lifespan)
+    # Prod (front servi par l'API) : pas de /docs ni /openapi.json publics
+    docs = {} if not settings.static_dir else {"docs_url": None, "redoc_url": None, "openapi_url": None}
+    app = FastAPI(title="Lilium API", lifespan=lifespan, **docs)
+    install_security(app, frontend_url=settings.frontend_url, hsts=settings.cookie_secure)
     app.state.settings = settings
     app.state.db = db
     app.state.discord = discord or DiscordRest(settings.discord_token)
@@ -68,6 +72,7 @@ def mount_frontend(app: FastAPI, static_dir: Path) -> None:
     index = root / "index.html"
     if not index.is_file():
         raise RuntimeError(f"STATIC_DIR={static_dir} : index.html introuvable (front non compilé ?)")
+    app.state.csp = content_security_policy(inline_script_hashes(index.read_text(encoding="utf-8")))
 
     @app.get("/{path:path}", include_in_schema=False)
     async def frontend(path: str):

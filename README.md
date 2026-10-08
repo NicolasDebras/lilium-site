@@ -49,7 +49,7 @@ Copy-Item api\.env.example api\.env
 | `DISCORD_TOKEN` | le même token que le bot |
 | `DISCORD_CLIENT_ID` / `DISCORD_CLIENT_SECRET` | [Discord Developer Portal](https://discord.com/developers/applications) → ton application → **OAuth2** |
 | `DISCORD_REDIRECT_URI` | laisser `http://localhost:4200/api/auth/callback` **et l'ajouter dans OAuth2 → Redirects** du portail |
-| `SESSION_SECRET` | n'importe quelle longue chaîne aléatoire |
+| `SESSION_SECRET` | longue chaîne aléatoire, **16 caractères minimum** (sinon l'API refuse de démarrer) : `python -c "import secrets; print(secrets.token_urlsafe(48))"` |
 
 > ⚠️ En local tu es branché sur la **vraie base** : un build ou une compo créé/supprimé sur ton site local l'est aussi pour le bot.
 
@@ -117,8 +117,24 @@ Toutes sous `/api`. `{gid}` = id du serveur Discord.
 | GET | `/guilds/{gid}/compos`, `/guilds/{gid}/compos/{nom}` | membre |
 | POST · PUT · DELETE | `/guilds/{gid}/compos[/{nom}]` | staff |
 | GET | `/guilds/{gid}/bal/me`, `/guilds/{gid}/bal/me/history?period=`, `/guilds/{gid}/roles` | membre |
+| GET | `/guilds/{gid}/bal/me/operations?action=&page=` (25 par page), `/guilds/{gid}/bal/me/operations.csv?action=` | membre (ses propres lignes uniquement) |
 | GET | `/guilds/{gid}/admin/overview` | admin |
 | GET | `/guilds/{gid}/admin/bal?period=week\|7d\|30d\|90d\|180d` | admin |
+| GET | `/guilds/{gid}/admin/errors?command=&page=` (sans traceback), `/guilds/{gid}/admin/errors/{id}` (avec traceback, 404 si autre serveur) | admin |
+
+**Page « Ma BAL » → Historique complet** : toutes les opérations du joueur (6 mois gardés par le bot), filtre par type (`/finacti`, `/paybal`, `/addbal`, `/retirebal`, `/transferbal`), pagination et **export CSV** (séparateur `;`, ouvrable dans Excel ; les cellules commençant par `= + - @` sont neutralisées contre l'injection de formules).
+
+**Page Admin → Erreurs du bot** : équivalent web de `/errors` (table `error_log` du bot, 30 jours), filtre par commande, traceback chargé au clic et affiché en texte brut.
+
+### Sécurité
+
+- **Connexion Discord** : paramètre `state` OAuth (cookie HttpOnly de 10 min) vérifié au retour — un lien piégé `?code=` ne connecte pas la victime sur le compte d'un autre.
+- **`SESSION_SECRET`** : au moins 16 caractères et jamais une valeur d'exemple, sinon l'API refuse de démarrer (avec le dépôt public, un secret faible permettrait de forger un cookie admin).
+- **Cookie `Secure`** par défaut quand l'API sert le front (`STATIC_DIR`), sauf `COOKIE_SECURE=false` explicite.
+- **Anti-CSRF** : en plus de `SameSite=Lax`, toute requête qui modifie (POST/PUT/DELETE) est refusée si le navigateur annonce une autre origine que `FRONTEND_URL` ou le domaine du site.
+- **En-têtes** : `X-Content-Type-Options`, `X-Frame-Options: DENY`, `Referrer-Policy`, et en prod une **CSP** (scripts limités au site + empreinte du script en ligne de `index.html`, calculée au démarrage) et **HSTS**. `/docs` et `/openapi.json` ne sont pas exposés en prod.
+- **Limites** : corps de requête 128 Ko max (refusé avant l'authentification) ; 500 builds et 100 compos par serveur ; 20 lignes par party et 50 joueurs par ligne dans une compo ; 10 choix max par case d'équipement à la saisie (3 après nettoyage) ; noms de compo sans `/ \ ? # %` (et unicité sans tenir compte de la casse) ; images en `https://` uniquement.
+- **Quota Discord** : l'API n'interroge Discord (token du bot) que si l'utilisateur a un profil `/register` sur ce serveur — un id de serveur au hasard ne consomme rien. Caches bornés, délais d'attente de 10 s sur les appels Discord.
 
 ### Statistiques BAL — page Admin et page « Ma BAL »
 
@@ -200,8 +216,8 @@ Toute URL hors `/api` renvoie `index.html` (routes Angular). Healthcheck : `/api
    | `DISCORD_CLIENT_ID` / `DISCORD_CLIENT_SECRET` | application Discord → OAuth2 |
    | `DISCORD_REDIRECT_URI` | `https://<domaine>/api/auth/callback` |
    | `FRONTEND_URL` | `https://<domaine>` |
-   | `SESSION_SECRET` | longue chaîne aléatoire (différente de celle du local) |
-   | `COOKIE_SECURE` | `true` |
+   | `SESSION_SECRET` | longue chaîne aléatoire, 16 caractères minimum (différente de celle du local) |
+   | `COOKIE_SECURE` | `true` (valeur par défaut en prod de toute façon) |
 
 3. Portail Discord → ton application → **OAuth2 → Redirects** : ajouter `https://<domaine>/api/auth/callback` (garder celle de localhost pour le dev).
 4. Chaque push sur `main` redéploie.

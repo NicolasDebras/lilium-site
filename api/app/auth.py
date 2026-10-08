@@ -1,5 +1,7 @@
 """Connexion Discord OAuth2 (scope "identify" uniquement) + session signée par
 cookie (rien stocké côté serveur). Repris de botDiscord/web/auth.py."""
+import asyncio
+import secrets
 from urllib.parse import urlencode
 
 import aiohttp
@@ -10,18 +12,30 @@ from app.settings import Settings
 
 SESSION_COOKIE = "lilium_session"
 SESSION_MAX_AGE = 60 * 60 * 24 * 30  # 30 jours
+STATE_COOKIE = "lilium_oauth_state"  # anti-CSRF du login : relie le retour de Discord à CE navigateur
+STATE_MAX_AGE = 10 * 60
+HTTP_TIMEOUT = aiohttp.ClientTimeout(total=10)
 
 
 def _serializer(settings: Settings) -> URLSafeTimedSerializer:
     return URLSafeTimedSerializer(settings.session_secret, salt="lilium-session")
 
 
-def build_authorize_url(settings: Settings) -> str:
+def new_oauth_state() -> str:
+    return secrets.token_urlsafe(24)
+
+
+def state_matches(expected: str | None, received: str | None) -> bool:
+    return bool(expected and received) and secrets.compare_digest(expected, received)
+
+
+def build_authorize_url(settings: Settings, state: str) -> str:
     query = urlencode({
         "client_id":     settings.discord_client_id,
         "redirect_uri":  settings.discord_redirect_uri,
         "response_type": "code",
         "scope":         "identify",
+        "state":         state,
     })
     return f"https://discord.com/oauth2/authorize?{query}"
 
@@ -35,21 +49,27 @@ async def exchange_code(settings: Settings, code: str) -> str:
         "code":          code,
         "redirect_uri":  settings.discord_redirect_uri,
     }
-    async with aiohttp.ClientSession() as session:
-        async with session.post("https://discord.com/api/oauth2/token", data=data) as resp:
-            if resp.status != 200:
-                raise HTTPException(status_code=400, detail="Échec de l'authentification Discord.")
-            payload = await resp.json()
-    return payload["access_token"]
+    try:
+        async with aiohttp.ClientSession(timeout=HTTP_TIMEOUT) as session:
+            async with session.post("https://discord.com/api/oauth2/token", data=data) as resp:
+                if resp.status != 200:
+                    raise HTTPException(status_code=400, detail="Échec de l'authentification Discord.")
+                payload = await resp.json()
+        return payload["access_token"]
+    except (aiohttp.ClientError, asyncio.TimeoutError, KeyError, TypeError, ValueError):
+        raise HTTPException(status_code=400, detail="Échec de l'authentification Discord.")
 
 
 async def fetch_discord_user(access_token: str) -> dict:
     headers = {"Authorization": f"Bearer {access_token}"}
-    async with aiohttp.ClientSession() as session:
-        async with session.get("https://discord.com/api/users/@me", headers=headers) as resp:
-            if resp.status != 200:
-                raise HTTPException(status_code=400, detail="Impossible de récupérer le profil Discord.")
-            return await resp.json()
+    try:
+        async with aiohttp.ClientSession(timeout=HTTP_TIMEOUT) as session:
+            async with session.get("https://discord.com/api/users/@me", headers=headers) as resp:
+                if resp.status != 200:
+                    raise HTTPException(status_code=400, detail="Impossible de récupérer le profil Discord.")
+                return await resp.json()
+    except (aiohttp.ClientError, asyncio.TimeoutError, ValueError):
+        raise HTTPException(status_code=400, detail="Impossible de récupérer le profil Discord.")
 
 
 def session_payload(user: dict) -> dict:

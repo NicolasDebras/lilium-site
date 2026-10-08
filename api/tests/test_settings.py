@@ -5,7 +5,7 @@ from app.settings import MissingSettings, load_settings
 FULL = {
     "DATABASE_URL": "postgresql://x", "DISCORD_TOKEN": "t", "DISCORD_CLIENT_ID": "c",
     "DISCORD_CLIENT_SECRET": "s", "DISCORD_REDIRECT_URI": "http://localhost:4200/api/auth/callback",
-    "SESSION_SECRET": "secret",
+    "SESSION_SECRET": "un-secret-de-test-assez-long",
 }
 
 
@@ -43,3 +43,15 @@ def test_env_file_wins_over_system_variable(tmp_path, monkeypatch):
     monkeypatch.setenv("DISCORD_TOKEN", "vieux-token-systeme")
 
     assert settings_module.load_settings().discord_token == "token-du-fichier"
+
+
+@pytest.mark.parametrize("weak", ["change-moi", "secret", "court"])
+def test_weak_session_secret_is_refused(weak):
+    with pytest.raises(MissingSettings) as exc:
+        load_settings({**FULL, "SESSION_SECRET": weak})
+    assert "SESSION_SECRET" in str(exc.value)
+
+
+def test_cookie_secure_by_default_when_serving_the_front():
+    assert load_settings({**FULL, "STATIC_DIR": "/app/static"}).cookie_secure is True
+    assert load_settings({**FULL, "STATIC_DIR": "/app/static", "COOKIE_SECURE": "false"}).cookie_secure is False

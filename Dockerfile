@@ -20,5 +20,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY api/app ./app
 COPY --from=frontend /frontend/dist/lilium/browser ./static
 
+# L'API n'écrit rien sur le disque : elle tourne sans les droits root
+RUN useradd --create-home --uid 10001 lilium
+USER lilium
+
 # Railway fournit $PORT ; --proxy-headers : l'appli est derrière le proxy HTTPS de Railway.
 CMD ["sh", "-c", "uvicorn app.main:create_app --factory --host 0.0.0.0 --port ${PORT:-8000} --proxy-headers --forwarded-allow-ips='*'"]

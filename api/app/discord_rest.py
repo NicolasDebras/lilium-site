@@ -5,12 +5,15 @@ elle vérifie l'appartenance et les rôles via GET /guilds/{g}/members/{u}.
 Résultats gardés en cache mémoire (60 s par défaut) pour ne pas se faire
 rate-limiter à chaque requête du site.
 """
+import asyncio
 import time
 from typing import Awaitable, Callable
 
 import aiohttp
 
 API = "https://discord.com/api/v10"
+TIMEOUT = aiohttp.ClientTimeout(total=10)
+CACHE_MAX = 10_000  # entrées : au-delà, les entrées expirées sont purgées
 
 # (status, json | None)
 Fetcher = Callable[[str], Awaitable[tuple[int, dict | None]]]
@@ -33,12 +36,12 @@ class DiscordRest:
     async def _http_get(self, path: str) -> tuple[int, dict | None]:
         headers = {"Authorization": f"Bot {self._token}"}
         try:
-            async with aiohttp.ClientSession() as session:
+            async with aiohttp.ClientSession(timeout=TIMEOUT) as session:
                 async with session.get(API + path, headers=headers) as resp:
                     body = await resp.json() if resp.status == 200 else None
                     return resp.status, body
-        except aiohttp.ClientError as e:
-            raise DiscordUnavailable(str(e)) from e
+        except (aiohttp.ClientError, asyncio.TimeoutError) as e:
+            raise DiscordUnavailable(str(e) or type(e).__name__) from e
 
     async def _cached_get(self, path: str) -> dict | None:
         now = self._clock()
@@ -54,6 +57,8 @@ class DiscordRest:
         else:
             raise DiscordUnavailable(f"Discord a répondu {status} sur {path}")
 
+        if len(self._cache) >= CACHE_MAX:
+            self._cache = {k: v for k, v in self._cache.items() if now - v[0] < self._ttl}
         self._cache[path] = (now, value)
         return value
 

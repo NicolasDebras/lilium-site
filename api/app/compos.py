@@ -19,6 +19,10 @@ PARTIES = (
 )
 
 
+# Le bot affiche une ligne par place : un nombre géant le ferait générer des millions de lignes.
+MAX_COUNT = 50
+
+
 class InvalidCompo(ValueError):
     pass
 
@@ -36,6 +40,8 @@ def _party(rows: list[dict], builds_by_id: dict[int, dict], label: str
             continue
         if count <= 0:
             continue
+        if count > MAX_COUNT:
+            raise InvalidCompo(f"{MAX_COUNT} joueurs maximum par ligne ({label}).")
 
         build_id = row.get("build_id")
         if build_id is not None:
