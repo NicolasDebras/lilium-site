@@ -43,13 +43,34 @@ describe('BuildForm — équipement', () => {
     );
   }
 
-  it('affiche les 8 cases (dont bouffe et potion) + la case Swaps à droite', async () => {
+  it('affiche les 8 cases (dont bouffe et potion) + 6 cases Swap sous l’équipement', async () => {
     const { el } = await render();
     const labels = [...el.querySelectorAll('.doll button.slot')].map((b) => b.getAttribute('aria-label')?.split(' :')[0]);
     expect(labels.length).toBe(8);
-    expect(el.querySelector('.swaps-picker button.slot')?.getAttribute('aria-label')).toContain('Swaps');
     expect(labels).toContain('Bouffe');
     expect(labels).toContain('Potion');
+    const swaps = el.querySelectorAll('.swaps-row button.slot');
+    expect(swaps.length).toBe(6);
+    expect(swaps[0].getAttribute('aria-label')).toContain('Swaps');
+    expect(el.querySelector('.swaps-row .slot-label')?.textContent?.trim()).toBe('Swap');
+  });
+
+  it('swaps : une case par objet, tassés à gauche, sans doublon', async () => {
+    const { fixture, cmp, el } = await render();
+    cmp.setSwap(3, ['MAIN_SWORD']);           // case vide lointaine → ajouté à la suite
+    cmp.setSwap(1, ['HEAD_PLATE_SET1']);
+    expect(cmp['model']().items.swaps).toEqual(['MAIN_SWORD', 'HEAD_PLATE_SET1']);
+    cmp.setSwap(0, ['MEAL_STEW']);            // remplace la 1re case
+    expect(cmp['model']().items.swaps).toEqual(['MEAL_STEW', 'HEAD_PLATE_SET1']);
+    cmp.setSwap(0, ['HEAD_PLATE_SET1']);      // déjà en case 2 → déplacé
+    expect(cmp['model']().items.swaps).toEqual(['HEAD_PLATE_SET1']);
+    cmp.setSwap(1, ['MAIN_SWORD']);
+    await fixture.whenStable();
+    expect(el.querySelectorAll('.swaps-row .slot.filled').length).toBe(2);
+    cmp.setSwap(0, []);                       // vider resserre la liste
+    expect(cmp['model']().items.swaps).toEqual(['MAIN_SWORD']);
+    cmp.setSwap(0, []);
+    expect(cmp['model']().items).toEqual({});
   });
 
   it('armes toutes à deux mains : la main gauche est vidée et bloquée', async () => {

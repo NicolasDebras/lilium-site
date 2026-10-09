@@ -10,7 +10,8 @@ import { BuildsList } from './builds-list';
 
 const BUILDS: Build[] = [
   { id: 1, name: 'Tank Masse', role: 'TANK', type_acti: 'PVP', weapon: '1H Masse', notes: '', image: '',
-    items: { mainhand: ['MAIN_SWORD'], offhand: ['OFF_SHIELD'], head: ['HEAD_PLATE_SET1', 'HEAD_CLOTH_SET2'], cape: ['*'] },
+    items: { mainhand: ['MAIN_SWORD'], offhand: ['OFF_SHIELD'], head: ['HEAD_PLATE_SET1', 'HEAD_CLOTH_SET2'], cape: ['*'],
+             swaps: ['MEAL_STEW'] },
     created_by_name: 'Lily' },
   { id: 2, name: 'Heal Sancti', role: 'HEAL', type_acti: 'PVE', weapon: '', notes: 'Note', image: '',
     items: {}, created_by_name: 'Lily' },
@@ -57,6 +58,21 @@ describe('BuildsList', () => {
     expect(first.querySelector('.gear-names')?.textContent).toContain("Casque de soldat ou Capuchon d'ecclésiastique");
     expect(first.querySelector('.gear-names')?.textContent).toContain('Cape au choix');
     expect(second.querySelector('.doll')).toBeNull();   // build sans équipement : pas d'inventaire
+  });
+
+  it('swaps : rangée d’icônes sous l’inventaire, hors du texte, mais trouvés par la recherche', async () => {
+    const { fixture, el } = await render('member');
+    const [first, second] = el.querySelectorAll('article.build');
+    expect([...first.querySelectorAll<HTMLImageElement>('app-gear-swaps img')].map((i) => i.alt)).toEqual(['Ragoût de bœuf']);
+    expect(first.querySelector('.doll app-gear-swaps, .doll ~ app-gear-swaps')).toBeNull();   // pas collés à l'inventaire
+    expect(first.querySelector('.gear-names')?.textContent).not.toContain('Ragoût');
+    expect(second.querySelector('app-gear-swaps img')).toBeNull();
+
+    const input = el.querySelector<HTMLInputElement>('input.search')!;
+    input.value = 'ragout';
+    input.dispatchEvent(new Event('input'));
+    await fixture.whenStable();
+    expect([...el.querySelectorAll('article.build h2')].map((h) => h.textContent?.trim())).toEqual(['Tank Masse']);
   });
 
   it('un membre ne voit pas les boutons d’édition', async () => {

@@ -30,7 +30,7 @@ import { FREE_CHOICE, Item, MAX_CHOICES, SLOT_LABELS, SWAPS_MAX, Slot } from '..
         <span class="placeholder">+</span>
       }
     </button>
-    <span class="slot-label">{{ value().length ? summary() : label() }}</span>
+    <span class="slot-label">{{ value().length ? summary() : (placeholder() || label()) }}</span>
 
     @if (open()) {
       <div class="overlay" (click)="close()"></div>
@@ -39,7 +39,7 @@ import { FREE_CHOICE, Item, MAX_CHOICES, SLOT_LABELS, SWAPS_MAX, Slot } from '..
           <h3>{{ label() }} <span class="muted count">{{ items().length }}/{{ max() }}</span></h3>
           <button type="button" class="btn btn-sm" (click)="close()" aria-label="Fermer">✕</button>
         </div>
-        <p class="muted hint">{{ swaps() ? 'Objets de rechange, tous emplacements : jusqu’à ' + max() + '.' : 'Clique jusqu’à ' + max() + ' objets : le joueur aura le choix entre eux.' }}</p>
+        <p class="muted hint">{{ hint() }}</p>
         <input class="input search" type="search" placeholder="Rechercher (ex : épée, holy, cuir…)"
                aria-label="Rechercher un objet" [value]="query()" (input)="query.set($any($event.target).value)" />
         @if (categories().length > 1) {
@@ -114,7 +114,17 @@ export class ItemPicker {
   /** Un emplacement, ou 'swaps' : objets de rechange de tous emplacements (6 max, jamais « au choix »). */
   readonly slot = input.required<Slot | 'swaps'>();
   protected readonly swaps = computed(() => this.slot() === 'swaps');
-  protected readonly max = computed(() => (this.swaps() ? SWAPS_MAX : MAX_CHOICES));
+  /** Nombre d'objets max imposé (ex. 1 pour une case de swap) ; sinon 6 (swaps) ou 3. */
+  readonly limit = input<number>();
+  /** Libellé sous la case vide (par défaut : nom de l'emplacement). */
+  readonly placeholder = input('');
+  protected readonly max = computed(() => this.limit() ?? (this.swaps() ? SWAPS_MAX : MAX_CHOICES));
+  protected readonly hint = computed(() => {
+    if (this.max() === 1) return this.swaps() ? 'Un objet de rechange, tous emplacements.' : 'Clique un objet.';
+    return this.swaps()
+      ? `Objets de rechange, tous emplacements : jusqu’à ${this.max()}.`
+      : `Clique jusqu’à ${this.max()} objets : le joueur aura le choix entre eux.`;
+  });
   private readonly slotFilter = computed(() => (this.swaps() ? null : (this.slot() as Slot)));
   /** Ids choisis (1 à 3), [FREE_CHOICE] pour « au choix du joueur », [] = rien. */
   readonly value = input<string[]>([]);
@@ -131,7 +141,8 @@ export class ItemPicker {
   readonly items = computed(() =>
     this.isFree() ? [] : this.value().map((id) => this.catalog.get(id)).filter((i): i is Item => !!i),
   );
-  readonly isFull = computed(() => this.items().length >= this.max());
+  /** Plus de place pour un objet de plus (une case à 1 objet n'est jamais « pleine » : on remplace). */
+  readonly isFull = computed(() => this.max() > 1 && this.items().length >= this.max());
   readonly summary = computed(() =>
     this.isFree() ? 'Au choix du joueur' : this.items().map((i) => i.name).join(' / ') || 'vide',
   );
@@ -152,11 +163,14 @@ export class ItemPicker {
     return this.value().includes(item.id);
   }
 
-  /** Ajoute l'objet aux choix (max 3) ou le retire s'il y est déjà. */
+  /** Ajoute l'objet aux choix (max 3) ou le retire s'il y est déjà ; case à 1 objet : remplace et ferme. */
   toggle(item: Item): void {
     const current = this.isFree() ? [] : this.value();
     if (current.includes(item.id)) {
       this.valueChange.emit(current.filter((id) => id !== item.id));
+    } else if (this.max() === 1) {
+      this.valueChange.emit([item.id]);
+      this.close();
     } else if (current.length < this.max()) {
       this.valueChange.emit([...current, item.id]);
     }

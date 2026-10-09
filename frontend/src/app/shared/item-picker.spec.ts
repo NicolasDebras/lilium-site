@@ -144,4 +144,19 @@ describe('ItemPicker', () => {
     await clickResult('Casque de soldat');
     expect(emitted.at(-1)?.length).toBe(1);
   });
+
+  it('case à un objet (limit=1) : libellé « Swap », un autre objet remplace le premier et ferme', async () => {
+    const { fixture, el, openPanel, clickResult, emitted } = await render('swaps', ['MAIN_SWORD']);
+    fixture.componentRef.setInput('limit', 1);
+    fixture.componentRef.setInput('placeholder', 'Swap');
+    await fixture.whenStable();
+    await openPanel();
+    expect(el.querySelector('.panel .count')?.textContent?.trim()).toBe('1/1');
+    await clickResult('Casque de soldat');
+    expect(emitted).toEqual([['HEAD_PLATE_SET1']]);
+    expect(el.querySelector('.panel')).toBeNull();
+    fixture.componentRef.setInput('value', []);
+    await fixture.whenStable();
+    expect(el.querySelector('.slot-label')?.textContent?.trim()).toBe('Swap');
+  });
 });

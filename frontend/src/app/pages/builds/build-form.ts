@@ -6,7 +6,7 @@ import { firstValueFrom } from 'rxjs';
 import { ApiService, errorMessage } from '../../core/api.service';
 import { ToastService } from '../../core/toast.service';
 import { ItemsService } from '../../core/items.service';
-import { BuildInput, FREE_CHOICE, Item, RoleInfo, Slot } from '../../core/models';
+import { BuildInput, FREE_CHOICE, Item, RoleInfo, SWAPS_MAX, Slot } from '../../core/models';
 import { PAPER_DOLL } from '../../shared/gear';
 import { Icon } from '../../shared/icon';
 import { ItemPicker } from '../../shared/item-picker';
@@ -49,7 +49,6 @@ export function allTwoHanded(mainhand: string[], get: (id: string) => Item | und
       <div class="layout">
         <fieldset class="equipment card">
           <legend><app-icon name="shield" [size]="16" /> Équipement</legend>
-          <div class="gear-row">
           <div class="doll">
             @for (slot of doll; track $index) {
               @if (slot) {
@@ -62,9 +61,12 @@ export function allTwoHanded(mainhand: string[], get: (id: string) => Item | und
               }
             }
           </div>
-          <div class="swaps-picker" title="Objets de rechange (tous emplacements)">
-            <app-item-picker slot="swaps" [value]="model().items.swaps ?? []" (valueChange)="setSwaps($event)" />
-          </div>
+          <div class="swaps-row" role="group" aria-label="Swaps" title="Objets de rechange (tous emplacements)">
+            <span class="swaps-title">Swaps</span>
+            @for (i of swapSlots; track i) {
+              <app-item-picker slot="swaps" [limit]="1" placeholder="Swap"
+                               [value]="swapAt(i)" (valueChange)="setSwap(i, $event)" />
+            }
           </div>
           @if (itemsError()) {
             <p class="error-text">{{ itemsError() }}</p>
@@ -135,10 +137,12 @@ export function allTwoHanded(mainhand: string[], get: (id: string) => Item | und
     .equipment { margin: 0; padding: 18px; position: sticky; top: 84px; z-index: 30;
                  background: radial-gradient(circle at 50% 35%, rgba(167, 123, 243, .16), transparent 65%), var(--surface); }
     legend { display: inline-flex; align-items: center; gap: 6px; padding: 0 8px; font-weight: 700; color: var(--lilac); }
-    .gear-row { display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-start; gap: 16px; }
-    /* Swaps à droite de l'équipement, séparés par un trait lilas */
-    .swaps-picker { padding-left: 16px; border-left: 2px solid var(--lilac-strong); }
     .doll { display: grid; grid-template-columns: repeat(3, 104px); gap: 14px 16px; justify-content: center; }
+    /* Swaps sous l'équipement : une case par objet de rechange, séparées par un trait lilas */
+    .swaps-row { display: grid; grid-template-columns: repeat(6, 76px); gap: 12px 10px; justify-content: center;
+                 align-items: start; margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--lilac-strong); }
+    .swaps-title { grid-column: 1 / -1; font-size: .75rem; font-weight: 700; text-transform: uppercase;
+                   letter-spacing: .08em; color: var(--lilac); }
     .doll-gap { display: grid; place-items: center; color: var(--lilac); opacity: .25; }
     .save-bar { position: sticky; bottom: 12px; z-index: 5; display: flex; justify-content: flex-end; gap: 10px;
                 padding: 10px; border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-lg); }
@@ -146,6 +150,7 @@ export function allTwoHanded(mainhand: string[], get: (id: string) => Item | und
       .layout { grid-template-columns: minmax(0, 1fr); }
       .equipment { position: static; }
       .doll { grid-template-columns: repeat(3, minmax(0, 100px)); gap: 10px; }
+      .swaps-row { grid-template-columns: repeat(3, 76px); }
     }
   `,
 })
@@ -172,7 +177,29 @@ export class BuildForm implements OnInit {
    *  (même règle que l'API). Arme « au choix » ou au moins une arme à une main → possible. */
   readonly twoHanded = computed(() => allTwoHanded(this.model().items.mainhand ?? [], (id) => this.items.get(id)));
 
-  /** Objets de rechange (tous emplacements), affichés à droite de l'équipement. */
+  /** Une case par swap possible, sous l'équipement. */
+  protected readonly swapSlots = Array.from({ length: SWAPS_MAX }, (_, i) => i);
+
+  swapAt(index: number): string[] {
+    const id = this.model().items.swaps?.[index];
+    return id ? [id] : [];
+  }
+
+  /** Remplit ou vide la case `index` ; les swaps restent tassés à gauche (pas de trou)
+   *  et un objet déjà présent dans une autre case y est déplacé (pas de doublon). */
+  setSwap(index: number, ids: string[]): void {
+    const swaps = [...(this.model().items.swaps ?? [])];
+    if (!ids.length) {
+      swaps.splice(index, 1);
+      this.setSwaps(swaps);
+      return;
+    }
+    const pos = Math.min(index, swaps.length);
+    swaps[pos] = ids[0];
+    this.setSwaps(swaps.filter((id, i) => id !== ids[0] || i === pos));
+  }
+
+  /** Objets de rechange (tous emplacements), affichés sous l'équipement. */
   setSwaps(ids: string[]): void {
     this.model.update((m) => {
       const items = { ...m.items };

@@ -183,7 +183,7 @@ La liste des **builds** a une barre de recherche instantanée (nom, rôle, arme,
 Un build choisit son équipement parmi les **vrais objets du jeu**, avec leur image, dans une disposition identique à l'inventaire in-game :
 tête, cape / arme, armure, main gauche / potion, bottes, bouffe. Le sélecteur propose une recherche (FR, EN ou famille, accents ignorés) et des filtres par famille (Épées, Bâtons sacrés, Plaque, Nourriture, Potions…).
 
-**Swaps** : jusqu'à 6 objets de rechange, tous emplacements (clé `swaps` de `builds.items`), affichés **à droite** de l'équipement sur le site et sur les images (MP de `/massup`, image de compo).
+**Swaps** : jusqu'à 6 objets de rechange, tous emplacements (clé `swaps` de `builds.items`), saisis dans une **rangée de 6 cases sous l'équipement** (un objet par case) et affichés en rangée d'icônes sous l'inventaire sur le site ; sur les images (MP de `/massup`, image de compo), ils restent à droite de l'équipement.
 
 Chaque case peut valoir :
 - **1 objet** imposé ;

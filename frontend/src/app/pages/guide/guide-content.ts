@@ -114,7 +114,7 @@ export const SITE: Article[] = [
   ] },
   { id: 'builds', title: 'Builds', paragraphs: [
     'Chaque case d’équipement vaut un objet imposé, 2 ou 3 objets au choix, ou « au choix du joueur ».',
-    'Swaps : la case à droite de l’équipement accepte jusqu’à 6 objets de rechange (arme, cape, armure…) ; ils apparaissent aussi sur l’image du build.',
+    'Swaps : la rangée de 6 cases sous l’équipement accueille les objets de rechange (arme, cape, armure…), un par case ; ils apparaissent aussi sur l’image du build.',
     'La page d’un build a un lien à coller dans Discord et son image (la même qu’en MP avec /massup) ; le staff peut le dupliquer.',
   ] },
   { id: 'compos', title: 'Compos', paragraphs: [

@@ -8,14 +8,14 @@ import { AuthService } from '../../core/auth.service';
 import { ItemsService, normalize } from '../../core/items.service';
 import { Build, RoleInfo, hasLevel } from '../../core/models';
 import { ToastService } from '../../core/toast.service';
-import { Gear, describeGear, describeSwaps } from '../../shared/gear';
+import { Gear, GearSwaps, describeGear, describeSwaps } from '../../shared/gear';
 import { Icon } from '../../shared/icon';
 import { Pager } from '../../shared/pager';
 import { roleColor, sortByRole } from '../../shared/roles';
 
 @Component({
   selector: 'app-builds-list',
-  imports: [FormsModule, RouterLink, Gear, Icon, Pager],
+  imports: [FormsModule, RouterLink, Gear, GearSwaps, Icon, Pager],
   template: `
     <div class="page-head">
       <div>
@@ -79,12 +79,13 @@ import { roleColor, sortByRole } from '../../shared/roles';
             <h2><a class="title-link" [routerLink]="['/g', guildId(), 'builds', b.id]">{{ b.name }}</a></h2>
             @if (hasGear(b)) {
               <div class="body">
-                <app-gear [items]="b.items" layout="doll" size="small" />
+                <app-gear [items]="b.items" layout="doll" size="small" [showSwaps]="false" />
                 @if (gearNames(b); as names) {
                   <p class="gear-names muted">{{ names }}</p>
                 }
               </div>
             }
+            <app-gear-swaps class="swaps" [items]="b.items" size="small" />
             @if (b.weapon) {
               <p class="weapon"><app-icon name="info" [size]="14" /> {{ b.weapon }}</p>
             }
@@ -134,6 +135,7 @@ import { roleColor, sortByRole } from '../../shared/roles';
     .thumb { width: calc(100% + 40px); margin: -22px -20px 4px; max-height: 150px; object-fit: cover; }
     .body { display: flex; gap: 14px; align-items: flex-start; }
     .gear-names { margin: 0; font-size: .8rem; line-height: 1.55; }
+    .swaps { padding-top: 8px; border-top: 1px solid var(--lilac-soft); }
     .weapon { margin: 0; display: flex; gap: 6px; align-items: baseline; font-size: .88rem; }
     .weapon app-icon { color: var(--lilac); }
     .notes { margin: 0; white-space: pre-line; font-size: .88rem; }
@@ -168,7 +170,7 @@ export class BuildsList implements OnInit {
     if (!words.length) return this.builds();
     return this.builds().filter((b) => {
       const text = normalize(
-        [b.name, b.role, b.type_acti, b.weapon, b.notes, b.created_by_name, this.gearNames(b)].join(' '),
+        [b.name, b.role, b.type_acti, b.weapon, b.notes, b.created_by_name, this.gearNames(b), this.swapNames(b)].join(' '),
       );
       return words.every((w) => text.includes(w));
     });
@@ -231,12 +233,16 @@ export class BuildsList implements OnInit {
     return describeGear(build.items, (id) => this.items.get(id)).length > 0;
   }
 
-  /** « Épée large ou Hallebarde · Bouclier · Cape au choix » */
+  /** « Épée large ou Hallebarde · Bouclier · Cape au choix » (les swaps ont leur propre rangée d'icônes). */
   gearNames(build: Build): string {
     return describeGear(build.items, (id) => this.items.get(id))
       .map((g) => (g.free ? `${g.label} au choix` : g.items.map((i) => i.name).join(' ou ')))
-      .concat(describeSwaps(build.items, (id) => this.items.get(id)).map((i) => `swap ${i.name}`))
       .join(' · ');
+  }
+
+  /** Noms des swaps, pour la recherche. */
+  swapNames(build: Build): string {
+    return describeSwaps(build.items, (id) => this.items.get(id)).map((i) => i.name).join(' ');
   }
 
   emoji(role: string): string {
