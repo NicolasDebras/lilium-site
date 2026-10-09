@@ -85,7 +85,8 @@ describe('Gear (mini-inventaire)', () => {
     expect(cells[3].querySelector('img')?.getAttribute('alt')).toBe('Épée large');
     expect(cells[3].querySelector('.more')?.textContent).toBe('+1');
     expect(cells[8].querySelector('img')).not.toBeNull();             // bouffe en bas à droite
-    expect(cells[1].classList).toContain('empty');                    // tête non précisée
+    expect(cells[1].classList).toContain('unset');                    // tête non précisée
+    expect(cells[1].classList).not.toContain('empty');                // classe globale : étirerait la grille
   });
 });
 

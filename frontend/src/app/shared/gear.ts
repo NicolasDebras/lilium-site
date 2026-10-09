@@ -95,7 +95,7 @@ export class GearSwaps {
               <ng-container *ngTemplateOutlet="content; context: { $implicit: g }" />
             </span>
           } @else {
-            <span class="cell empty" [title]="cell?.label + ' : non précisé'"></span>
+            <span class="cell unset" [title]="cell?.label + ' : non précisé'"></span>
           }
         }
       </div>
@@ -147,7 +147,8 @@ export class GearSwaps {
     .doll.small { grid-template-columns: repeat(3, 40px); gap: 4px; padding: 7px; }
     .doll.small .cell { width: 40px; height: 40px; }
     .doll .blank { background: transparent; border-color: transparent; }
-    .doll .empty { background: var(--surface); border-style: dashed; border-color: var(--border); }
+    /* Pas « .empty » : la classe globale (état vide des pages) ajoute 44px de padding et étire la grille */
+    .doll .unset { background: var(--surface); border-style: dashed; border-color: var(--border); }
   `,
 })
 export class Gear {

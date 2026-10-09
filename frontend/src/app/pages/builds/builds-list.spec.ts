@@ -52,7 +52,8 @@ describe('BuildsList', () => {
     const icons = [...first.querySelectorAll<HTMLImageElement>('.doll img')].map((i) => i.alt);
     expect(icons).toEqual(['Casque de soldat', 'Épée large', 'Bouclier']);
     expect(first.querySelector('.doll img')?.getAttribute('src')).toContain('render.albiononline.com');
-    expect(first.querySelectorAll('.doll .empty').length).toBe(4);   // armure, potion, bottes, bouffe
+    expect(first.querySelectorAll('.doll .unset').length).toBe(4);   // armure, potion, bottes, bouffe
+    expect(first.querySelector('.doll .empty')).toBeNull();          // classe globale : étirerait la grille
     expect(first.querySelector('.more')?.textContent).toContain('+1');
     expect(first.querySelector('.free')).not.toBeNull();
     expect(first.querySelector('.gear-names')?.textContent).toContain("Casque de soldat ou Capuchon d'ecclésiastique");
