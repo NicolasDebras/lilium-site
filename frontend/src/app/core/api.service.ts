@@ -3,7 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import {
-  AdminOverview, Bal, BalAction, BalOperationsPage, BalPeriod, BalPlayer, BalStats, BotErrorDetail, BotErrorsPage, Build, BuildDetail, BuildInput,
+  ActivityStats, AdminOverview, Bal, BalAction, BalOperationsPage, BalPeriod, BalPlayer, BalStats, BotErrorDetail, BotErrorsPage, Build, BuildDetail, BuildInput,
   Compo, CompoInput, CompoList, MyBalHistory, PublicComposPage, RoleInfo,
 } from './models';
 
@@ -154,6 +154,10 @@ export class ApiService {
 
   deletePublicCompo(id: number): Observable<void> {
     return this.http.delete<void>(`/api/public/compos/${id}`);
+  }
+
+  adminActivity(guildId: string, period: BalPeriod): Observable<ActivityStats> {
+    return this.http.get<ActivityStats>(`${this.g(guildId)}/admin/activity`, { params: { period } });
   }
 
   // ── Admin : BAL par joueur ────────────────────────────────────────────────

@@ -286,7 +286,7 @@ export interface HBarRow { label: string; value: number; sub?: string }
     @if (rows().length) {
       <ol class="bars">
         @for (r of rows(); track r.label) {
-          <li [title]="r.label + ' : ' + full(r.value) + ' silver' + (r.sub ? ' · ' + r.sub : '')">
+          <li [title]="r.label + ' : ' + full(r.value) + ' ' + unit() + (r.sub ? ' · ' + r.sub : '')">
             <div class="name">
               <span class="label">{{ r.label }}</span>
               @if (r.sub) { <span class="sub">{{ r.sub }}</span> }
@@ -322,6 +322,8 @@ export interface HBarRow { label: string; value: number; sub?: string }
 export class HBarChart {
   readonly rows = input.required<HBarRow[]>();
   readonly empty = input('Aucune donnée sur la période.');
+  /** Unité affichée au survol (« silver » par défaut, « actis », « places »…). */
+  readonly unit = input('silver');
   protected readonly compact = compactSilver;
   protected readonly full = fullSilver;
   private readonly max = computed(() => Math.max(1, ...this.rows().map((r) => r.value)));

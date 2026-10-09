@@ -159,6 +159,8 @@ Toutes sous `/api`. `{gid}` = id du serveur Discord.
 - **Quand la guilde joue** : carte jour × heure des fins d'activité (heure de Paris) + créneau le plus actif ;
 - **Top callers** (qui lance les `/finacti`/`/paybal` : silver distribué, nb d'actis), **top gagnants** de la période, **plus grosses BAL dues** en **donut** (les 7 plus grosses + « Autres », part de la BAL due au survol, palette catégorielle `--cat-1…7` validée daltonisme), **silver par compo**.
 
+**Activité de la guilde** (`GET /admin/activity?period=`, admin, mêmes périodes) : lit `activity_log`, historique écrit par le bot à chaque fin d'acti (`/finacti`, fin libre, annulation ; vide avant la mise à jour du bot, conservé 6 mois). Tuiles actis jouées, annulées, joueurs différents, joueurs par acti, **taux de remplissage** (places prises ÷ places prévues par les compos) ; courbe des actis jouées ; **rôles qui manquent le plus** (places vides, lus par rôle de base) ; joueurs les plus présents (pseudo `/register`), callers, compos les plus jouées ; carte jour × heure. Calculs dans `api/app/activity_stats.py`.
+
 **Ma BAL** (`GET /bal/me/history?period=`, membre — uniquement ses propres données) : solde + **rang dans la guilde**, gagné / retiré / actis payées sur la période, **courbe de son solde**, gains et retraits par jour/semaine, **15 dernières opérations** (date, type, compo, montant, par qui).
 
 Calculs dans `api/app/bal_stats.py` (fonctions pures testées) ; graphiques SVG/HTML maison (`frontend/src/app/shared/charts.ts` : colonnes, courbe, barres, carte de chaleur, badge de variation), sans librairie. Palettes (lilas/orange, couleurs de rôle, rampe de la carte) validées pour le contraste et le daltonisme.

@@ -328,3 +328,20 @@ class Database:
     async def count_public_import(self, public_id: int) -> None:
         async with self._pool.acquire() as conn:
             await conn.execute("UPDATE public_compos SET imports = imports + 1 WHERE id = $1", public_id)
+
+    # ── Stats d'activité (table activity_log, écrite par le bot) ──────────────
+    async def get_activity_log(self, guild_id: int, since) -> list[dict]:
+        async with self._pool.acquire() as conn:
+            rows = await conn.fetch("""
+                SELECT ended_at, template, creator_id, slots, capacity, outcome
+                FROM activity_log WHERE guild_id = $1 AND ended_at >= $2 ORDER BY ended_at
+            """, guild_id, since)
+        return [{**dict(r), "slots": _jloads(r["slots"]) or {}, "capacity": _jloads(r["capacity"]) or {}} for r in rows]
+
+    async def get_player_names(self, guild_id: int) -> dict[str, str]:
+        """{id Discord: pseudo IG} des profils /register du serveur."""
+        async with self._pool.acquire() as conn:
+            rows = await conn.fetch(
+                "SELECT user_id, ig_name FROM player_profiles WHERE guild_id = $1 AND ig_name <> ''", guild_id
+            )
+        return {str(r["user_id"]): r["ig_name"] for r in rows}

@@ -221,6 +221,21 @@ export interface PublicComposPage {
   page_size: number;
 }
 
+/** GET /admin/activity?period= — stats d'activité (historique activity_log du bot). */
+export interface ActivityStats {
+  period: BalPeriod;
+  days: number;
+  start: string;
+  bucket: 'day' | 'week';
+  totals: { activities: number; cancelled: number; players: number; avg_players: number; fill_rate: number | null };
+  timeline: { start: string; finacti: number; fin: number; 'annulée': number }[];
+  heatmap: number[][];
+  top_players: { name: string; count: number }[];
+  top_callers: { name: string; count: number }[];
+  top_templates: { name: string; count: number }[];
+  missing_roles: { name: string; count: number }[];
+}
+
 /** GET /admin/bal/players?q= — un joueur de la BAL du serveur. */
 export interface BalPlayer {
   uid: string;

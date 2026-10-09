@@ -10,6 +10,7 @@ from app.bal_stats import (
     BAL_ACTIONS, bal_operation, bal_operations_csv, compute_bal_stats, fetch_since, guild_operations_csv,
     my_bal_history, search_players,
 )
+from app.activity_stats import compute_activity_stats
 from app.constants import ROLES
 from app.permissions import require_admin, require_member
 
@@ -129,6 +130,18 @@ async def admin_guild_operations_csv(guild_id: int, request: Request, period: Pe
     since = fetch_since(period, datetime.now(timezone.utc), with_previous=False)
     events = await request.app.state.db.get_bal_events(guild_id, since)
     return _csv_response(guild_operations_csv(events), f"bal-guilde-{period}.csv")
+
+
+@router.get("/admin/activity")
+async def admin_activity(guild_id: int, request: Request, period: Period = "30d",
+                         user: dict = Depends(require_admin)):
+    """Stats d'activité : actis par jour, remplissage, rôles qui manquent, joueurs et callers les plus présents."""
+    db = request.app.state.db
+    now = datetime.now(timezone.utc)
+    rows, names = await asyncio.gather(
+        db.get_activity_log(guild_id, fetch_since(period, now, with_previous=False)), db.get_player_names(guild_id)
+    )
+    return compute_activity_stats(rows, names, period, now)
 
 
 def _error_row(row: dict) -> dict:

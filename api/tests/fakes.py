@@ -150,6 +150,13 @@ class FakeDB:
     async def count_public_import(self, public_id):
         self.public[public_id]["imports"] += 1
 
+    async def get_activity_log(self, guild_id, since):
+        self.activity_since = since
+        return [r for r in getattr(self, "activity", []) if r["guild_id"] == guild_id and r["ended_at"] >= since]
+
+    async def get_player_names(self, guild_id):
+        return {str(u): f"Joueur{u}" for g, u in self.profiles if g == guild_id}
+
     async def get_bal_players(self, guild_id):
         uids = {r["uid"] for r in self.bal_ops if r["guild_id"] == guild_id}
         uids |= {str(u) for (g, u) in self.bal if g == guild_id}
