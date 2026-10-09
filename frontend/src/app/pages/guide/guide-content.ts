@@ -114,6 +114,7 @@ export const SITE: Article[] = [
   ] },
   { id: 'builds', title: 'Builds', paragraphs: [
     'Chaque case d’équipement vaut un objet imposé, 2 ou 3 objets au choix, ou « au choix du joueur ».',
+    'Chaque objet choisi a son tier minimum (T6, T7, T8 ou libre) et son enchantement (.0 à .4, .3 pour la bouffe et les potions), réglables dans la liste « Sélection » du sélecteur. C’est un minimum : un équivalent convient (8.1 = 7.2 = 6.3). Une pastille « 8.1 » s’affiche sur l’icône, et le MP de /massup le rappelle.',
     'Swaps : la rangée de 6 cases sous l’équipement accueille les objets de rechange (arme, cape, armure…), un par case ; ils apparaissent aussi sur l’image du build.',
     'La page d’un build a un lien à coller dans Discord et son image (la même qu’en MP avec /massup) ; le staff peut le dupliquer.',
   ] },

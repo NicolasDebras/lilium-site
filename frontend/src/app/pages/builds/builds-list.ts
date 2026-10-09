@@ -8,7 +8,7 @@ import { AuthService } from '../../core/auth.service';
 import { ItemsService, normalize } from '../../core/items.service';
 import { Build, RoleInfo, hasLevel } from '../../core/models';
 import { ToastService } from '../../core/toast.service';
-import { Gear, GearSwaps, describeGear, describeSwaps } from '../../shared/gear';
+import { Gear, GearSwaps, choiceName, describeGear, describeSwaps } from '../../shared/gear';
 import { Icon } from '../../shared/icon';
 import { Pager } from '../../shared/pager';
 import { roleColor, sortByRole } from '../../shared/roles';
@@ -233,10 +233,10 @@ export class BuildsList implements OnInit {
     return describeGear(build.items, (id) => this.items.get(id)).length > 0;
   }
 
-  /** « Épée large ou Hallebarde · Bouclier · Cape au choix » (les swaps ont leur propre rangée d'icônes). */
+  /** « Épée large 8.1 ou Hallebarde · Bouclier · Cape au choix » (les swaps ont leur propre rangée d'icônes). */
   gearNames(build: Build): string {
     return describeGear(build.items, (id) => this.items.get(id))
-      .map((g) => (g.free ? `${g.label} au choix` : g.items.map((i) => i.name).join(' ou ')))
+      .map((g) => (g.free ? `${g.label} au choix` : g.items.map(choiceName).join(' ou ')))
       .join(' · ');
   }
 

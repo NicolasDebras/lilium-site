@@ -4,7 +4,9 @@ bottes, capes, bouffe, potions), généré depuis les dumps officiels du jeu :
     https://github.com/ao-data/ao-bin-dumps  (items.json + formatted/items.json)
 
 Une entrée par *type* d'objet, tous tiers confondus (« Épée large », pas
-« Épée large du sage ») : un build décrit quoi porter, le tier dépend du joueur.
+« Épée large du sage »). Dans un build, chaque choix peut imposer un tier minimum
+et un enchantement au format du jeu : « T8_MAIN_SWORD@1 » (8.1), « T7_MAIN_SWORD »
+(7.0) ; l'id nu « MAIN_SWORD » (ancien format) = tier libre.
 Le fichier généré est versionné (app/data/items.json) ; pour le régénérer
 après un patch du jeu :  python -m scripts.update_items
 """
@@ -172,6 +174,47 @@ class InvalidItems(ValueError):
     pass
 
 
+# Tier + enchantement d'un choix : « T8_MAIN_SWORD@1 ». Aucun id de base ne commence par « T<n>_ ».
+_CHOICE = re.compile(r"^T([1-8])_([A-Z0-9_]+?)(?:@([1-4]))?$")
+BUILD_TIERS = (6, 7, 8)
+
+
+def parse_choice(value: str) -> tuple[str, int | None, int]:
+    """« T8_MAIN_SWORD@1 » → ("MAIN_SWORD", 8, 1) ; « MAIN_SWORD » → ("MAIN_SWORD", None, 0)."""
+    match = _CHOICE.match(value)
+    if not match:
+        return value, None, 0
+    return match.group(2), int(match.group(1)), int(match.group(3) or 0)
+
+
+def allowed_tiers(item: dict) -> list[int]:
+    return [t for t in BUILD_TIERS if t in item.get("tiers", [])]
+
+
+def max_enchant(item: dict) -> int:
+    """Équipement : .0 à .4 ; bouffe et potions : .0 à .3."""
+    return 3 if item["slot"] in ("food", "potion") else 4
+
+
+def _check_choice(choice: str, catalog: dict[str, dict]) -> dict:
+    """Objet du catalogue désigné par le choix ; refuse un tier ou un enchantement impossible."""
+    base, tier, enchant = parse_choice(choice)
+    item = catalog.get(base)
+    if item is None:
+        raise InvalidItems(f"Objet inconnu : {choice}")
+    if tier is not None and tier not in allowed_tiers(item):
+        raise InvalidItems(f"« {item['name']} » ne se choisit pas en T{tier} (T6, T7 ou T8 selon l'objet).")
+    if enchant > max_enchant(item):
+        raise InvalidItems(f"« {item['name']} » : enchantement .{max_enchant(item)} maximum.")
+    return item
+
+
+def _no_duplicate(choices: list[str]) -> None:
+    bases = [parse_choice(c)[0] for c in choices]
+    if len(set(bases)) != len(bases):
+        raise InvalidItems("Un même objet ne peut être proposé qu'une fois (un seul tier par objet).")
+
+
 def _choices(value) -> list[str]:
     """Une case = une chaîne (ancien format) ou une liste de choix → liste propre, sans doublon."""
     raw = [value] if isinstance(value, str) else list(value or [])
@@ -191,11 +234,12 @@ def normalize_items(items: dict | None) -> dict[str, list[str]]:
 def validate_build_items(items: dict, catalog: dict[str, dict] | None = None) -> dict[str, list[str]]:
     """Nettoie l'équipement d'un build et refuse l'incohérent.
 
-    Chaque case vaut 1 à 3 objets au choix (["2H_HOLYSTAFF", "2H_HOLYSTAFF_HELL"]),
+    Chaque case vaut 1 à 3 objets au choix (["T8_2H_HOLYSTAFF@1", "2H_HOLYSTAFF_HELL"]),
     ou ["*"] = au choix du joueur. L'ancien format {slot: "ID"} est accepté.
     Refusé : emplacement ou objet inconnu, objet au mauvais endroit, plus de 3
-    choix, "*" mélangé à des objets, main gauche alors que toutes les armes
-    proposées sont à deux mains.
+    choix, "*" mélangé à des objets, même objet deux fois, tier hors T6–T8 (ou
+    inexistant pour l'objet), enchantement trop haut, main gauche alors que
+    toutes les armes proposées sont à deux mains.
     """
     catalog = items_by_id() if catalog is None else catalog
     cleaned: dict[str, list[str]] = {}
@@ -215,10 +259,9 @@ def validate_build_items(items: dict, catalog: dict[str, dict] | None = None) ->
             continue
         if len(choices) > MAX_CHOICES:
             raise InvalidItems(f"{MAX_CHOICES} choix maximum par case.")
-        for item_id in choices:
-            item = catalog.get(item_id)
-            if item is None:
-                raise InvalidItems(f"Objet inconnu : {item_id}")
+        _no_duplicate(choices)
+        for choice in choices:
+            item = _check_choice(choice, catalog)
             if item["slot"] != slot:
                 raise InvalidItems(f"« {item['name']} » ne se porte pas à cet emplacement.")
         cleaned[slot] = choices
@@ -240,13 +283,13 @@ def _validate_swaps(choices: list[str], catalog: dict[str, dict]) -> list[str]:
         raise InvalidItems("Un swap doit être un objet précis.")
     if len(choices) > SWAPS_MAX:
         raise InvalidItems(f"{SWAPS_MAX} swaps maximum.")
-    unknown = [i for i in choices if i not in catalog]
-    if unknown:
-        raise InvalidItems(f"Objet inconnu : {unknown[0]}")
+    _no_duplicate(choices)
+    for choice in choices:
+        _check_choice(choice, catalog)
     return choices
 
 
 def all_two_handed(mainhand: list[str], catalog: dict[str, dict]) -> bool:
     """Vrai si la case arme propose au moins une arme et qu'elles sont TOUTES à deux mains."""
-    weapons = [catalog.get(i) for i in mainhand if i != FREE_CHOICE]
+    weapons = [catalog.get(parse_choice(i)[0]) for i in mainhand if i != FREE_CHOICE]
     return bool(weapons) and len(weapons) == len(mainhand) and all(w and w["two_handed"] for w in weapons)

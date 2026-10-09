@@ -7,7 +7,7 @@ import { AuthService } from '../../core/auth.service';
 import { ItemsService } from '../../core/items.service';
 import { BuildDetail, hasLevel } from '../../core/models';
 import { ToastService } from '../../core/toast.service';
-import { Gear, describeGear } from '../../shared/gear';
+import { Gear, choiceName, describeGear, describeSwaps } from '../../shared/gear';
 import { Icon } from '../../shared/icon';
 import { roleColor } from '../../shared/roles';
 
@@ -45,6 +45,9 @@ import { roleColor } from '../../shared/roles';
           <app-gear [items]="b.items" layout="doll" />
           @if (gearNames(); as names) {
             <p class="muted names">{{ names }}</p>
+          }
+          @if (hasTiers()) {
+            <p class="tiers-hint faint">Tiers = minimum : un équivalent convient (8.1 = 7.2 = 6.3).</p>
           }
           @if (b.weapon) {
             <p class="weapon"><app-icon name="info" [size]="14" /> {{ b.weapon }}</p>
@@ -86,6 +89,7 @@ import { roleColor } from '../../shared/roles';
     .layout { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 16px; align-items: start; }
     .gear-card { display: grid; gap: 12px; justify-items: start; }
     .names { margin: 0; font-size: .85rem; }
+    .tiers-hint { margin: -6px 0 0; font-size: .78rem; }
     .weapon { margin: 0; display: flex; align-items: center; gap: 6px; }
     .notes { margin: 0; white-space: pre-wrap; color: var(--text-muted); }
     .used h3, .image-card h3 { margin: 0 0 8px; font-size: 1rem; }
@@ -116,13 +120,21 @@ export class BuildDetailPage implements OnInit {
   protected readonly imageUrl = computed(() => this.api.buildImageUrl(this.guildId(), Number(this.buildId())));
   protected readonly fileName = computed(() => `build-${(this.build()?.name ?? 'lilium').replace(/[^\p{L}\p{N}-]+/gu, '-')}.png`);
 
-  /** « Épée large ou Hallebarde · Bouclier · Cape au choix » */
+  /** « Épée large 8.1 ou Hallebarde · Bouclier · Cape au choix » */
   protected readonly gearNames = computed(() => {
     const b = this.build();
     if (!b) return '';
     return describeGear(b.items, (id) => this.items.get(id))
-      .map((g) => (g.free ? `${g.label} au choix` : g.items.map((i) => i.name).join(' ou ')))
+      .map((g) => (g.free ? `${g.label} au choix` : g.items.map(choiceName).join(' ou ')))
       .join(' · ');
+  });
+
+  /** Au moins un équipement (hors bouffe/potion) avec un tier imposé → rappel « minimum ou équivalent ». */
+  protected readonly hasTiers = computed(() => {
+    const b = this.build();
+    const get = (id: string) => this.items.get(id);
+    return !!b && [...describeGear(b.items, get).flatMap((g) => g.items), ...describeSwaps(b.items, get)]
+      .some((i) => i.tier != null && i.slot !== 'food' && i.slot !== 'potion');
   });
 
   async ngOnInit(): Promise<void> {

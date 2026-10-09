@@ -10,7 +10,7 @@ import { BuildsList } from './builds-list';
 
 const BUILDS: Build[] = [
   { id: 1, name: 'Tank Masse', role: 'TANK', type_acti: 'PVP', weapon: '1H Masse', notes: '', image: '',
-    items: { mainhand: ['MAIN_SWORD'], offhand: ['OFF_SHIELD'], head: ['HEAD_PLATE_SET1', 'HEAD_CLOTH_SET2'], cape: ['*'],
+    items: { mainhand: ['T8_MAIN_SWORD@1'], offhand: ['OFF_SHIELD'], head: ['HEAD_PLATE_SET1', 'HEAD_CLOTH_SET2'], cape: ['*'],
              swaps: ['MEAL_STEW'] },
     created_by_name: 'Lily' },
   { id: 2, name: 'Heal Sancti', role: 'HEAL', type_acti: 'PVE', weapon: '', notes: 'Note', image: '',
@@ -58,6 +58,8 @@ describe('BuildsList', () => {
     expect(first.querySelector('.free')).not.toBeNull();
     expect(first.querySelector('.gear-names')?.textContent).toContain("Casque de soldat ou Capuchon d'ecclésiastique");
     expect(first.querySelector('.gear-names')?.textContent).toContain('Cape au choix');
+    expect(first.querySelector('.gear-names')?.textContent).toContain('Épée large 8.1');   // tier imposé
+    expect(first.querySelector('.doll app-tier-badge:not(.hidden)')?.textContent?.trim()).toBe('8.1');
     expect(second.querySelector('.doll')).toBeNull();   // build sans équipement : pas d'inventaire
   });
 

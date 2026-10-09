@@ -39,6 +39,12 @@
   --heat-3: #9373e8;
   --heat-4: #b697f6;
   --heat-5: #dcc6ff;
+  /* Enchantement des objets (bord de la pastille « 8.1 »), couleurs du jeu : .0 neutre, .1 vert, .2 bleu, .3 violet, .4 or */
+  --ench-0: #6f6886;
+  --ench-1: #5cc970;
+  --ench-2: #58a0ff;
+  --ench-3: #b878ff;
+  --ench-4: #ffc850;
   /* Catégorielle (camembert) — ordre fixe, validée sur --surface en mode sombre :
      daltonisme ΔE ≥ 8,4 entre voisines, vision normale ≥ 19,3, contraste ≥ 3:1.
      7 teintes max : au-delà, « Autres » en --text-faint. */

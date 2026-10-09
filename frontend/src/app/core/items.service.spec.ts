@@ -62,6 +62,16 @@ describe('ItemsService', () => {
     expect(service.get('INCONNU')).toBeUndefined();
     expect(service.get(undefined)).toBeUndefined();
   });
+
+  it('choix avec tier : objet du catalogue + tier, enchantement et icône de ce tier', async () => {
+    const p = service.load();
+    http.expectOne('/api/items').flush(TEST_ITEMS);
+    await p;
+    const sword = service.get('T7_MAIN_SWORD@2');
+    expect(sword).toMatchObject({ id: 'MAIN_SWORD', name: 'Épée large', tier: 7, enchant: 2, icon: 'T7_MAIN_SWORD@2' });
+    expect(service.get('MAIN_SWORD')?.tier).toBeUndefined();          // tier libre
+    expect(service.get('T8_INCONNU@1')).toBeUndefined();
+  });
 });
 
 describe('useFallbackIcon', () => {

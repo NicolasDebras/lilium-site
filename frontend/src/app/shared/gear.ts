@@ -3,6 +3,8 @@ import { Component, computed, inject, input } from '@angular/core';
 
 import { ItemsService, itemIconUrl, useFallbackIcon } from '../core/items.service';
 import { BuildItems, FREE_CHOICE, Item, SLOTS, SLOT_LABELS, Slot } from '../core/models';
+import { tierLabel, tierText } from '../core/tiers';
+import { TierBadge } from './tier-badge';
 
 export interface GearSlot {
   slot: Slot;
@@ -31,8 +33,19 @@ function describeSlot(items: BuildItems | undefined, slot: Slot, get: (id: strin
   return free || found.length ? { slot, label: SLOT_LABELS[slot], items: found, free } : null;
 }
 
+/** « Épée large 8.1 » (nom seul si le tier est libre). */
+export function choiceName(item: Item): string {
+  return item.tier == null ? item.name : `${item.name} ${tierLabel(item.tier, item.enchant ?? 0)}`;
+}
+
+/** « Épée large 8.1 minimum ou équivalent (7.2, 6.3) » : pour le survol et la page détail. */
+export function choiceDetail(item: Item): string {
+  const tier = tierText(item);
+  return tier ? `${item.name} ${tier}` : item.name;
+}
+
 export function gearTitle(g: GearSlot): string {
-  return `${g.label} : ${g.free ? 'au choix du joueur' : g.items.map((i) => i.name).join(' ou ')}`;
+  return `${g.label} : ${g.free ? 'au choix du joueur' : g.items.map(choiceDetail).join(' ou ')}`;
 }
 
 /** Swaps d'un build : libellé puis rangée d'icônes (rien si aucun swap). */
@@ -44,8 +57,9 @@ export function gearTitle(g: GearSlot): string {
       <div class="swaps" [class.small]="size() === 'small'" aria-label="Swaps">
         <span class="swaps-label">Swaps</span>
         @for (s of swaps(); track s.id) {
-          <span class="cell" [title]="'Swap : ' + s.name">
+          <span class="cell" [title]="'Swap : ' + detail(s)">
             <img [src]="icon(s)" [alt]="s.name" loading="lazy" (error)="fallback($event)" />
+            <app-tier-badge [item]="s" />
           </span>
         }
       </div>
@@ -57,17 +71,22 @@ export function gearTitle(g: GearSlot): string {
     .swaps { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
     .swaps-label { font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em;
                    color: var(--lilac); margin-right: 6px; }
-    .cell { width: 48px; height: 48px; border-radius: 9px; background: linear-gradient(180deg, var(--surface-3), var(--surface-2));
+    .cell { position: relative; width: 48px; height: 48px; border-radius: 9px; background: linear-gradient(180deg, var(--surface-3), var(--surface-2));
             border: 1px solid var(--lilac-soft); display: grid; place-items: center; }
     .small .cell { width: 32px; height: 32px; border-radius: 7px; }
     img { width: 100%; height: 100%; }
   `,
+  imports: [TierBadge],
 })
 export class GearSwaps {
   private readonly catalog = inject(ItemsService);
   readonly items = input<BuildItems | undefined>();
   readonly size = input<'normal' | 'small'>('normal');
   readonly swaps = computed(() => describeSwaps(this.items(), (id) => this.catalog.get(id)));
+
+  protected detail(item: Item): string {
+    return choiceDetail(item);
+  }
 
   protected icon(item: Item): string {
     return itemIconUrl(item.icon);
@@ -118,13 +137,14 @@ export class GearSwaps {
         <span class="free">?</span>
       } @else {
         <img [src]="icon(g.items[0])" [alt]="g.items[0].name" loading="lazy" (error)="fallback($event)" />
+        <app-tier-badge [item]="g.items[0]" />
         @if (g.items.length > 1) {
           <span class="more">+{{ g.items.length - 1 }}</span>
         }
       }
     </ng-template>
   `,
-  imports: [NgTemplateOutlet, GearSwaps],
+  imports: [NgTemplateOutlet, GearSwaps, TierBadge],
   styles: `
     .with-swaps { display: flex; align-items: flex-start; gap: 10px; flex-wrap: wrap; }
     .with-swaps.stacked { flex-direction: column; flex-wrap: nowrap; }

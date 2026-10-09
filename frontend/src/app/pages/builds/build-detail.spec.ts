@@ -5,6 +5,7 @@ import { Router, provideRouter } from '@angular/router';
 
 import { AuthService } from '../../core/auth.service';
 import { BuildDetail, Level } from '../../core/models';
+import { TEST_ITEMS } from '../../../testing/items';
 import { BuildDetailPage } from './build-detail';
 
 async function settle(fixture: { whenStable(): Promise<unknown>; detectChanges(): void }) {
@@ -19,7 +20,7 @@ const BUILD: BuildDetail = {
 };
 
 describe('BuildDetailPage (build partageable)', () => {
-  async function render(level: Level) {
+  async function render(level: Level, build: BuildDetail = BUILD) {
     TestBed.configureTestingModule({
       imports: [BuildDetailPage],
       providers: [
@@ -32,8 +33,8 @@ describe('BuildDetailPage (build partageable)', () => {
     fixture.componentRef.setInput('buildId', '7');
     fixture.detectChanges();
     const http = TestBed.inject(HttpTestingController);
-    http.match('/api/items').forEach((r) => r.flush([]));
-    http.expectOne('/api/guilds/111/builds/7').flush(BUILD);
+    http.match('/api/items').forEach((r) => r.flush(TEST_ITEMS));
+    http.expectOne('/api/guilds/111/builds/7').flush(build);
     await settle(fixture);
     return { fixture, http, el: fixture.nativeElement as HTMLElement };
   }
@@ -44,6 +45,15 @@ describe('BuildDetailPage (build partageable)', () => {
     expect([...el.querySelectorAll('.used .badge')].map((b) => b.textContent)).toEqual(['ZvZ', 'Statik']);
     expect(el.querySelector('img.preview')?.getAttribute('src')).toBe('/api/guilds/111/builds/7/image.png');
     expect(el.querySelector('a[download]')?.getAttribute('download')).toBe('build-Tank-Masse.png');
+  });
+
+  it('tiers imposés : noms « 8.1 » et rappel « minimum ou équivalent » ; rien sans tier', async () => {
+    const { el } = await render('member', { ...BUILD, items: { mainhand: ['T8_MAIN_SWORD@1'], food: ['T8_MEAL_STEW'] } });
+    expect(el.querySelector('.names')?.textContent).toContain('Épée large 8.1');
+    expect(el.querySelector('.tiers-hint')?.textContent).toContain('8.1 = 7.2 = 6.3');
+    TestBed.resetTestingModule();
+    const plain = await render('member', { ...BUILD, items: { mainhand: ['MAIN_SWORD'], food: ['T8_MEAL_STEW@1'] } });
+    expect(plain.el.querySelector('.tiers-hint')).toBeNull();   // bouffe seule : pas d'équivalence
   });
 
   it('un membre ne voit ni Dupliquer ni Modifier', async () => {

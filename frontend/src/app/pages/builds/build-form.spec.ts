@@ -73,6 +73,21 @@ describe('BuildForm — équipement', () => {
     expect(cmp['model']().items).toEqual({});
   });
 
+  it('swaps : le même objet à un autre tier compte comme un doublon', async () => {
+    const { cmp } = await render();
+    cmp.setSwap(0, ['T8_MAIN_SWORD@1']);
+    cmp.setSwap(1, ['HEAD_PLATE_SET1']);
+    cmp.setSwap(1, ['T7_MAIN_SWORD']);       // Épée large déjà en case 1 → déplacée en case 2 avec ce tier
+    expect(cmp['model']().items.swaps).toEqual(['T7_MAIN_SWORD']);
+  });
+
+  it('deux mains reconnu sur une arme avec tier', async () => {
+    const { cmp } = await render();
+    cmp.setItem('offhand', ['T8_OFF_SHIELD']);
+    cmp.setItem('mainhand', ['T8_2H_HOLYSTAFF@2']);
+    expect(cmp['model']().items).toEqual({ mainhand: ['T8_2H_HOLYSTAFF@2'] });
+  });
+
   it('armes toutes à deux mains : la main gauche est vidée et bloquée', async () => {
     const { fixture, cmp, el } = await render();
     cmp.setItem('offhand', ['OFF_SHIELD']);

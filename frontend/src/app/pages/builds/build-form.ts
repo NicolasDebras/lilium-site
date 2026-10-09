@@ -7,6 +7,7 @@ import { ApiService, errorMessage } from '../../core/api.service';
 import { ToastService } from '../../core/toast.service';
 import { ItemsService } from '../../core/items.service';
 import { BuildInput, FREE_CHOICE, Item, RoleInfo, SWAPS_MAX, Slot } from '../../core/models';
+import { parseChoice } from '../../core/tiers';
 import { PAPER_DOLL } from '../../shared/gear';
 import { Icon } from '../../shared/icon';
 import { ItemPicker } from '../../shared/item-picker';
@@ -37,7 +38,8 @@ export function allTwoHanded(mainhand: string[], get: (id: string) => Item | und
     <div class="page-head">
       <div>
         <h1>{{ buildId() ? 'Modifier le build' : 'Nouveau build' }}</h1>
-        <p class="subtitle">Choisis jusqu'à 3 objets par case, ou laisse le joueur libre (« au choix »).</p>
+        <p class="subtitle">Choisis jusqu'à 3 objets par case, ou laisse le joueur libre (« au choix »).
+          Chaque objet a son tier minimum (T6 à T8) et son enchantement : un équivalent convient (8.1 = 7.2 = 6.3).</p>
       </div>
     </div>
 
@@ -102,7 +104,7 @@ export function allTwoHanded(mainhand: string[], get: (id: string) => Item | und
           <div class="field">
             <label for="weapon">Précisions sur le stuff (optionnel)</label>
             <input id="weapon" name="weapon" class="input" maxlength="200"
-                   placeholder="ex : tier 8.1 minimum, bouffe, potion, monture…"
+                   placeholder="ex : monture, spé minimum, consignes de stuff…"
                    [(ngModel)]="model().weapon" />
           </div>
 
@@ -196,7 +198,8 @@ export class BuildForm implements OnInit {
     }
     const pos = Math.min(index, swaps.length);
     swaps[pos] = ids[0];
-    this.setSwaps(swaps.filter((id, i) => id !== ids[0] || i === pos));
+    const base = parseChoice(ids[0]).base;   // même objet à un autre tier = doublon
+    this.setSwaps(swaps.filter((id, i) => parseChoice(id).base !== base || i === pos));
   }
 
   /** Objets de rechange (tous emplacements), affichés sous l'équipement. */

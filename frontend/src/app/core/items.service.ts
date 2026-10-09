@@ -3,6 +3,7 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
 import { Item, Slot } from './models';
+import { parseChoice } from './tiers';
 
 /** Image officielle d'un objet (CDN Albion Online). */
 export function itemIconUrl(icon: string, size = 64): string {
@@ -61,7 +62,12 @@ export class ItemsService {
     return this.pending;
   }
 
+  /** Objet d'un choix de build. « T8_MAIN_SWORD@1 » → l'Épée large avec tier 8, enchantement 1 et
+   *  l'icône de ce tier ; l'`id` reste celui du catalogue (emplacement, deux mains, sélection…). */
   get(id: string | undefined | null): Item | undefined {
-    return id ? this.byId().get(id) : undefined;
+    if (!id) return undefined;
+    const { base, tier, enchant } = parseChoice(id);
+    const item = this.byId().get(base);
+    return item && tier !== null ? { ...item, icon: id, tier, enchant } : item;
   }
 }

@@ -1,5 +1,7 @@
 /* Composants visuels partagés : icônes, logo, rôles, barre de composition, mini-inventaire,
    sélecteur de période, notifications. */
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
 import { TEST_ITEMS } from '../../testing/items';
@@ -87,6 +89,26 @@ describe('Gear (mini-inventaire)', () => {
     expect(cells[8].querySelector('img')).not.toBeNull();             // bouffe en bas à droite
     expect(cells[1].classList).toContain('unset');                    // tête non précisée
     expect(cells[1].classList).not.toContain('empty');                // classe globale : étirerait la grille
+  });
+
+  it('tier imposé : icône du tier, pastille « 8.1 » colorée, survol « minimum ou équivalent »', async () => {
+    TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting()] });
+    const load = TestBed.inject(ItemsService).load();
+    TestBed.inject(HttpTestingController).expectOne('/api/items').flush(TEST_ITEMS);
+    await load;
+    const fixture = TestBed.createComponent(Gear);
+    fixture.componentRef.setInput('items', { mainhand: ['T8_MAIN_SWORD@1'], head: ['HEAD_PLATE_SET1'], swaps: ['T7_OFF_SHIELD@3'] });
+    fixture.componentRef.setInput('layout', 'doll');
+    fixture.detectChanges();
+    const el = fixture.nativeElement as HTMLElement;
+    const weapon = el.querySelectorAll('.doll .cell')[3];
+    expect(weapon.querySelector('img')?.getAttribute('src')).toContain('T8_MAIN_SWORD@1.png');
+    const badge = weapon.querySelector('app-tier-badge')!;
+    expect(badge.textContent?.trim()).toBe('8.1');
+    expect(badge.getAttribute('data-enchant')).toBe('1');
+    expect(weapon.getAttribute('title')).toBe('Arme : Épée large 8.1 minimum ou équivalent (7.2, 6.3)');
+    expect(el.querySelectorAll('.doll .cell')[1].querySelector('app-tier-badge')?.classList).toContain('hidden');   // tier libre
+    expect(el.querySelector('app-gear-swaps app-tier-badge')?.textContent?.trim()).toBe('7.3');
   });
 });
 

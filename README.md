@@ -185,6 +185,8 @@ La liste des **builds** a une barre de recherche instantanée (nom, rôle, arme,
 Un build choisit son équipement parmi les **vrais objets du jeu**, avec leur image, dans une disposition identique à l'inventaire in-game :
 tête, cape / arme, armure, main gauche / potion, bottes, bouffe. Le sélecteur propose une recherche (FR, EN ou famille, accents ignorés) et des filtres par famille (Épées, Bâtons sacrés, Plaque, Nourriture, Potions…).
 
+**Tier et enchantement par objet** : chaque choix est stocké au format du jeu — `T8_MAIN_SWORD@1` = 8.1, `T7_MAIN_SWORD` = 7.0, l'id nu `MAIN_SWORD` = tier libre (ancien format, toujours valide, aucune migration). Tiers T6 à T8 parmi ceux qui existent pour l'objet, enchantement .0 à .4 (.3 pour bouffe et potions) ; un objet une seule fois par case. Réglés dans la liste « Sélection » du sélecteur (le dernier réglage s'applique aux objets cliqués ensuite, T8.0 au départ). Le tier est un **minimum** : survol « 8.1 minimum ou équivalent (7.2, 6.3) » (niveau = tier + enchantement ; pas d'équivalence pour bouffe/potions). Affichage : icône du tier (CDN Albion) + pastille « 8.1 » bordée de la couleur de l'enchantement (`--ench-0…4`), sur le site comme sur les images (bot et API) ; le MP de `/massup` rappelle l'équivalence. Validation : `catalog.py` (`parse_choice`, `_check_choice`) ; front : `core/tiers.ts`, `shared/tier-badge.ts`.
+
 **Swaps** : jusqu'à 6 objets de rechange, tous emplacements (clé `swaps` de `builds.items`), saisis dans une **rangée de 6 cases sous l'équipement** (un objet par case) et affichés en rangée d'icônes sous l'inventaire sur le site ; sur les images (MP de `/massup`, image de compo), ils restent à droite de l'équipement.
 
 Chaque case peut valoir :

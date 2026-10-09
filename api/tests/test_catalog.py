@@ -193,6 +193,49 @@ def test_validate_offhand_ok_when_weapon_is_free_or_empty(catalog):
     assert validate_build_items({"offhand": ["OFF_SHIELD"]}, catalog) == {"offhand": ["OFF_SHIELD"]}
 
 
+# ── Tier et enchantement par objet ───────────────────────────────────────────
+
+def test_parse_choice():
+    from app.catalog import parse_choice
+    assert parse_choice("T8_MAIN_SWORD@1") == ("MAIN_SWORD", 8, 1)
+    assert parse_choice("T7_2H_HOLYSTAFF_HELL") == ("2H_HOLYSTAFF_HELL", 7, 0)
+    assert parse_choice("MAIN_SWORD") == ("MAIN_SWORD", None, 0)       # ancien format : tier libre
+
+
+def test_validate_accepts_tier_and_enchant(catalog):
+    items = {"mainhand": ["T8_MAIN_SWORD@3", "2H_HOLYSTAFF"], "food": ["T6_MEAL_STEW@2"], "swaps": ["T8_OFF_SHIELD@4"]}
+    assert validate_build_items(items, catalog) == items
+
+
+def test_validate_rejects_tier_outside_t6_t8_or_missing_for_item(catalog):
+    with pytest.raises(InvalidItems, match="T4"):
+        validate_build_items({"mainhand": ["T4_MAIN_SWORD"]}, catalog)        # existe en T4 mais hors T6–T8
+    with pytest.raises(InvalidItems, match="T7"):
+        validate_build_items({"food": ["T7_MEAL_STEW"]}, catalog)             # le ragoût n'existe qu'en T6/T8
+    with pytest.raises(InvalidItems, match="T6"):
+        validate_build_items({"swaps": ["T6_MAIN_SWORD"]}, catalog)
+
+
+def test_validate_rejects_enchant_above_max(catalog):
+    with pytest.raises(InvalidItems, match=r"\.3 maximum"):
+        validate_build_items({"food": ["T8_MEAL_STEW@4"]}, catalog)           # bouffe : .3 max
+    assert validate_build_items({"mainhand": ["T8_MAIN_SWORD@4"]}, catalog)  # équipement : .4
+
+
+def test_validate_tiered_item_in_wrong_slot_or_duplicated(catalog):
+    with pytest.raises(InvalidItems, match="ne se porte pas"):
+        validate_build_items({"head": ["T8_MAIN_SWORD@1"]}, catalog)
+    with pytest.raises(InvalidItems, match="une fois"):
+        validate_build_items({"mainhand": ["T8_MAIN_SWORD@1", "MAIN_SWORD"]}, catalog)
+    with pytest.raises(InvalidItems, match="une fois"):
+        validate_build_items({"swaps": ["T8_OFF_SHIELD", "T8_OFF_SHIELD@2"]}, catalog)
+
+
+def test_validate_two_handed_with_tiered_weapons(catalog):
+    with pytest.raises(InvalidItems, match="deux mains"):
+        validate_build_items({"mainhand": ["T8_2H_HOLYSTAFF@2"], "offhand": ["T8_OFF_SHIELD"]}, catalog)
+
+
 # ── Fichier versionné ────────────────────────────────────────────────────────
 
 def test_shipped_catalog_is_complete():

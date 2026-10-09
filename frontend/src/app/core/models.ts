@@ -52,11 +52,14 @@ export interface Item {
   slot: Slot;
   name: string;
   name_en: string;
-  /** Identifiant d'objet du jeu (tier max) pour l'image du CDN Albion. */
+  /** Identifiant d'objet du jeu pour l'image du CDN Albion (tier max, ou tier imposé dans un build). */
   icon: string;
   tiers: number[];
   two_handed: boolean;
   category: string;
+  /** Dans un build seulement : tier minimum imposé (absent = libre) et enchantement (cf. core/tiers.ts). */
+  tier?: number;
+  enchant?: number;
 }
 
 /** Par case : 1 à 3 ids d'objets au choix, ou [FREE_CHOICE]. Case absente = rien de précisé. */
