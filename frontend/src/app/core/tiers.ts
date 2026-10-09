@@ -1,7 +1,7 @@
 import { Item } from './models';
 
 /** Tiers qu'un build peut imposer. */
-export const BUILD_TIERS = [6, 7, 8];
+export const BUILD_TIERS = [4, 5, 6, 7, 8];
 
 /** Un choix d'objet dans un build : id de base + tier minimum (null = libre) + enchantement. */
 export interface Choice {
@@ -43,7 +43,7 @@ export function tierLabel(tier: number, enchant: number): string {
   return `${tier}.${enchant}`;
 }
 
-/** Même puissance d'objet sur les autres tiers du build : 8.1 → [[7, 2], [6, 3]] (niveau = tier + enchantement). */
+/** Même puissance d'objet sur les autres tiers du build : 8.1 → [[7, 2], [6, 3], [5, 4]] (niveau = tier + enchantement). */
 export function equivalents(tier: number, enchant: number): [number, number][] {
   return BUILD_TIERS.filter((t) => t !== tier)
     .sort((a, b) => b - a)
@@ -51,7 +51,7 @@ export function equivalents(tier: number, enchant: number): [number, number][] {
     .filter(([, e]) => e >= 0 && e <= 4);
 }
 
-/** « 8.1 minimum ou équivalent (7.2, 6.3) » ; « 8.1 » pour un consommable ; '' si tier libre. */
+/** « 8.1 minimum ou équivalent (7.2, 6.3, 5.4) » ; « 8.1 » pour un consommable ; '' si tier libre. */
 export function tierText(item: Pick<Item, 'slot' | 'tier' | 'enchant'>): string {
   if (item.tier == null) return '';
   const label = tierLabel(item.tier, item.enchant ?? 0);

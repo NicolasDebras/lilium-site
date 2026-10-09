@@ -183,7 +183,7 @@ describe('ItemPicker', () => {
     it('changer tier puis enchantement remplace le choix ; le prochain clic reprend ce réglage', async () => {
       const { fixture, el, emitted, openPanel, clickResult } = await render('mainhand', ['T8_MAIN_SWORD']);
       await openPanel();
-      expect(options(select(el, 'tier'))).toEqual(['Tier libre', 'T6', 'T7', 'T8']);
+      expect(options(select(el, 'tier'))).toEqual(['Tier libre', 'T8', 'T7', 'T6', 'T5', 'T4']);
       await choose(fixture, select(el, 'tier'), '7');
       await choose(fixture, select(el, 'ench'), '2');
       await clickResult('Grand bâton béni');
@@ -207,10 +207,10 @@ describe('ItemPicker', () => {
       expect(emitted).toEqual([[]]);
     });
 
-    it('bouffe : seulement les tiers qui existent (T6, T8) et enchantement .3 max', async () => {
+    it('bouffe : seulement les tiers qui existent (T8, T6, T4) et enchantement .3 max', async () => {
       const { el, openPanel } = await render('food', ['T8_MEAL_STEW']);
       await openPanel();
-      expect(options(select(el, 'tier'))).toEqual(['Tier libre', 'T6', 'T8']);
+      expect(options(select(el, 'tier'))).toEqual(['Tier libre', 'T8', 'T6', 'T4']);
       expect(options(select(el, 'ench'))).toEqual(['.0', '.1', '.2', '.3']);
     });
 

@@ -11,10 +11,10 @@ describe('tiers', () => {
     expect(makeChoice('MAIN_SWORD', null, 3)).toBe('MAIN_SWORD');
   });
 
-  it('tiers T6–T8 qui existent pour l’objet ; enchantement .4 (équipement) ou .3 (consommable)', () => {
-    expect(allowedTiers({ tiers: [4, 5, 6, 7, 8] })).toEqual([6, 7, 8]);
-    expect(allowedTiers({ tiers: [2, 4, 6] })).toEqual([6]);
-    expect(allowedTiers({ tiers: [3, 5] })).toEqual([]);
+  it('tiers T4–T8 qui existent pour l’objet ; enchantement .4 (équipement) ou .3 (consommable)', () => {
+    expect(allowedTiers({ tiers: [3, 4, 5, 6, 7, 8] })).toEqual([4, 5, 6, 7, 8]);
+    expect(allowedTiers({ tiers: [2, 4, 6] })).toEqual([4, 6]);
+    expect(allowedTiers({ tiers: [1, 2, 3] })).toEqual([]);
     expect(maxEnchant({ slot: 'head' })).toBe(4);
     expect(maxEnchant({ slot: 'food' })).toBe(3);
     expect(maxEnchant({ slot: 'potion' })).toBe(3);
@@ -22,16 +22,17 @@ describe('tiers', () => {
 
   it('équivalences de puissance : niveau = tier + enchantement', () => {
     expect(tierLabel(8, 1)).toBe('8.1');
-    expect(equivalents(8, 1)).toEqual([[7, 2], [6, 3]]);
+    expect(equivalents(8, 1)).toEqual([[7, 2], [6, 3], [5, 4]]);
     expect(equivalents(8, 3)).toEqual([[7, 4]]);
-    expect(equivalents(7, 0)).toEqual([[6, 1]]);
-    expect(equivalents(6, 0)).toEqual([]);
-    expect(equivalents(6, 4)).toEqual([[8, 2], [7, 3]]);
+    expect(equivalents(7, 0)).toEqual([[6, 1], [5, 2], [4, 3]]);
+    expect(equivalents(4, 0)).toEqual([]);
+    expect(equivalents(5, 0)).toEqual([[4, 1]]);
+    expect(equivalents(6, 4)).toEqual([[8, 2], [7, 3]]);   // 5.5 n'existe pas
   });
 
   it('tierText : minimum + équivalents pour l’équipement, tier exact pour la bouffe, vide si libre', () => {
-    expect(tierText({ slot: 'mainhand', tier: 8, enchant: 1 })).toBe('8.1 minimum ou équivalent (7.2, 6.3)');
-    expect(tierText({ slot: 'head', tier: 6, enchant: 0 })).toBe('6.0 minimum');
+    expect(tierText({ slot: 'mainhand', tier: 8, enchant: 1 })).toBe('8.1 minimum ou équivalent (7.2, 6.3, 5.4)');
+    expect(tierText({ slot: 'head', tier: 4, enchant: 0 })).toBe('4.0 minimum');
     expect(tierText({ slot: 'food', tier: 8, enchant: 2 })).toBe('8.2');
     expect(tierText({ slot: 'mainhand' })).toBe('');
   });

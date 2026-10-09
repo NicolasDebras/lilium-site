@@ -14,7 +14,7 @@ export const lastPick = signal<{ tier: number | null; enchant: number }>({ tier:
  * Case d'équipement cliquable (comme l'inventaire du jeu). Une case vaut :
  * rien, 1 à 3 objets au choix, ou « au choix du joueur ». Le clic ouvre un
  * sélecteur avec recherche, familles et images ; cliquer un objet l'ajoute ou
- * le retire de la sélection. Chaque objet choisi a son tier minimum (T6–T8,
+ * le retire de la sélection. Chaque objet choisi a son tier minimum (T4–T8,
  * ou libre) et son enchantement, réglables dans la liste « Sélection ».
  */
 @Component({
@@ -219,8 +219,9 @@ export class ItemPicker {
     return this.value().some((id) => parseChoice(id).base === item.id);
   }
 
+  /** Du plus haut au plus bas : T8 en premier. */
   protected tiersOf(item: Item): number[] {
-    return allowedTiers(item);
+    return [...allowedTiers(item)].reverse();
   }
 
   protected enchantsOf(item: Item): number[] {

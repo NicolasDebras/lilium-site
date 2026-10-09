@@ -38,7 +38,7 @@ export function choiceName(item: Item): string {
   return item.tier == null ? item.name : `${item.name} ${tierLabel(item.tier, item.enchant ?? 0)}`;
 }
 
-/** « Épée large 8.1 minimum ou équivalent (7.2, 6.3) » : pour le survol et la page détail. */
+/** « Épée large 8.1 minimum ou équivalent (7.2, 6.3, 5.4) » : pour le survol et la page détail. */
 export function choiceDetail(item: Item): string {
   const tier = tierText(item);
   return tier ? `${item.name} ${tier}` : item.name;

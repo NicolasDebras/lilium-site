@@ -205,11 +205,14 @@ def test_parse_choice():
 def test_validate_accepts_tier_and_enchant(catalog):
     items = {"mainhand": ["T8_MAIN_SWORD@3", "2H_HOLYSTAFF"], "food": ["T6_MEAL_STEW@2"], "swaps": ["T8_OFF_SHIELD@4"]}
     assert validate_build_items(items, catalog) == items
+    assert validate_build_items({"mainhand": ["T4_MAIN_SWORD@2"]}, catalog)   # T4 et T5 acceptés aussi
 
 
 def test_validate_rejects_tier_outside_t6_t8_or_missing_for_item(catalog):
-    with pytest.raises(InvalidItems, match="T4"):
-        validate_build_items({"mainhand": ["T4_MAIN_SWORD"]}, catalog)        # existe en T4 mais hors T6–T8
+    with pytest.raises(InvalidItems, match="T3"):
+        validate_build_items({"mainhand": ["T3_MAIN_SWORD"]}, catalog)        # hors T4–T8
+    with pytest.raises(InvalidItems, match="T5"):
+        validate_build_items({"mainhand": ["T5_MAIN_SWORD"]}, catalog)        # l'épée du test n'existe qu'en T4/T8
     with pytest.raises(InvalidItems, match="T7"):
         validate_build_items({"food": ["T7_MEAL_STEW"]}, catalog)             # le ragoût n'existe qu'en T6/T8
     with pytest.raises(InvalidItems, match="T6"):

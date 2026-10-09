@@ -176,7 +176,7 @@ class InvalidItems(ValueError):
 
 # Tier + enchantement d'un choix : « T8_MAIN_SWORD@1 ». Aucun id de base ne commence par « T<n>_ ».
 _CHOICE = re.compile(r"^T([1-8])_([A-Z0-9_]+?)(?:@([1-4]))?$")
-BUILD_TIERS = (6, 7, 8)
+BUILD_TIERS = (4, 5, 6, 7, 8)
 
 
 def parse_choice(value: str) -> tuple[str, int | None, int]:
@@ -203,7 +203,7 @@ def _check_choice(choice: str, catalog: dict[str, dict]) -> dict:
     if item is None:
         raise InvalidItems(f"Objet inconnu : {choice}")
     if tier is not None and tier not in allowed_tiers(item):
-        raise InvalidItems(f"« {item['name']} » ne se choisit pas en T{tier} (T6, T7 ou T8 selon l'objet).")
+        raise InvalidItems(f"« {item['name']} » ne se choisit pas en T{tier} (T4 à T8 selon l'objet).")
     if enchant > max_enchant(item):
         raise InvalidItems(f"« {item['name']} » : enchantement .{max_enchant(item)} maximum.")
     return item
@@ -237,7 +237,7 @@ def validate_build_items(items: dict, catalog: dict[str, dict] | None = None) ->
     Chaque case vaut 1 à 3 objets au choix (["T8_2H_HOLYSTAFF@1", "2H_HOLYSTAFF_HELL"]),
     ou ["*"] = au choix du joueur. L'ancien format {slot: "ID"} est accepté.
     Refusé : emplacement ou objet inconnu, objet au mauvais endroit, plus de 3
-    choix, "*" mélangé à des objets, même objet deux fois, tier hors T6–T8 (ou
+    choix, "*" mélangé à des objets, même objet deux fois, tier hors T4–T8 (ou
     inexistant pour l'objet), enchantement trop haut, main gauche alors que
     toutes les armes proposées sont à deux mains.
     """

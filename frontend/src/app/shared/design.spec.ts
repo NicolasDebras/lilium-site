@@ -106,7 +106,7 @@ describe('Gear (mini-inventaire)', () => {
     const badge = weapon.querySelector('app-tier-badge')!;
     expect(badge.textContent?.trim()).toBe('8.1');
     expect(badge.getAttribute('data-enchant')).toBe('1');
-    expect(weapon.getAttribute('title')).toBe('Arme : Épée large 8.1 minimum ou équivalent (7.2, 6.3)');
+    expect(weapon.getAttribute('title')).toBe('Arme : Épée large 8.1 minimum ou équivalent (7.2, 6.3, 5.4)');
     expect(el.querySelectorAll('.doll .cell')[1].querySelector('app-tier-badge')?.classList).toContain('hidden');   // tier libre
     expect(el.querySelector('app-gear-swaps app-tier-badge')?.textContent?.trim()).toBe('7.3');
   });

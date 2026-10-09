@@ -39,7 +39,7 @@ export function allTwoHanded(mainhand: string[], get: (id: string) => Item | und
       <div>
         <h1>{{ buildId() ? 'Modifier le build' : 'Nouveau build' }}</h1>
         <p class="subtitle">Choisis jusqu'à 3 objets par case, ou laisse le joueur libre (« au choix »).
-          Chaque objet a son tier minimum (T6 à T8) et son enchantement : un équivalent convient (8.1 = 7.2 = 6.3).</p>
+          Chaque objet a son tier minimum (T4 à T8) et son enchantement : un équivalent convient (8.1 = 7.2 = 6.3).</p>
       </div>
     </div>
 
