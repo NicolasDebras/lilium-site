@@ -135,18 +135,17 @@ import { roleColor, sortByRole } from '../../shared/roles';
     .desc { margin: 0; white-space: pre-line; font-size: .9rem; }
     .party h3 { margin: 0 0 8px; font-size: .75rem; text-transform: uppercase; letter-spacing: .08em; color: var(--text-faint); }
     .lines { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
-    .lines li { display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto; align-items: center; gap: 10px;
+    /* Rôle, nombre et nom du build sur une ligne ; équipement + swaps dessous, sur toute la largeur
+       (sinon le nom du build est écrasé et les swaps passent à la ligne au hasard). */
+    .lines li { display: grid; grid-template-columns: auto auto minmax(0, 1fr); align-items: center; gap: 8px 10px;
                 padding: 8px 10px; border-radius: 10px; background: var(--bg-2); border: 1px solid var(--border-soft);
                 border-left: 3px solid var(--role-color); }
+    .lines li app-gear { grid-column: 1 / -1; }
     .times { color: var(--text-muted); font-weight: 600; font-size: .85rem; }
     .build-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .9rem; }
     .foot { padding-top: 12px; border-top: 1px solid var(--border-soft); flex-wrap: wrap; }
     .copy { width: auto; }
     .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-    @media (max-width: 560px) {
-      .lines li { grid-template-columns: auto auto minmax(0, 1fr); }
-      .lines li app-gear { grid-column: 1 / -1; }
-    }
   `,
 })
 export class ComposList implements OnInit {
