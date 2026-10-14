@@ -116,10 +116,10 @@ describe('BuildsList', () => {
     req.flush([]);
   });
 
-  it('filtrer par rôle recharge avec le paramètre', async () => {
+  it('changer le filtre de rôle recharge automatiquement avec le paramètre', async () => {
     const { fixture, http } = await render('member');
     fixture.componentInstance['role'].set('HEAL');
-    void fixture.componentInstance.load();
+    fixture.detectChanges();   // le filtre suffit : la ressource se recharge seule
     const req = http.expectOne((r) => r.url === '/api/guilds/111/builds');
     expect(req.request.params.get('role')).toBe('HEAL');
     req.flush([BUILDS[1]]);

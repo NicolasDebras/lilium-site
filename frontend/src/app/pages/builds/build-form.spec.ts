@@ -6,7 +6,8 @@ import { Router, provideRouter } from '@angular/router';
 import { TEST_ITEMS } from '../../../testing/items';
 import { BuildForm, allTwoHanded } from './build-form';
 
-async function render(buildId?: string) {
+/** `edited` : réponse de l'API pour le build ouvert en édition (avec `buildId`). */
+async function render(buildId?: string, edited?: object) {
   TestBed.configureTestingModule({
     imports: [BuildForm],
     providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting()],
@@ -18,6 +19,7 @@ async function render(buildId?: string) {
   const http = TestBed.inject(HttpTestingController);
   http.expectOne('/api/guilds/111/roles').flush([{ name: 'HEAL', emoji: '💚' }]);
   http.expectOne('/api/items').flush(TEST_ITEMS);
+  if (buildId) http.expectOne(`/api/guilds/111/builds/${buildId}`).flush(edited ?? {});
   const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
   await fixture.whenStable();
   return { fixture, http, navigate, cmp: fixture.componentInstance, el: fixture.nativeElement as HTMLElement };
@@ -128,14 +130,35 @@ describe('BuildForm — équipement', () => {
     expect(navigate).toHaveBeenCalledWith(['/g', '111', 'builds']);
   });
 
+  it('formulaire (signal forms) : nom et rôle obligatoires, limites de longueur, saisie dans le modèle', async () => {
+    const { fixture, cmp, el } = await render();
+    const name = el.querySelector<HTMLInputElement>('#name')!;
+    const submit = el.querySelector<HTMLButtonElement>('button[type=submit]')!;
+    expect(name.required).toBe(true);
+    expect(name.maxLength).toBe(100);
+    expect(el.querySelector<HTMLTextAreaElement>('#notes')!.maxLength).toBe(4000);
+    expect(submit.disabled).toBe(true);
+
+    name.value = '   ';
+    name.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    expect(submit.disabled).toBe(true);   // que des espaces : refusé
+
+    name.value = 'Heal ZvZ';
+    name.dispatchEvent(new Event('input'));
+    const role = el.querySelector<HTMLSelectElement>('#role')!;
+    role.value = 'HEAL';
+    role.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    expect(cmp['model']()).toMatchObject({ name: 'Heal ZvZ', role: 'HEAL' });
+    expect(submit.disabled).toBe(false);
+  });
+
   it('en édition : relit l’équipement (et l’ancien format « chaîne »)', async () => {
-    const { fixture, cmp, http } = await render('7');
-    http.expectOne('/api/guilds/111/builds/7').flush({
+    const { cmp } = await render('7', {
       id: 7, name: 'Tank', role: 'HEAL', type_acti: 'PVP', weapon: '', notes: '', image: '',
       items: { mainhand: 'MAIN_SWORD', head: ['HEAD_PLATE_SET1', 'HEAD_CLOTH_SET2'] }, created_by_name: 'Lily',
     });
-    await new Promise((r) => setTimeout(r));
-    await fixture.whenStable();
     expect(cmp['model']().items).toEqual({ mainhand: ['MAIN_SWORD'], head: ['HEAD_PLATE_SET1', 'HEAD_CLOTH_SET2'] });
   });
 });

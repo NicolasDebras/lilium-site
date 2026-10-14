@@ -1,12 +1,13 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, DestroyRef, OnInit, computed, inject, input, signal } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { Component, DestroyRef, computed, inject, input, linkedSignal, signal } from '@angular/core';
+import { rxResource } from '@angular/core/rxjs-interop';
+import { FormField, applyEach, disabled, form, max, maxLength, min, required, requiredError, validate } from '@angular/forms/signals';
 import { Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
 import { ApiService, errorMessage } from '../../core/api.service';
 import { ItemsService } from '../../core/items.service';
-import { Build, CompoInput, RoleInfo, SlotRow } from '../../core/models';
+import { Build, Compo, CompoInput, SlotRow } from '../../core/models';
 import { ToastService } from '../../core/toast.service';
 import { Gear } from '../../shared/gear';
 import { sortByRole } from '../../shared/roles';
@@ -23,13 +24,25 @@ const FREE = 'free';
 /** Ligne du formulaire : `free` (côté écran seulement) = l'utilisateur a choisi « sans build ». */
 type Row = SlotRow & { free?: boolean };
 
+type CompoModel = CompoInput & { pf1: Row[]; pf2: Row[] };
+
 function emptyRow(): Row {
   return { build_id: null, role: '', count: 1, weapon: '' };
 }
 
+function emptyCompo(): CompoModel {
+  return { name: '', description: '', type_acti: 'PVP', image: '', pf1: [emptyRow()], pf2: [] };
+}
+
+/** Compo de l'API → valeurs du formulaire (une ligne sans build est une ligne « sans build » choisie). */
+function toModel({ total: _t, custom: _c, ...compo }: Compo): CompoModel {
+  const withMode = (rows: SlotRow[]): Row[] => rows.map(({ slot_key: _k, ...r }) => ({ ...r, free: r.build_id == null }));
+  return { ...compo, pf1: withMode(compo.pf1), pf2: withMode(compo.pf2) };
+}
+
 @Component({
   selector: 'app-compo-form',
-  imports: [FormsModule, RouterLink, Gear, Icon, ImageShare, RoleBar],
+  imports: [FormField, RouterLink, Gear, Icon, ImageShare, RoleBar],
   template: `
     <div class="page-head">
       <div>
@@ -38,7 +51,7 @@ function emptyRow(): Row {
       </div>
     </div>
 
-    <form class="form" (ngSubmit)="save()">
+    <form class="form" (submit)="$event.preventDefault(); save()">
       @if (error()) {
         <p class="alert">{{ error() }}</p>
       }
@@ -47,12 +60,11 @@ function emptyRow(): Row {
       <div class="row two">
         <div class="field">
           <label for="name">Nom</label>
-          <input id="name" name="name" class="input" required maxlength="100" [disabled]="!!name()"
-                 [(ngModel)]="model().name" />
+          <input id="name" class="input" [formField]="form.name" />
         </div>
         <div class="field">
           <label for="type">Type</label>
-          <select id="type" name="type_acti" class="select" [(ngModel)]="model().type_acti">
+          <select id="type" class="select" [formField]="form.type_acti">
             <option value="PVP">PVP</option>
             <option value="PVE">PVE</option>
           </select>
@@ -61,20 +73,19 @@ function emptyRow(): Row {
 
       <div class="field">
         <label for="description">Description</label>
-        <textarea id="description" name="description" class="textarea" maxlength="2000"
-                  [(ngModel)]="model().description"></textarea>
+        <textarea id="description" class="textarea" [formField]="form.description"></textarea>
       </div>
 
       <div class="field">
         <label for="image">Image (URL, optionnel)</label>
-        <input id="image" name="image" class="input" type="url" maxlength="500" [(ngModel)]="model().image" />
+        <input id="image" class="input" type="url" [formField]="form.image" />
       </div>
       </div>
 
       <div class="card preview">
         <div class="preview-head">
           <strong>Aperçu</strong>
-          <span class="badge">{{ total('pf1') + total('pf2') }} joueurs</span>
+          <span class="badge">{{ totals().pf1 + totals().pf2 }} joueurs</span>
         </div>
         <app-role-bar [rows]="previewRows()" [emojis]="emojiMap()" />
         <p class="muted help">Sur Discord, le joueur choisit son rôle et le build lui est imposé.</p>
@@ -82,43 +93,43 @@ function emptyRow(): Row {
 
       @for (pf of parties; track pf.key) {
         <fieldset class="party card">
-          <legend>{{ pf.label }} <span class="muted">— {{ total(pf.key) }} joueurs</span></legend>
-          @for (row of model()[pf.key]; track $index; let i = $index) {
+          <legend>{{ pf.label }} <span class="muted">— {{ totals()[pf.key] }} joueurs</span></legend>
+          @for (field of form[pf.key]; track $index; let i = $index) {
+            @let row = field().value();
+            @let source = sourceOf(row);
             <div class="slot" [attr.data-party]="pf.key">
-              <select class="select source" [name]="pf.key + '-source-' + i" aria-label="Build"
-                      [ngModel]="sourceOf(row)" (ngModelChange)="setSource(pf.key, i, $event)">
-                <option [value]="pick" disabled>Choisir un build…</option>
+              <select class="select source" aria-label="Build" (change)="setSource(pf.key, i, $any($event.target).value)">
+                <option [value]="pick" disabled [selected]="source === pick">Choisir un build…</option>
                 @for (group of buildGroups(); track group.role) {
                   <optgroup [label]="group.role">
                     @for (b of group.builds; track b.id) {
-                      <option [value]="'' + b.id" [disabled]="isBuildTaken(pf.key, b.id, i)">
-                        {{ b.name }}{{ isBuildTaken(pf.key, b.id, i) ? ' (déjà dans cette party : augmente le nombre)' : '' }}
+                      @let taken = isBuildTaken(pf.key, b.id, i);
+                      <option [value]="'' + b.id" [disabled]="taken" [selected]="source === '' + b.id">
+                        {{ b.name }}{{ taken ? ' (déjà dans cette party : augmente le nombre)' : '' }}
                       </option>
                     }
                   </optgroup>
                 }
-                <option [value]="free">Sans build (rôle libre)</option>
+                <option [value]="free" [selected]="source === free">Sans build (rôle libre)</option>
               </select>
-              <input class="input count" type="number" min="1" max="50" aria-label="Nombre"
-                     [name]="pf.key + '-count-' + i" [(ngModel)]="row.count" />
+              <input class="input count" type="number" aria-label="Nombre" [formField]="field.count" />
               <button type="button" class="btn btn-sm btn-danger" aria-label="Retirer la ligne"
                       (click)="removeRow(pf.key, i)">✕</button>
 
               @if (buildOf(row); as b) {
                 <div class="detail">
-                  <span class="badge">{{ emoji(b.role) }} {{ b.role }}</span>
+                  <span class="badge">{{ emojiMap()[b.role] }} {{ b.role }}</span>
                   <app-gear [items]="b.items" size="small" />
                 </div>
               } @else if (row.free) {
                 <div class="detail free-row">
-                  <select class="select" [name]="pf.key + '-role-' + i" aria-label="Rôle" [(ngModel)]="row.role" (ngModelChange)="sortRows(pf.key)">
+                  <select class="select" aria-label="Rôle" [formField]="field.role" (change)="sortRows(pf.key)">
                     <option value="" disabled>Rôle…</option>
                     @for (r of roles(); track r.name) {
                       <option [value]="r.name">{{ r.emoji }} {{ r.name }}</option>
                     }
                   </select>
-                  <input class="input" placeholder="Armes conseillées (optionnel)" aria-label="Armes"
-                         [name]="pf.key + '-weapon-' + i" [(ngModel)]="row.weapon" />
+                  <input class="input" placeholder="Armes conseillées (optionnel)" aria-label="Armes" [formField]="field.weapon" />
                 </div>
               }
             </div>
@@ -134,7 +145,7 @@ function emptyRow(): Row {
       <section class="card image-preview">
         <div class="preview-head">
           <h3>Image de la compo <span class="muted">— celle postée sous /acti</span></h3>
-          <button type="button" class="btn btn-sm" [disabled]="previewing() || !model().name.trim()" (click)="previewImage()">
+          <button type="button" class="btn btn-sm" [disabled]="previewing() || form.name().invalid()" (click)="previewImage()">
             <app-icon name="sparkles" [size]="14" /> {{ previewing() ? 'Génération…' : previewUrl() ? 'Régénérer' : "Aperçu de l'image" }}
           </button>
         </div>
@@ -149,7 +160,7 @@ function emptyRow(): Row {
 
       <div class="save-bar glass">
         <a class="btn btn-ghost" [routerLink]="['/g', guildId(), 'compos']">Annuler</a>
-        <button type="submit" class="btn btn-primary" [disabled]="saving() || !model().name.trim()">
+        <button type="submit" class="btn btn-primary" [disabled]="saving() || form().invalid()">
           <app-icon name="check" /> {{ saving() ? 'Enregistrement…' : 'Enregistrer' }}
         </button>
       </div>
@@ -178,7 +189,7 @@ function emptyRow(): Row {
     .image-preview h3 .muted { font-weight: 400; font-size: .85rem; }
   `,
 })
-export class CompoForm implements OnInit {
+export class CompoForm {
   private readonly api = inject(ApiService);
   private readonly router = inject(Router);
   private readonly items = inject(ItemsService);
@@ -195,30 +206,57 @@ export class CompoForm implements OnInit {
   protected readonly pick = PICK;
   protected readonly free = FREE;
 
-  protected readonly model = signal<CompoInput & { pf1: Row[]; pf2: Row[] }>({
-    name: '', description: '', type_acti: 'PVP', image: '', pf1: [emptyRow()], pf2: [],
+  private readonly rolesRes = rxResource({ params: () => this.guildId(), stream: ({ params }) => this.api.roles(params) });
+  private readonly buildsRes = rxResource({ params: () => this.guildId(), stream: ({ params }) => this.api.builds(params) });
+  /** Compo éditée (rien à charger en création : la ressource reste inactive). */
+  private readonly existing = rxResource({
+    params: () => {
+      const name = this.name();
+      return name ? { guildId: this.guildId(), name } : undefined;
+    },
+    stream: ({ params }) => this.api.compo(params.guildId, params.name),
   });
-  protected readonly roles = signal<RoleInfo[]>([]);
-  protected readonly builds = signal<Build[]>([]);
+
+  protected readonly roles = computed(() => (this.rolesRes.hasValue() ? this.rolesRes.value() : []));
+  protected readonly builds = computed(() => (this.buildsRes.hasValue() ? this.buildsRes.value() : []));
+
+  /** Valeurs du formulaire : une ligne vide en création, la compo une fois chargée en édition. */
+  protected readonly model = linkedSignal<CompoModel>(() => (this.existing.hasValue() ? toModel(this.existing.value()) : emptyCompo()));
+  protected readonly form = form(this.model, (p) => {
+    required(p.name);
+    validate(p.name, ({ value }) => (value().trim() ? undefined : requiredError()));
+    maxLength(p.name, 100);
+    disabled(p.name, () => !!this.name());   // le nom identifie la compo : pas de renommage
+    maxLength(p.description, 2000);
+    maxLength(p.image, 500);
+    for (const party of [p.pf1, p.pf2]) {
+      applyEach(party, (row) => {
+        min(row.count, 1);
+        max(row.count, 50);
+      });
+    }
+  });
+
   protected readonly saving = signal(false);
-  protected readonly error = signal('');
+  private readonly saveError = signal('');
+  protected readonly error = computed(() => (this.existing.error() ? errorMessage(this.existing.error()) : this.saveError()));
   protected readonly previewUrl = signal<string | null>(null);
   protected readonly previewing = signal(false);
   protected readonly previewError = signal('');
   protected readonly slug = fileSlug;
 
   constructor() {
+    this.items.load().catch(() => {});
     inject(DestroyRef).onDestroy(() => this.setPreview(null));
   }
 
   private readonly buildsById = computed(() => new Map(this.builds().map((b) => [b.id, b])));
-  /** Aperçu de la composition (PF1 + PF2, lignes avec un rôle). Méthode et pas computed :
-   *  le nombre est modifié en place par ngModel, comme pour total(). */
-  previewRows(): { role: string; count: number }[] {
-    return [...this.model().pf1, ...this.model().pf2]
-      .filter((r) => r.role)
-      .map((r) => ({ role: r.role, count: Number(r.count) || 0 }));
-  }
+  /** Aperçu de la composition (PF1 + PF2, lignes avec un rôle). */
+  protected readonly previewRows = computed(() => [...this.model().pf1, ...this.model().pf2]
+    .filter((r) => r.role)
+    .map((r) => ({ role: r.role, count: Number(r.count) || 0 })));
+  /** Joueurs par party, en ignorant les lignes sans rôle. */
+  protected readonly totals = computed((): Record<Party, number> => ({ pf1: this.total('pf1'), pf2: this.total('pf2') }));
   protected readonly emojiMap = computed(() => Object.fromEntries(this.roles().map((r) => [r.name, r.emoji])));
   /** Builds regroupés par rôle pour le sélecteur. */
   protected readonly buildGroups = computed(() => {
@@ -226,23 +264,6 @@ export class CompoForm implements OnInit {
     for (const b of this.builds()) groups.set(b.role, [...(groups.get(b.role) ?? []), b]);
     return [...groups].map(([role, builds]) => ({ role, builds }));
   });
-
-  async ngOnInit(): Promise<void> {
-    this.api.roles(this.guildId()).subscribe({ next: (r) => this.roles.set(r), error: () => {} });
-    this.api.builds(this.guildId()).subscribe({ next: (b) => this.builds.set(b), error: () => {} });
-    this.items.load().catch(() => {});
-    const name = this.name();
-    if (name) {
-      try {
-        const { total: _t, custom: _c, ...compo } = await firstValueFrom(this.api.compo(this.guildId(), name));
-        const withMode = (rows: SlotRow[]): Row[] =>
-          rows.map(({ slot_key: _k, ...r }) => ({ ...r, free: r.build_id == null }));
-        this.model.set({ ...compo, pf1: withMode(compo.pf1), pf2: withMode(compo.pf2) });
-      } catch (err) {
-        this.error.set(errorMessage(err));
-      }
-    }
-  }
 
   buildOf(row: Row): Build | undefined {
     return row.build_id != null ? this.buildsById().get(row.build_id) : undefined;
@@ -279,10 +300,6 @@ export class CompoForm implements OnInit {
     });
   }
 
-  emoji(role: string): string {
-    return this.roles().find((r) => r.name === role)?.emoji ?? '';
-  }
-
   addRow(party: Party): void {
     this.model.update((m) => ({ ...m, [party]: [...m[party], emptyRow()] }));
   }
@@ -298,7 +315,8 @@ export class CompoForm implements OnInit {
   /** Corps envoyé à l'API (sans l'état d'interface « free »). */
   private body(): CompoInput {
     const { pf1, pf2, ...rest } = this.model();
-    const clean = (rows: Row[]): SlotRow[] => rows.map(({ free: _f, ...r }) => r);
+    // Champs explicites : ni « free » ni l'identifiant interne que les signal forms posent sur chaque ligne.
+    const clean = (rows: Row[]): SlotRow[] => rows.map(({ build_id, role, count, weapon }) => ({ build_id, role, count, weapon }));
     return { ...rest, pf1: clean(pf1), pf2: clean(pf2) };
   }
 
@@ -324,8 +342,9 @@ export class CompoForm implements OnInit {
   }
 
   async save(): Promise<void> {
+    if (this.form().invalid()) return;
     this.saving.set(true);
-    this.error.set('');
+    this.saveError.set('');
     try {
       const name = this.name();
       const body = this.body();
@@ -335,7 +354,7 @@ export class CompoForm implements OnInit {
       this.toast.success(name ? 'Compo enregistrée.' : `Compo « ${body.name} » créée.`);
       await this.router.navigate(['/g', this.guildId(), 'compos']);
     } catch (err) {
-      this.error.set(errorMessage(err));
+      this.saveError.set(errorMessage(err));
     } finally {
       this.saving.set(false);
     }

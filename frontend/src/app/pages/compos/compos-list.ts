@@ -1,5 +1,6 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { Component, OnInit, computed, inject, input, signal } from '@angular/core';
+import { Component, computed, inject, input, signal } from '@angular/core';
+import { rxResource } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
@@ -13,6 +14,25 @@ import { Icon } from '../../shared/icon';
 import { ImageShare, fileSlug } from '../../shared/image-share';
 import { RoleBar } from '../../shared/role-bar';
 import { roleColor, sortByRole } from '../../shared/roles';
+
+/** Une compo et ce que la carte en affiche, calculé une fois par chargement. */
+interface CompoCard {
+  compo: Compo;
+  /** PF1 puis PF2 : barre des rôles. */
+  rows: SlotRow[];
+  /** Parties non vides, lignes rangées par rôle. */
+  parties: { label: string; rows: SlotRow[] }[];
+  /** L'image ne montre que les rôles liés à un build : sans build, pas d'image. */
+  hasBuilds: boolean;
+}
+
+function toCard(compo: Compo): CompoCard {
+  const parties = [{ label: 'Party 1', rows: compo.pf1 }, { label: 'Party 2', rows: compo.pf2 }]
+    .filter((pf) => pf.rows.length)
+    .map((pf) => ({ label: pf.label, rows: sortByRole(pf.rows, (r) => r.role) }));
+  const rows = [...compo.pf1, ...compo.pf2];
+  return { compo, rows, parties, hasBuilds: rows.some((r) => r.build_id != null) };
+}
 
 @Component({
   selector: 'app-compos-list',
@@ -32,15 +52,15 @@ import { roleColor, sortByRole } from '../../shared/roles';
       <p class="alert">{{ error() }}</p>
     }
 
-    @if (loading()) {
+    @if (list.isLoading() && !list.hasValue()) {
       <div class="grid">
         @for (s of [1, 2]; track s) { <div class="skeleton tall"></div> }
       </div>
     } @else {
       @if (custom().length) {
         <div class="grid compos">
-          @for (c of custom(); track c.name; let i = $index) {
-            <ng-container *ngTemplateOutlet="card; context: { $implicit: c, i: i }" />
+          @for (v of custom(); track v.compo.name; let i = $index) {
+            <ng-container *ngTemplateOutlet="card; context: { $implicit: v, i: i }" />
           }
         </div>
       } @else {
@@ -50,14 +70,15 @@ import { roleColor, sortByRole } from '../../shared/roles';
       @if (defaults().length) {
         <h2 class="section-title">Templates par défaut</h2>
         <div class="grid compos">
-          @for (c of defaults(); track c.name; let i = $index) {
-            <ng-container *ngTemplateOutlet="card; context: { $implicit: c, i: i }" />
+          @for (v of defaults(); track v.compo.name; let i = $index) {
+            <ng-container *ngTemplateOutlet="card; context: { $implicit: v, i: i }" />
           }
         </div>
       }
     }
 
-    <ng-template #card let-c let-i="i">
+    <ng-template #card let-v let-i="i">
+      @let c = v.compo;
       <article class="card card-hover compo fade-up" [style.animation-delay.ms]="i * 50">
         <header class="head">
           <div class="title">
@@ -74,14 +95,13 @@ import { roleColor, sortByRole } from '../../shared/roles';
         @if (c.description) {
           <p class="muted desc">{{ c.description }}</p>
         }
-        <app-role-bar [rows]="allRows(c)" [emojis]="emojis()" />
+        <app-role-bar [rows]="v.rows" [emojis]="emojis()" />
 
-        @for (pf of [{ label: 'Party 1', rows: c.pf1 }, { label: 'Party 2', rows: c.pf2 }]; track pf.label) {
-          @if (pf.rows.length) {
+        @for (pf of v.parties; track pf.label) {
             <section class="party">
               <h3>{{ pf.label }}</h3>
               <ul class="lines">
-                @for (r of sorted(pf.rows); track $index) {
+                @for (r of pf.rows; track $index) {
                   <li [style.--role-color]="color(r.role)">
                     <span class="role-tag">{{ emojis()[r.role] ?? '' }} {{ r.role }}</span>
                     <span class="times num">×{{ r.count }}</span>
@@ -95,11 +115,10 @@ import { roleColor, sortByRole } from '../../shared/roles';
                 }
               </ul>
             </section>
-          }
         }
-        @if (c.custom && (canEdit() || hasBuilds(c))) {
+        @if (c.custom && (canEdit() || v.hasBuilds)) {
           <div class="foot row">
-            @if (hasBuilds(c)) {
+            @if (v.hasBuilds) {
               <button type="button" class="btn btn-sm" [attr.aria-expanded]="imageOf() === c.name"
                       (click)="toggleImage(c.name)"><app-icon name="sparkles" [size]="14" /> Image</button>
             }
@@ -147,13 +166,45 @@ import { roleColor, sortByRole } from '../../shared/roles';
     .copy { width: auto; }
   `,
 })
-export class ComposList implements OnInit {
+export class ComposList {
   private readonly api = inject(ApiService);
   private readonly auth = inject(AuthService);
   private readonly items = inject(ItemsService);
+  private readonly toast = inject(ToastService);
+
+  readonly guildId = input.required<string>();
+
+  protected readonly list = rxResource({ params: () => this.guildId(), stream: ({ params }) => this.api.compos(params) });
+  private readonly buildsRes = rxResource({ params: () => this.guildId(), stream: ({ params }) => this.api.builds(params) });
+  private readonly rolesRes = rxResource({ params: () => this.guildId(), stream: ({ params }) => this.api.roles(params) });
+
+  protected readonly custom = computed(() => (this.list.hasValue() ? this.list.value().custom.map(toCard) : []));
+  protected readonly defaults = computed(() => (this.list.hasValue() ? this.list.value().defaults.map(toCard) : []));
+  private readonly buildsById = computed(() => new Map((this.buildsRes.hasValue() ? this.buildsRes.value() : []).map((b) => [b.id, b])));
+  protected readonly emojis = computed((): Record<string, string> =>
+    Object.fromEntries((this.rolesRes.hasValue() ? this.rolesRes.value() : []).map((r) => [r.name, r.emoji])));
+  private readonly actionError = signal('');
+  protected readonly error = computed(() => (this.list.error() ? errorMessage(this.list.error()) : this.actionError()));
+  protected readonly canEdit = computed(() => hasLevel(this.auth.levelFor(this.guildId()), 'staff'));
   /** Mes autres serveurs où je suis staff : cibles possibles d'une copie. */
   protected readonly copyTargets = computed(() =>
     this.auth.guilds().filter((g) => g.id !== this.guildId() && hasLevel(g.level, 'staff')));
+
+  /** Compo dont l'image est affichée (une à la fois). */
+  protected readonly imageOf = signal<string | null>(null);
+  protected readonly slug = fileSlug;
+
+  constructor() {
+    this.items.load().catch(() => {});
+  }
+
+  buildOf(row: SlotRow): Build | undefined {
+    return row.build_id != null ? this.buildsById().get(row.build_id) : undefined;
+  }
+
+  color(role: string): string {
+    return roleColor(role);
+  }
 
   async copyTo(c: Compo, select: HTMLSelectElement): Promise<void> {
     const target = this.copyTargets().find((g) => g.id === select.value);
@@ -177,15 +228,6 @@ export class ComposList implements OnInit {
     }
   }
 
-  /** Compo dont l'image est affichée (une à la fois). */
-  protected readonly imageOf = signal<string | null>(null);
-  protected readonly slug = fileSlug;
-
-  /** L'image ne montre que les rôles liés à un build : sans build, pas d'image. */
-  hasBuilds(c: Compo): boolean {
-    return [...c.pf1, ...c.pf2].some((r) => r.build_id != null);
-  }
-
   toggleImage(name: string): void {
     this.imageOf.update((open) => (open === name ? null : name));
   }
@@ -193,61 +235,14 @@ export class ComposList implements OnInit {
   imageUrl(name: string): string {
     return this.api.compoImageUrl(this.guildId(), name);
   }
-  private readonly toast = inject(ToastService);
-  private readonly builds = signal<Build[]>([]);
-  private readonly buildsById = computed(() => new Map(this.builds().map((b) => [b.id, b])));
-
-  readonly guildId = input.required<string>();
-
-  protected readonly custom = signal<Compo[]>([]);
-  protected readonly defaults = signal<Compo[]>([]);
-  protected readonly emojis = signal<Record<string, string>>({});
-  protected readonly loading = signal(true);
-  protected readonly error = signal('');
-  protected readonly canEdit = computed(() => hasLevel(this.auth.levelFor(this.guildId()), 'staff'));
-
-  buildOf(row: SlotRow): Build | undefined {
-    return row.build_id != null ? this.buildsById().get(row.build_id) : undefined;
-  }
-
-  allRows(c: Compo): SlotRow[] {
-    return [...c.pf1, ...c.pf2];
-  }
-
-  sorted(rows: SlotRow[]): SlotRow[] {
-    return sortByRole(rows, (r) => r.role);
-  }
-
-  color(role: string): string {
-    return roleColor(role);
-  }
-
-  async ngOnInit(): Promise<void> {
-    this.items.load().catch(() => {});
-    this.api.builds(this.guildId()).subscribe({ next: (b) => this.builds.set(b), error: () => {} });
-    this.api.roles(this.guildId()).subscribe({
-      next: (roles) => this.emojis.set(Object.fromEntries(roles.map((r) => [r.name, r.emoji]))),
-      error: () => {},
-    });
-    try {
-      const list = await firstValueFrom(this.api.compos(this.guildId()));
-      this.custom.set(list.custom);
-      this.defaults.set(list.defaults);
-    } catch (err) {
-      this.error.set(errorMessage(err));
-    } finally {
-      this.loading.set(false);
-    }
-  }
-
   async remove(compo: Compo): Promise<void> {
     if (!confirm(`Supprimer la compo « ${compo.name} » ? Elle ne sera plus disponible dans /acti.`)) return;
     try {
       await firstValueFrom(this.api.deleteCompo(this.guildId(), compo.name));
-      this.custom.update((list) => list.filter((c) => c.name !== compo.name));
+      this.list.update((list) => list && { ...list, custom: list.custom.filter((c) => c.name !== compo.name) });
       this.toast.success(`Compo « ${compo.name} » supprimée.`);
     } catch (err) {
-      this.error.set(errorMessage(err));
+      this.actionError.set(errorMessage(err));
     }
   }
 }

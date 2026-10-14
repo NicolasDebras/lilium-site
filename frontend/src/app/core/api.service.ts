@@ -9,6 +9,8 @@ import {
 
 /** Message lisible à partir d'une erreur HTTP de l'API (champ "detail" de FastAPI). */
 export function errorMessage(err: unknown): string {
+  // Une ressource (rxResource/httpResource) peut envelopper l'erreur d'origine dans .cause.
+  if (!(err instanceof HttpErrorResponse) && err instanceof Error && err.cause instanceof HttpErrorResponse) err = err.cause;
   if (err instanceof HttpErrorResponse) {
     const detail = err.error?.detail;
     if (typeof detail === 'string') return detail;
