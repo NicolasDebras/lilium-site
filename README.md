@@ -105,6 +105,18 @@ cd frontend
 npm test -- --watch=false
 ```
 
+**CI** (`.github/workflows/tests.yml`) : à chaque push et pull request, GitHub lance les tests de l'API (avec le repo du bot cloné à côté, pour vérifier les fichiers partagés), puis les tests et le build du front. `main` est protégée : on ne fusionne que si ces jobs passent.
+
+**Fichiers partagés avec le bot** : le rendu des images (`app/shared/build_image.py`), les rôles et templates par défaut (`app/shared/roles_templates.py`) et `app/assets/` sont des **copies exactes** du bot, qui est la source. On ne les modifie jamais ici : on change le bot, on le fusionne, puis, avec les deux repos côte à côte :
+
+```powershell
+cd api
+.venv\Scripts\python -m scripts.sync_from_bot          # recopie depuis ..\..\botDiscord
+.venv\Scripts\python -m scripts.sync_from_bot --check  # vérifie seulement
+```
+
+`tests/test_shared_sync.py` échoue (en local et en CI) si une copie diffère du `main` du bot.
+
 ---
 
 ## Routes de l'API
@@ -180,7 +192,7 @@ La liste des **builds** a une barre de recherche instantanée (nom, rôle, arme,
 
 **Page d'un build** (`/g/{gid}/builds/{id}`, lien à coller dans Discord — il faut être connecté et membre du serveur) : équipement en grand, précisions, compos qui l'utilisent, **image PNG** identique au MP de `/massup` (télécharger / copier), et pour le staff **Dupliquer** (crée « Nom (copie) » puis ouvre son formulaire).
 
-**Images générées par l'API** (`app/images.py`) : **copie** du rendu du bot (`botDiscord/Service/build_image.py`) — à resynchroniser si le bot change — avec sa police et ses icônes (`app/assets/`, CDN Albion en secours). Rendu dans un thread, 2 à la fois au plus, 200 dernières images gardées en mémoire (clé = contenu exact).
+**Images générées par l'API** (`app/images.py`) : rendu du bot, copié tel quel dans `app/shared/build_image.py` (voir « Fichiers partagés avec le bot »), avec sa police et ses icônes (`app/assets/`, CDN Albion en secours). Rendu dans un thread, 2 à la fois au plus, 200 dernières images gardées en mémoire (clé = contenu exact).
 
 Un build choisit son équipement parmi les **vrais objets du jeu**, avec leur image, dans une disposition identique à l'inventaire in-game :
 tête, cape / arme, armure, main gauche / potion, bottes, bouffe. Le sélecteur propose une recherche (FR, EN ou famille, accents ignorés) et des filtres par famille (Épées, Bâtons sacrés, Plaque, Nourriture, Potions…).
@@ -279,9 +291,11 @@ lilium-site/
 │   │   ├── bal_stats.py     # statistiques BAL de la page Admin (fonctions pures)
 │   │   ├── catalog.py       # catalogue d'objets Albion (génération + validation de l'équipement)
 │   │   ├── data/items.json  # catalogue généré (versionné)
-│   │   ├── constants.py     # ROLES + DEFAULT_TEMPLATES (copie de botDiscord/config.py, à garder synchro)
+│   │   ├── constants.py     # ROLES + DEFAULT_TEMPLATES (depuis shared/) + ce que seul le site utilise
+│   │   ├── shared/          # copies exactes du bot (build_image.py, roles_templates.py) — ne pas modifier ici
 │   │   └── routes/          # auth, me, items, builds, compos, guild (bal, rôles, admin)
 │   ├── scripts/update_items.py  # régénère data/items.json depuis ao-bin-dumps
+│   ├── scripts/sync_from_bot.py # recopie (ou --check) les fichiers partagés avec le bot
 │   └── tests/
 └── frontend/
     ├── proxy.conf.json      # /api → localhost:8000

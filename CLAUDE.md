@@ -1,12 +1,13 @@
 # lilium-site
 
 Règles communes (invariants, workflow git, lecture économe) : `../CLAUDE.md`.
-Schéma = bot (`botDiscord/db.py`) ; `api/app/constants.py` est une copie de `botDiscord/config.py` (resynchroniser).
+Schéma = bot (`botDiscord/db.py`). `api/app/shared/` et `api/app/assets/` = copies exactes du bot : ne jamais les modifier ici, changer le bot puis `python -m scripts.sync_from_bot` (vérifié par `tests/test_shared_sync.py` et la CI).
 
 ## Carte
 - `api/app/main.py` — app, front servi via `STATIC_DIR` ; `security.py` — taille des corps, origine, en-têtes/CSP
 - `api/app/auth.py` + `routes/auth.py` — OAuth Discord (`state`), cookie de session signé
 - `api/app/permissions.py` — `require_member/staff/admin` (`member < staff < admin`), cache 60 s
+- `api/app/images.py` — ré-exporte `shared/build_image.py` + rendu async/cache ; `constants.py` — `shared/roles_templates.py` + spécifique site
 - `api/app/db.py` — requêtes ; `bal_stats.py`, `compos.py`, `catalog.py` — logique pure
 - `api/app/routes/` — builds, compos, guild (BAL, admin, erreurs du bot), items, me
 - `frontend/src/app/core/` — `api.service.ts`, `models.ts`, guards (`levelGuard`, `hasLevel`)

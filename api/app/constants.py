@@ -1,24 +1,9 @@
-"""Copie de ROLES et DEFAULT_TEMPLATES du bot (botDiscord/config.py).
+"""ROLES et DEFAULT_TEMPLATES du bot, plus ce que seul le site utilise.
 
-⚠️ À garder synchronisé à la main avec le bot : si un rôle ou un template par
-défaut y est ajouté/supprimé, reporter le changement ici.
+ROLES et DEFAULT_TEMPLATES viennent de app/shared/roles_templates.py, copie exacte de
+botDiscord/roles_templates.py (`python -m scripts.sync_from_bot`, vérifiée par la CI).
 """
-
-ROLES: dict[str, str] = {
-    "TANK":    "🛡️",
-    "HEAL":    "💚",
-    "DPS":     "⚔️",
-    "SUPPORT": "🔮",
-}
-
-DEFAULT_TEMPLATES: dict[str, dict] = {
-    "Donjon Groupe 5": {
-        "description": "Donjon de groupe — 5 joueurs",
-        "type_acti":   "PVE",
-        "image":       "",
-        "pf_1": {"TANK": 1, "DPS": 3, "HEAL": 1},
-    },
-}
+from app.shared.roles_templates import DEFAULT_TEMPLATES, ROLES  # noqa: F401
 
 TYPES_ACTI = ("PVP", "PVE")
 
