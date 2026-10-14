@@ -1,16 +1,17 @@
-import { Component, OnInit, computed, inject, input, signal } from '@angular/core';
+import { Component, computed, inject, input, linkedSignal, signal } from '@angular/core';
+import { rxResource } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
 import { ApiService, errorMessage } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
-import { PublicCompo, PublicComposPage, hasLevel } from '../../core/models';
+import { debouncedSignal } from '../../core/debounce';
+import { PublicCompo, hasLevel } from '../../core/models';
+import { errorText, lastValue } from '../../core/resource';
 import { ToastService } from '../../core/toast.service';
 import { Icon } from '../../shared/icon';
 import { Pager } from '../../shared/pager';
 import { roleColor } from '../../shared/roles';
-
-const SEARCH_DELAY_MS = 250;
 
 /** Modèles de compos publiés par les serveurs qui utilisent le bot : recherche, aperçu de l'image,
  *  import en un clic (staff) dans le serveur courant, avec les builds. */
@@ -77,7 +78,7 @@ const SEARCH_DELAY_MS = 250;
             </article>
           }
         </div>
-        <app-pager [page]="d.page" [pageSize]="d.page_size" [total]="d.total" label="modèles" (pageChange)="load($event)" />
+        <app-pager [page]="d.page" [pageSize]="d.page_size" [total]="d.total" label="modèles" (pageChange)="page.set($event)" />
       } @else {
         <div class="empty"><app-icon name="book" [size]="32" />
           <p>Aucun modèle{{ query() || typeActi() ? ' ne correspond' : ' publié pour l’instant' }}. Publie une compo depuis la page Compos !</p>
@@ -88,7 +89,6 @@ const SEARCH_DELAY_MS = 250;
     }
   `,
   styles: `
-    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
     .toolbar { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; padding: 12px; margin-bottom: 18px; }
     .toolbar .input { flex: 1 1 240px; }
     .filters { gap: 6px; }
@@ -110,7 +110,7 @@ const SEARCH_DELAY_MS = 250;
     .tall { min-height: 220px; }
   `,
 })
-export class LibraryPage implements OnInit {
+export class LibraryPage {
   private readonly api = inject(ApiService);
   private readonly auth = inject(AuthService);
   private readonly toast = inject(ToastService);
@@ -120,30 +120,30 @@ export class LibraryPage implements OnInit {
   protected readonly types = [
     { label: 'Tout', value: null }, { label: 'PvP', value: 'PVP' }, { label: 'PvE', value: 'PVE' },
   ];
-  protected readonly data = signal<PublicComposPage | null>(null);
   protected readonly query = signal('');
+  private readonly debouncedQuery = debouncedSignal(computed(() => this.query().trim()));
   protected readonly typeActi = signal<string | null>(null);
-  protected readonly loading = signal(false);
-  protected readonly error = signal('');
+  /** Revient à la page 1 quand la recherche ou le type change. */
+  protected readonly page = linkedSignal({ source: () => [this.debouncedQuery(), this.typeActi()], computation: () => 1 });
+
+  private readonly models = rxResource({
+    params: () => ({ page: this.page(), q: this.debouncedQuery(), type: this.typeActi() }),
+    stream: ({ params }) => this.api.publicCompos(params.page, params.q, params.type),
+  });
+  /** Dernière page reçue : reste affichée (grisée) pendant le chargement de la suivante. */
+  protected readonly data = lastValue(this.models);
+  protected readonly loading = this.models.isLoading;
+  protected readonly error = errorText(this.models);
   protected readonly shown = signal<number | null>(null);
   protected readonly busy = signal<number | null>(null);
   protected readonly canImport = computed(() => hasLevel(this.auth.levelFor(this.guildId()), 'staff'));
-  private request = 0;
-  private timer: ReturnType<typeof setTimeout> | undefined;
-
-  ngOnInit(): void {
-    void this.load(1);
-  }
 
   search(value: string): void {
     this.query.set(value);
-    clearTimeout(this.timer);
-    this.timer = setTimeout(() => void this.load(1), SEARCH_DELAY_MS);
   }
 
   setType(value: string | null): void {
     this.typeActi.set(value);
-    void this.load(1);
   }
 
   color(role: string): string {
@@ -152,20 +152,6 @@ export class LibraryPage implements OnInit {
 
   imageUrl(id: number): string {
     return this.api.publicCompoImageUrl(id);
-  }
-
-  async load(page: number): Promise<void> {
-    const request = ++this.request;
-    this.loading.set(true);
-    this.error.set('');
-    try {
-      const d = await firstValueFrom(this.api.publicCompos(page, this.query().trim(), this.typeActi()));
-      if (request === this.request) this.data.set(d);
-    } catch (err) {
-      if (request === this.request) this.error.set(errorMessage(err));
-    } finally {
-      if (request === this.request) this.loading.set(false);
-    }
   }
 
   /** Import ; si le nom est déjà pris (409), propose un autre nom. */
@@ -190,7 +176,7 @@ export class LibraryPage implements OnInit {
     try {
       await firstValueFrom(this.api.deletePublicCompo(m.id));
       this.toast.success('Modèle retiré.');
-      await this.load(this.data()?.page ?? 1);
+      this.models.reload();
     } catch (err) {
       this.toast.error(errorMessage(err));
     }

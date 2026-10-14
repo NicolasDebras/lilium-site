@@ -44,10 +44,27 @@ describe('LibraryPage (modèles de compos)', () => {
   });
 
   it('filtre PvE : recharge la page 1 avec type_acti', async () => {
-    const { http, el } = await render('member');
+    const { fixture, http, el } = await render('member');
     [...el.querySelectorAll<HTMLButtonElement>('.filters button')].find((b) => b.textContent === 'PvE')!.click();
+    fixture.detectChanges();
     const req = http.expectOne((r) => r.url === '/api/public/compos');
     expect(req.request.params.get('type_acti')).toBe('PVE');
+    expect(req.request.params.get('page')).toBe('1');
+  });
+
+  it('recherche à la frappe : une seule requête après le délai, revenue en page 1', async () => {
+    const { fixture, http, el } = await render('member');
+    const input = el.querySelector<HTMLInputElement>('input')!;
+    for (const text of ['z', 'zv', 'zvz']) {
+      input.value = text;
+      input.dispatchEvent(new Event('input'));
+      fixture.detectChanges();
+    }
+    http.expectNone((r) => r.url === '/api/public/compos');
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    fixture.detectChanges();
+    const req = http.expectOne((r) => r.url === '/api/public/compos');
+    expect(req.request.params.get('q')).toBe('zvz');
     expect(req.request.params.get('page')).toBe('1');
   });
 

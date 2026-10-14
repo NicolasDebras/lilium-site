@@ -1,12 +1,13 @@
-import { Component, OnInit, computed, inject, input, signal } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { Component, computed, inject, input, linkedSignal, signal } from '@angular/core';
+import { rxResource } from '@angular/core/rxjs-interop';
+import { FormField, form, maxLength, required, requiredError, validate } from '@angular/forms/signals';
 import { Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
 import { ApiService, errorMessage } from '../../core/api.service';
 import { ToastService } from '../../core/toast.service';
 import { ItemsService } from '../../core/items.service';
-import { BuildInput, FREE_CHOICE, Item, RoleInfo, SWAPS_MAX, Slot } from '../../core/models';
+import { Build, BuildInput, FREE_CHOICE, Item, SWAPS_MAX, Slot } from '../../core/models';
 import { parseChoice } from '../../core/tiers';
 import { PAPER_DOLL } from '../../shared/gear';
 import { Icon } from '../../shared/icon';
@@ -26,6 +27,11 @@ function emptyBuild(): BuildInput {
   return { name: '', role: '', type_acti: 'PVP', weapon: '', notes: '', image: '', items: {} };
 }
 
+/** Build de l'API → valeurs du formulaire (sans id ni auteur, équipement normalisé). */
+function toInput({ id: _id, created_by_name: _by, ...rest }: Build): BuildInput {
+  return { ...rest, items: normalizeItems(rest.items) };
+}
+
 export function allTwoHanded(mainhand: string[], get: (id: string) => Item | undefined): boolean {
   const weapons = mainhand.filter((id) => id !== FREE_CHOICE).map(get);
   return weapons.length > 0 && weapons.length === mainhand.length && weapons.every((w) => !!w?.two_handed);
@@ -33,7 +39,7 @@ export function allTwoHanded(mainhand: string[], get: (id: string) => Item | und
 
 @Component({
   selector: 'app-build-form',
-  imports: [FormsModule, RouterLink, ItemPicker, Icon],
+  imports: [FormField, RouterLink, ItemPicker, Icon],
   template: `
     <div class="page-head">
       <div>
@@ -43,7 +49,7 @@ export function allTwoHanded(mainhand: string[], get: (id: string) => Item | und
       </div>
     </div>
 
-    <form class="build-form" (ngSubmit)="save()">
+    <form class="build-form" (submit)="$event.preventDefault(); save()">
       @if (error()) {
         <p class="alert">{{ error() }}</p>
       }
@@ -78,14 +84,13 @@ export function allTwoHanded(mainhand: string[], get: (id: string) => Item | und
         <div class="fields card form">
           <div class="field">
             <label for="name">Nom</label>
-            <input id="name" name="name" class="input" required maxlength="100" placeholder="ex : Heal Sacré ZvZ"
-                   [(ngModel)]="model().name" />
+            <input id="name" class="input" placeholder="ex : Heal Sacré ZvZ" [formField]="form.name" />
           </div>
 
           <div class="row two">
             <div class="field">
               <label for="role">Rôle</label>
-              <select id="role" name="role" class="select" required [(ngModel)]="model().role">
+              <select id="role" class="select" [formField]="form.role">
                 <option value="" disabled>Choisir…</option>
                 @for (r of roles(); track r.name) {
                   <option [value]="r.name">{{ r.emoji }} {{ r.name }}</option>
@@ -94,7 +99,7 @@ export function allTwoHanded(mainhand: string[], get: (id: string) => Item | und
             </div>
             <div class="field">
               <label for="type">Type</label>
-              <select id="type" name="type_acti" class="select" [(ngModel)]="model().type_acti">
+              <select id="type" class="select" [formField]="form.type_acti">
                 <option value="PVP">PVP</option>
                 <option value="PVE">PVE</option>
               </select>
@@ -103,27 +108,24 @@ export function allTwoHanded(mainhand: string[], get: (id: string) => Item | und
 
           <div class="field">
             <label for="weapon">Précisions sur le stuff (optionnel)</label>
-            <input id="weapon" name="weapon" class="input" maxlength="200"
-                   placeholder="ex : monture, spé minimum, consignes de stuff…"
-                   [(ngModel)]="model().weapon" />
+            <input id="weapon" class="input" placeholder="ex : monture, spé minimum, consignes de stuff…" [formField]="form.weapon" />
           </div>
 
           <div class="field">
             <label for="notes">Notes</label>
-            <textarea id="notes" name="notes" class="textarea" maxlength="4000" placeholder="Rotation, placement, consignes…"
-                      [(ngModel)]="model().notes"></textarea>
+            <textarea id="notes" class="textarea" placeholder="Rotation, placement, consignes…" [formField]="form.notes"></textarea>
           </div>
 
           <div class="field">
             <label for="image">Image (URL, optionnel)</label>
-            <input id="image" name="image" class="input" type="url" maxlength="500" [(ngModel)]="model().image" />
+            <input id="image" class="input" type="url" [formField]="form.image" />
           </div>
         </div>
       </div>
 
       <div class="save-bar glass">
         <a class="btn btn-ghost" [routerLink]="['/g', guildId(), 'builds']">Annuler</a>
-        <button type="submit" class="btn btn-primary" [disabled]="saving() || !model().name.trim() || !model().role">
+        <button type="submit" class="btn btn-primary" [disabled]="saving() || form().invalid()">
           <app-icon name="check" /> {{ saving() ? 'Enregistrement…' : 'Enregistrer' }}
         </button>
       </div>
@@ -156,7 +158,7 @@ export function allTwoHanded(mainhand: string[], get: (id: string) => Item | und
     }
   `,
 })
-export class BuildForm implements OnInit {
+export class BuildForm {
   private readonly api = inject(ApiService);
   private readonly router = inject(Router);
   private readonly items = inject(ItemsService);
@@ -167,12 +169,36 @@ export class BuildForm implements OnInit {
   /** Présent en édition (/builds/:buildId/edit), absent en création. */
   readonly buildId = input<string>();
 
-  // Signal (et pas simple propriété) : l'app est zoneless, le rechargement
-  // asynchrone du build doit notifier la vue.
-  protected readonly model = signal<BuildInput>(emptyBuild());
-  protected readonly roles = signal<RoleInfo[]>([]);
+  private readonly rolesRes = rxResource({
+    params: () => this.guildId(),
+    stream: ({ params }) => this.api.roles(params),
+  });
+  protected readonly roles = computed(() => (this.rolesRes.hasValue() ? this.rolesRes.value() : []));
+
+  /** Build édité (rien à charger en création : la ressource reste inactive). */
+  private readonly existing = rxResource({
+    params: () => {
+      const id = this.buildId();
+      return id ? { guildId: this.guildId(), id: Number(id) } : undefined;
+    },
+    stream: ({ params }) => this.api.build(params.guildId, params.id),
+  });
+
+  /** Valeurs du formulaire : vides en création, celles du build une fois chargé en édition. */
+  protected readonly model = linkedSignal<BuildInput>(() => (this.existing.hasValue() ? toInput(this.existing.value()) : emptyBuild()));
+  protected readonly form = form(this.model, (p) => {
+    required(p.name);
+    validate(p.name, ({ value }) => (value().trim() ? undefined : requiredError()));
+    maxLength(p.name, 100);
+    required(p.role);
+    maxLength(p.weapon, 200);
+    maxLength(p.notes, 4000);
+    maxLength(p.image, 500);
+  });
+
   protected readonly saving = signal(false);
-  protected readonly error = signal('');
+  private readonly saveError = signal('');
+  protected readonly error = computed(() => (this.existing.error() ? errorMessage(this.existing.error()) : this.saveError()));
   protected readonly itemsError = signal('');
 
   /** Main gauche bloquée seulement si TOUTES les armes proposées sont à deux mains
@@ -222,23 +248,14 @@ export class BuildForm implements OnInit {
     });
   }
 
-  async ngOnInit(): Promise<void> {
-    this.api.roles(this.guildId()).subscribe({ next: (r) => this.roles.set(r), error: () => {} });
+  constructor() {
     this.items.load().catch(() => this.itemsError.set("Impossible de charger le catalogue d'objets."));
-    const id = this.buildId();
-    if (id) {
-      try {
-        const { id: _id, created_by_name: _by, ...rest } = await firstValueFrom(this.api.build(this.guildId(), +id));
-        this.model.set({ ...rest, items: normalizeItems(rest.items) });
-      } catch (err) {
-        this.error.set(errorMessage(err));
-      }
-    }
   }
 
   async save(): Promise<void> {
+    if (this.form().invalid()) return;
     this.saving.set(true);
-    this.error.set('');
+    this.saveError.set('');
     try {
       const id = this.buildId();
       await firstValueFrom(
@@ -247,7 +264,7 @@ export class BuildForm implements OnInit {
       this.toast.success(id ? 'Build enregistré.' : `Build « ${this.model().name} » créé.`);
       await this.router.navigate(['/g', this.guildId(), 'builds']);
     } catch (err) {
-      this.error.set(errorMessage(err));
+      this.saveError.set(errorMessage(err));
     } finally {
       this.saving.set(false);
     }

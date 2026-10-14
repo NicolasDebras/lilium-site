@@ -56,7 +56,7 @@ def _data(body: BuildIn) -> dict:
     try:
         data["items"] = validate_build_items(body.items)
     except InvalidItems as e:
-        raise HTTPException(status_code=422, detail=str(e))
+        raise HTTPException(status_code=422, detail=str(e)) from e
     return data
 
 

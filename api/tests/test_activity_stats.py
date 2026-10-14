@@ -1,10 +1,10 @@
 """Stats d'activité (page Admin) : calculs purs + route."""
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, UTC
 
 from app.activity_stats import compute_activity_stats
 from tests.fakes import ADMIN_ID, GUILD, MEMBER_ID, OTHER_GUILD, STAFF_ID
 
-NOW = datetime(2026, 10, 8, 20, 0, tzinfo=timezone.utc)   # jeudi
+NOW = datetime(2026, 10, 8, 20, 0, tzinfo=UTC)   # jeudi
 
 
 def row(days_ago=0, outcome="finacti", slots=None, capacity=None, template="ZvZ", creator="42", hour=19):
@@ -43,7 +43,7 @@ def test_empty_history():
 
 
 def test_route_admin_only_and_scoped(login, fake_db):
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     fake_db.activity = [{**row(), "ended_at": now - timedelta(hours=1), "guild_id": GUILD},
                         {**row(), "ended_at": now - timedelta(hours=1), "guild_id": OTHER_GUILD}]
     assert login(MEMBER_ID).get(f"/api/guilds/{GUILD}/admin/activity").status_code == 403

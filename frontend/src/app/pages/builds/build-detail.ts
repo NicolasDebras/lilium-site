@@ -1,11 +1,13 @@
-import { Component, OnInit, computed, inject, input, signal } from '@angular/core';
+import { Component, computed, inject, input, signal } from '@angular/core';
+import { rxResource } from '@angular/core/rxjs-interop';
 import { Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
+import { errorText } from '../../core/resource';
 import { ApiService, errorMessage } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
 import { ItemsService } from '../../core/items.service';
-import { BuildDetail, hasLevel } from '../../core/models';
+import { hasLevel } from '../../core/models';
 import { ToastService } from '../../core/toast.service';
 import { Gear, choiceName, describeGear, describeSwaps } from '../../shared/gear';
 import { Icon } from '../../shared/icon';
@@ -104,7 +106,7 @@ import { roleColor } from '../../shared/roles';
     }
   `,
 })
-export class BuildDetailPage implements OnInit {
+export class BuildDetailPage {
   private readonly api = inject(ApiService);
   private readonly auth = inject(AuthService);
   private readonly items = inject(ItemsService);
@@ -113,8 +115,12 @@ export class BuildDetailPage implements OnInit {
   readonly guildId = input.required<string>();
   readonly buildId = input.required<string>();
 
-  protected readonly build = signal<BuildDetail | null>(null);
-  protected readonly error = signal('');
+  private readonly detail = rxResource({
+    params: () => ({ guildId: this.guildId(), id: Number(this.buildId()) }),
+    stream: ({ params }) => this.api.buildDetail(params.guildId, params.id),
+  });
+  protected readonly build = computed(() => (this.detail.hasValue() ? this.detail.value() : null));
+  protected readonly error = errorText(this.detail);
   protected readonly busy = signal(false);
   protected readonly canEdit = computed(() => hasLevel(this.auth.levelFor(this.guildId()), 'staff'));
   protected readonly imageUrl = computed(() => this.api.buildImageUrl(this.guildId(), Number(this.buildId())));
@@ -137,13 +143,8 @@ export class BuildDetailPage implements OnInit {
       .some((i) => i.tier != null && i.slot !== 'food' && i.slot !== 'potion');
   });
 
-  async ngOnInit(): Promise<void> {
-    void this.items.load();
-    try {
-      this.build.set(await firstValueFrom(this.api.buildDetail(this.guildId(), Number(this.buildId()))));
-    } catch (err) {
-      this.error.set(errorMessage(err));
-    }
+  constructor() {
+    this.items.load().catch(() => {});
   }
 
   color(role: string): string {

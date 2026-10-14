@@ -39,7 +39,7 @@ Les rôles Discord sont vérifiés via l'API REST Discord avec le token du bot. 
 ## Lancer en local
 
 ### 1. Prérequis
-- Python 3.11+ et Node 20+ (`python --version`, `node --version`)
+- Python 3.11+ et Node 24 (ou 22.22.3+ : minimum exigé par Angular CLI 22) (`python --version`, `node --version`)
 - Le bot déployé au moins une fois avec la version qui crée la table `web_admins` (sinon personne n'est admin, le reste marche)
 
 ### 2. Remplir `api/.env`

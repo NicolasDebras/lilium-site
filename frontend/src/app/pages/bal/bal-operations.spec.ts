@@ -60,6 +60,7 @@ describe('BalOperations (historique complet)', () => {
     const select = el.querySelector('select') as HTMLSelectElement;
     select.value = 'retirebal';
     select.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
     const req = http.expectOne((q) => q.url === '/api/guilds/111/bal/me/operations');
     expect(req.request.params.get('action')).toBe('retirebal');
     expect(req.request.params.get('page')).toBe('1');
@@ -75,6 +76,7 @@ describe('BalOperations (historique complet)', () => {
     await settle(fixture);
 
     (el.querySelector('[aria-label="Page suivante"]') as HTMLButtonElement).click();
+    fixture.detectChanges();
     const req = http.expectOne((q) => q.url === '/api/guilds/111/bal/me/operations');
     expect(req.request.params.get('page')).toBe('2');
   });

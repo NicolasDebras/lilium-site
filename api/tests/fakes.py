@@ -1,5 +1,5 @@
 """Doubles en mémoire de la base et de Discord — aucune vraie connexion."""
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, UTC
 
 from app.discord_rest import DiscordUnavailable
 from app.settings import Settings
@@ -37,7 +37,7 @@ class FakeDB:
         self.templates: dict[int, dict[str, dict]] = {}
         self._next_id = 1
         self.access_queries = 0
-        t0 = datetime(2026, 10, 1, 18, 0, tzinfo=timezone.utc)
+        t0 = datetime(2026, 10, 1, 18, 0, tzinfo=UTC)
         # Lignes du bal_log « à plat » (une par joueur et par opération), plus récentes en dernier
         self.bal_ops = [
             {"guild_id": GUILD, "uid": str(MEMBER_ID), "ts": t0 + timedelta(hours=i), "action": a,
@@ -129,7 +129,7 @@ class FakeDB:
         pid = len(self.public) + 1
         self.public[pid] = {"id": pid, "name": name, "description": description, "type_acti": type_acti,
                             "image": image, "data": data, "source_guild_id": source_guild_id, "author_id": author_id,
-                            "author_name": author_name, "created_at": datetime(2026, 10, 8, tzinfo=timezone.utc),
+                            "author_name": author_name, "created_at": datetime(2026, 10, 8, tzinfo=UTC),
                             "imports": 0}
         return pid
 

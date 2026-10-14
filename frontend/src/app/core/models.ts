@@ -7,6 +7,9 @@ export function hasLevel(level: Level | undefined, minimum: Level): boolean {
   return LEVEL_RANK[level ?? 'none'] >= LEVEL_RANK[minimum];
 }
 
+/** Libellé affiché d'un niveau (vide pour « none »). */
+export const LEVEL_LABEL: Record<Level, string> = { none: '', member: 'Membre', staff: 'Staff', admin: 'Admin' };
+
 export interface User {
   id: string;
   username: string;

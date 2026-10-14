@@ -1,11 +1,10 @@
-import { Component, OnInit, inject, input, signal } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { Component, computed, inject, input } from '@angular/core';
+import { rxResource } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
-import { firstValueFrom } from 'rxjs';
 
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
-import { PublicCompo } from '../../core/models';
+import { PublicInfoService } from '../../core/public-info.service';
 import { Icon, IconName } from '../../shared/icon';
 import { Logo } from '../../shared/logo';
 
@@ -117,21 +116,20 @@ const SITE_FEATURES: { icon: IconName; title: string; text: string }[] = [
     .center { text-align: center; margin: 0; }
   `,
 })
-export class LandingPage implements OnInit {
+export class LandingPage {
   protected readonly auth = inject(AuthService);
   private readonly api = inject(ApiService);
-  private readonly http = inject(HttpClient);
+  protected readonly inviteUrl = inject(PublicInfoService).inviteUrl;
   /** ?error=1 renvoyé par l'API quand Discord refuse / l'utilisateur annule. */
   readonly error = input<string | undefined>();
 
   protected readonly botFeatures = BOT_FEATURES;
   protected readonly siteFeatures = SITE_FEATURES;
-  protected readonly inviteUrl = signal<string | null>(null);
-  protected readonly models = signal<PublicCompo[]>([]);
+  /** Aperçu de la bibliothèque : 6 premiers modèles publics (rien si l'API ne répond pas). */
+  private readonly publicCompos = rxResource({ stream: () => this.api.publicCompos(1, '', null) });
+  protected readonly models = computed(() => (this.publicCompos.hasValue() ? this.publicCompos.value().items.slice(0, 6) : []));
 
-  ngOnInit(): void {
+  constructor() {
     void this.auth.load().catch(() => null);
-    this.http.get<{ invite_url: string }>('/api/public/info').subscribe({ next: (i) => this.inviteUrl.set(i.invite_url), error: () => {} });
-    firstValueFrom(this.api.publicCompos(1, '', null)).then((p) => this.models.set(p.items.slice(0, 6)), () => {});
   }
 }

@@ -1,9 +1,10 @@
 import { DecimalPipe } from '@angular/common';
-import { Component, OnInit, inject, input, signal } from '@angular/core';
-import { firstValueFrom } from 'rxjs';
+import { Component, computed, inject, input, signal } from '@angular/core';
+import { rxResource } from '@angular/core/rxjs-interop';
 
-import { ApiService, errorMessage } from '../../core/api.service';
-import { Bal, BalPeriod, MyBalHistory } from '../../core/models';
+import { ApiService } from '../../core/api.service';
+import { BalPeriod } from '../../core/models';
+import { errorText, lastValue } from '../../core/resource';
 import { FlowChart, LineChart, compactSilver, fullSilver } from '../../shared/charts';
 import { Icon } from '../../shared/icon';
 import { PeriodPicker } from '../../shared/period-picker';
@@ -146,51 +147,32 @@ export function ordinal(n: number): string {
     }
   `,
 })
-export class BalPage implements OnInit {
+export class BalPage {
   private readonly api = inject(ApiService);
   readonly guildId = input.required<string>();
 
-  protected readonly bal = signal<Bal | null>(null);
-  protected readonly history = signal<MyBalHistory | null>(null);
+  private readonly balRes = rxResource({ params: () => this.guildId(), stream: ({ params }) => this.api.myBal(params) });
+  protected readonly bal = computed(() => (this.balRes.hasValue() ? this.balRes.value() : null));
+  protected readonly error = errorText(this.balRes);
+
   protected readonly period = signal<BalPeriod>('30d');
-  protected readonly loading = signal(false);
-  protected readonly error = signal('');
-  protected readonly historyError = signal('');
+  private readonly historyRes = rxResource({
+    params: () => ({ guildId: this.guildId(), period: this.period() }),
+    stream: ({ params }) => this.api.myBalHistory(params.guildId, params.period),
+  });
+  /** Garde l'ancien rendu (estompé) pendant le rechargement d'une autre période. */
+  protected readonly history = lastValue(this.historyRes);
+  protected readonly loading = this.historyRes.isLoading;
+  protected readonly historyError = errorText(this.historyRes);
+
   protected readonly compact = compactSilver;
   protected readonly full = fullSilver;
   protected readonly abs = Math.abs;
   protected readonly ordinal = ordinal;
-  private request = 0;
-
-  async ngOnInit(): Promise<void> {
-    void this.loadHistory();
-    try {
-      this.bal.set(await firstValueFrom(this.api.myBal(this.guildId())));
-    } catch (err) {
-      this.error.set(errorMessage(err));
-    }
-  }
-
-  setPeriod(period: BalPeriod): void {
-    if (period === this.period()) return;
-    this.period.set(period);
-    void this.loadHistory();
-  }
-
-  async loadHistory(): Promise<void> {
-    const request = ++this.request;
-    this.loading.set(true);
-    this.historyError.set('');
-    try {
-      const h = await firstValueFrom(this.api.myBalHistory(this.guildId(), this.period()));
-      if (request === this.request) this.history.set(h);
-    } catch (err) {
-      if (request === this.request) this.historyError.set(errorMessage(err));
-    } finally {
-      if (request === this.request) this.loading.set(false);
-    }
-  }
-
   protected readonly action = balAction;
   protected readonly when = opWhen;
+
+  setPeriod(period: BalPeriod): void {
+    this.period.set(period);
+  }
 }

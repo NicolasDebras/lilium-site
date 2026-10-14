@@ -17,7 +17,8 @@ const BUILDS: Build[] = [
     items: { mainhand: ['2H_HOLYSTAFF'] }, created_by_name: 'Lily' },
 ];
 
-async function render(name?: string) {
+/** `edited` : réponse de l'API pour la compo ouverte en édition (avec `name`). */
+async function render(name?: string, edited?: object) {
   TestBed.configureTestingModule({
     imports: [CompoForm],
     providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting(), fakeAuth({ levels: { '111': 'staff' } })],
@@ -30,6 +31,7 @@ async function render(name?: string) {
   http.expectOne('/api/guilds/111/roles').flush([{ name: 'TANK', emoji: '🛡️' }, { name: 'HEAL', emoji: '💚' }]);
   http.expectOne((r) => r.url === '/api/guilds/111/builds').flush(BUILDS);
   http.expectOne('/api/items').flush(TEST_ITEMS);
+  if (name) http.expectOne(`/api/guilds/111/compos/${name}`).flush(edited ?? {});
   const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
   await fixture.whenStable();
   return { fixture, http, navigate, cmp: fixture.componentInstance, el: fixture.nativeElement as HTMLElement };
@@ -110,6 +112,19 @@ describe('CompoForm', () => {
     expect(cmp.total('pf1')).toBe(2);
   });
 
+  it('changer le nombre dans le champ met à jour les totaux affichés', async () => {
+    const { fixture, cmp, el } = await render();
+    cmp.setSource('pf1', 0, '12');
+    fixture.detectChanges();
+    const count = el.querySelector<HTMLInputElement>('.slot input.count')!;
+    count.value = '3';
+    count.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    expect(cmp['model']().pf1[0].count).toBe(3);
+    expect(el.querySelector('.preview .badge')?.textContent).toContain('3 joueurs');
+    expect(el.querySelector('legend')?.textContent).toContain('3 joueurs');
+  });
+
   it('crée la compo : lignes avec build_id, sans le champ interne « free »', async () => {
     const { cmp, http, navigate } = await render();
     cmp['model'].update((m) => ({ ...m, name: 'ZvZ' }));
@@ -130,17 +145,15 @@ describe('CompoForm', () => {
   });
 
   it('en édition : relit les builds des lignes puis fait un PUT', async () => {
-    const { fixture, cmp, http, el } = await render('ZvZ');
-    http.expectOne('/api/guilds/111/compos/ZvZ').flush({
+    const { cmp, http, el } = await render('ZvZ', {
       name: 'ZvZ', description: '', type_acti: 'PVP', image: '',
       pf1: [{ build_id: 12, role: 'TANK', count: 1, weapon: 'Tank Masse' }, { build_id: null, role: 'CALLER', count: 1, weapon: '' }],
       pf2: [], total: 2, custom: true,
     });
-    await new Promise((r) => setTimeout(r));
-    await fixture.whenStable();
     expect(cmp.sourceOf(cmp['model']().pf1[0])).toBe('12');
     expect(cmp.sourceOf(cmp['model']().pf1[1])).toBe('free');
     expect(el.querySelector('.free-row')).not.toBeNull();
+    expect(el.querySelector<HTMLInputElement>('#name')!.disabled).toBe(true);   // pas de renommage
 
     const done = cmp.save();
     const req = http.expectOne('/api/guilds/111/compos/ZvZ');

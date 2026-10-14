@@ -1,8 +1,9 @@
-import { Component, OnInit, computed, inject, input, signal } from '@angular/core';
-import { firstValueFrom } from 'rxjs';
+import { Component, computed, inject, input, signal } from '@angular/core';
+import { rxResource } from '@angular/core/rxjs-interop';
 
-import { ApiService, errorMessage } from '../../core/api.service';
-import { ActivityStats, BalPeriod } from '../../core/models';
+import { ApiService } from '../../core/api.service';
+import { BalPeriod } from '../../core/models';
+import { errorText, lastValue } from '../../core/resource';
 import { HBarChart, HBarRow, Heatmap, LineChart, LinePoint, longDate } from '../../shared/charts';
 import { Icon } from '../../shared/icon';
 import { PeriodPicker } from '../../shared/period-picker';
@@ -51,19 +52,19 @@ import { PeriodPicker } from '../../shared/period-picker';
             </div>
             <div class="card chart">
               <h3><app-icon name="alert" [size]="16" /> Rôles qui manquent le plus <span class="muted">— places vides</span></h3>
-              <app-hbar-chart [rows]="rows(d.missing_roles)" unit="places vides" empty="Toutes les compos ont été remplies." />
+              <app-hbar-chart [rows]="bars().missing_roles" unit="places vides" empty="Toutes les compos ont été remplies." />
             </div>
             <div class="card chart">
               <h3><app-icon name="crown" [size]="16" /> Joueurs les plus présents</h3>
-              <app-hbar-chart [rows]="rows(d.top_players)" unit="actis" />
+              <app-hbar-chart [rows]="bars().top_players" unit="actis" />
             </div>
             <div class="card chart">
               <h3><app-icon name="flag" [size]="16" /> Callers <span class="muted">— actis lancées</span></h3>
-              <app-hbar-chart [rows]="rows(d.top_callers)" unit="actis" />
+              <app-hbar-chart [rows]="bars().top_callers" unit="actis" />
             </div>
             <div class="card chart">
               <h3><app-icon name="shield" [size]="16" /> Compos les plus jouées</h3>
-              <app-hbar-chart [rows]="rows(d.top_templates)" unit="actis" />
+              <app-hbar-chart [rows]="bars().top_templates" unit="actis" />
             </div>
             <div class="card chart wide">
               <h3>Quand la guilde joue <span class="muted">— fins d'activité par jour et heure</span></h3>
@@ -101,49 +102,40 @@ import { PeriodPicker } from '../../shared/period-picker';
     }
   `,
 })
-export class ActivityStatsPanel implements OnInit {
+export class ActivityStatsPanel {
   private readonly api = inject(ApiService);
   readonly guildId = input.required<string>();
 
-  protected readonly data = signal<ActivityStats | null>(null);
   protected readonly period = signal<BalPeriod>('30d');
-  protected readonly loading = signal(false);
-  protected readonly error = signal('');
+  private readonly stats = rxResource({
+    params: () => ({ guildId: this.guildId(), period: this.period() }),
+    stream: ({ params }) => this.api.adminActivity(params.guildId, params.period),
+  });
+  /** Garde l'ancien rendu (estompé) pendant le rechargement d'une autre période. */
+  protected readonly data = lastValue(this.stats);
+  protected readonly loading = this.stats.isLoading;
+  protected readonly error = errorText(this.stats);
   protected readonly long = longDate;
   /** Actis jouées (finacti + fin) par jour ou par semaine. */
   protected readonly timeline = computed((): LinePoint[] =>
     (this.data()?.timeline ?? []).map((t) => ({ date: t.start, total: t.finacti + t.fin })));
-  private request = 0;
-
-  ngOnInit(): void {
-    void this.load();
-  }
+  /** Barres des classements, recalculées seulement quand les stats changent. */
+  protected readonly bars = computed(() => {
+    const d = this.data();
+    const rows = (list: { name: string; count: number }[] = []): HBarRow[] => list.map((r) => ({ label: r.name, value: r.count }));
+    return {
+      missing_roles: rows(d?.missing_roles),
+      top_players: rows(d?.top_players),
+      top_callers: rows(d?.top_callers),
+      top_templates: rows(d?.top_templates),
+    };
+  });
 
   setPeriod(period: BalPeriod): void {
-    if (period === this.period()) return;
     this.period.set(period);
-    void this.load();
-  }
-
-  rows(list: { name: string; count: number }[]): HBarRow[] {
-    return list.map((r) => ({ label: r.name, value: r.count }));
   }
 
   fr(n: number): string {
     return n.toLocaleString('fr-FR');
-  }
-
-  async load(): Promise<void> {
-    const request = ++this.request;
-    this.loading.set(true);
-    this.error.set('');
-    try {
-      const d = await firstValueFrom(this.api.adminActivity(this.guildId(), this.period()));
-      if (request === this.request) this.data.set(d);
-    } catch (err) {
-      if (request === this.request) this.error.set(errorMessage(err));
-    } finally {
-      if (request === this.request) this.loading.set(false);
-    }
   }
 }

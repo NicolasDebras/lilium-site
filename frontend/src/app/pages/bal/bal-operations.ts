@@ -1,8 +1,9 @@
-import { Component, OnInit, computed, inject, input, signal } from '@angular/core';
-import { firstValueFrom } from 'rxjs';
+import { Component, computed, inject, input, linkedSignal, signal } from '@angular/core';
+import { rxResource } from '@angular/core/rxjs-interop';
 
-import { ApiService, errorMessage } from '../../core/api.service';
-import { BalAction, BalOperationsPage } from '../../core/models';
+import { ApiService } from '../../core/api.service';
+import { BalAction } from '../../core/models';
+import { errorText, lastValue } from '../../core/resource';
 import { fullSilver } from '../../shared/charts';
 import { Icon } from '../../shared/icon';
 import { Pager } from '../../shared/pager';
@@ -62,7 +63,6 @@ import { BAL_ACTIONS, balAction, opWhen } from './bal-actions';
   `,
   styles: `
     .history { display: grid; gap: 10px; margin-top: 16px; }
-    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
     .head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
     .head h3 { margin: 0; font-size: 1rem; }
     .tools { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
@@ -84,17 +84,26 @@ import { BAL_ACTIONS, balAction, opWhen } from './bal-actions';
     .skeleton { min-height: 160px; }
   `,
 })
-export class BalOperations implements OnInit {
+export class BalOperations {
   private readonly api = inject(ApiService);
   readonly guildId = input.required<string>();
-  /** Joueur affiché (admin) ; absent = le joueur connecté. */
+  /** Joueur dont on affiche l'historique (page Admin) ; null = le joueur connecté. */
   readonly userId = input<string | null>(null);
   readonly title = input('Historique complet');
 
-  protected readonly data = signal<BalOperationsPage | null>(null);
   protected readonly action = signal<BalAction | null>(null);
-  protected readonly loading = signal(false);
-  protected readonly error = signal('');
+  /** Revient à la page 1 quand le joueur ou le filtre change. */
+  protected readonly page = linkedSignal({ source: () => [this.userId(), this.action()], computation: () => 1 });
+  private readonly ops = rxResource({
+    params: () => ({ guildId: this.guildId(), uid: this.userId(), page: this.page(), action: this.action() }),
+    stream: ({ params: { guildId, uid, page, action } }) => (uid
+      ? this.api.playerBalOperations(guildId, uid, page, action)
+      : this.api.myBalOperations(guildId, page, action)),
+  });
+  /** Garde l'ancienne page (estompée) pendant le chargement de la suivante. */
+  protected readonly data = lastValue(this.ops);
+  protected readonly loading = this.ops.isLoading;
+  protected readonly error = errorText(this.ops);
   protected readonly csvUrl = computed(() => {
     const uid = this.userId();
     return uid ? this.api.playerBalCsvUrl(this.guildId(), uid, this.action()) : this.api.myBalCsvUrl(this.guildId(), this.action());
@@ -104,36 +113,12 @@ export class BalOperations implements OnInit {
   protected readonly when = opWhen;
   protected readonly full = fullSilver;
   protected readonly abs = Math.abs;
-  private request = 0;
-
-  ngOnInit(): void {
-    void this.load(1);
-  }
 
   setAction(value: string): void {
     this.action.set((value || null) as BalAction | null);
-    void this.load(1);
   }
 
   go(page: number): void {
-    void this.load(page);
-  }
-
-  /** Garde l'ancienne page (estompée) pendant le chargement ; ignore les réponses périmées. */
-  async load(page: number): Promise<void> {
-    const request = ++this.request;
-    this.loading.set(true);
-    this.error.set('');
-    try {
-      const uid = this.userId();
-      const d = await firstValueFrom(uid
-        ? this.api.playerBalOperations(this.guildId(), uid, page, this.action())
-        : this.api.myBalOperations(this.guildId(), page, this.action()));
-      if (request === this.request) this.data.set(d);
-    } catch (err) {
-      if (request === this.request) this.error.set(errorMessage(err));
-    } finally {
-      if (request === this.request) this.loading.set(false);
-    }
+    this.page.set(page);
   }
 }

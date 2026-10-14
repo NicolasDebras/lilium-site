@@ -5,9 +5,8 @@ elle vérifie l'appartenance et les rôles via GET /guilds/{g}/members/{u}.
 Résultats gardés en cache mémoire (60 s par défaut) pour ne pas se faire
 rate-limiter à chaque requête du site.
 """
-import asyncio
 import time
-from typing import Awaitable, Callable
+from collections.abc import Awaitable, Callable
 
 import aiohttp
 
@@ -40,7 +39,7 @@ class DiscordRest:
                 async with session.get(API + path, headers=headers) as resp:
                     body = await resp.json() if resp.status == 200 else None
                     return resp.status, body
-        except (aiohttp.ClientError, asyncio.TimeoutError) as e:
+        except (TimeoutError, aiohttp.ClientError) as e:
             raise DiscordUnavailable(str(e) or type(e).__name__) from e
 
     async def _cached_get(self, path: str) -> dict | None:

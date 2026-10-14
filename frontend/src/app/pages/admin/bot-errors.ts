@@ -1,8 +1,8 @@
-import { Component, OnInit, inject, input, signal } from '@angular/core';
-import { firstValueFrom } from 'rxjs';
+import { Component, computed, inject, input, linkedSignal, signal } from '@angular/core';
+import { rxResource } from '@angular/core/rxjs-interop';
 
-import { ApiService, errorMessage } from '../../core/api.service';
-import { BotErrorDetail, BotErrorsPage } from '../../core/models';
+import { ApiService } from '../../core/api.service';
+import { errorText, lastValue } from '../../core/resource';
 import { Icon } from '../../shared/icon';
 import { Pager } from '../../shared/pager';
 
@@ -72,7 +72,7 @@ export function errorWhen(ts: string): string {
               </li>
             }
           </ul>
-          <app-pager [page]="d.page" [pageSize]="d.page_size" [total]="d.total" label="erreurs" (pageChange)="load($event)" />
+          <app-pager [page]="d.page" [pageSize]="d.page_size" [total]="d.total" label="erreurs" (pageChange)="page.set($event)" />
         } @else {
           <p class="muted">Aucune erreur enregistrée. 🎉</p>
         }
@@ -83,7 +83,6 @@ export function errorWhen(ts: string): string {
   `,
   styles: `
     .errors { margin-top: 32px; }
-    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
     .section-head { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
     .section-head h2 { margin: 0; }
     .section-head p { margin: 4px 0 0; }
@@ -113,57 +112,40 @@ export function errorWhen(ts: string): string {
     }
   `,
 })
-export class BotErrors implements OnInit {
+export class BotErrors {
   private readonly api = inject(ApiService);
   readonly guildId = input.required<string>();
 
-  protected readonly data = signal<BotErrorsPage | null>(null);
   protected readonly command = signal<string | null>(null);
-  protected readonly loading = signal(false);
-  protected readonly error = signal('');
-  protected readonly openId = signal<number | null>(null);
-  protected readonly detail = signal<BotErrorDetail | null>(null);
-  protected readonly detailError = signal('');
-  protected readonly when = errorWhen;
-  private request = 0;
+  /** Revient à la page 1 quand le filtre change. */
+  protected readonly page = linkedSignal({ source: this.command, computation: () => 1 });
+  private readonly list = rxResource({
+    params: () => ({ guildId: this.guildId(), page: this.page(), command: this.command() }),
+    stream: ({ params }) => this.api.botErrors(params.guildId, params.page, params.command),
+  });
+  /** Garde l'ancienne page (estompée) pendant le chargement de la suivante. */
+  protected readonly data = lastValue(this.list);
+  protected readonly loading = this.list.isLoading;
+  protected readonly error = errorText(this.list);
 
-  ngOnInit(): void {
-    void this.load(1);
-  }
+  /** Erreur dépliée (une à la fois) ; repliée dès qu'on change de page ou de filtre. */
+  protected readonly openId = linkedSignal<unknown, number | null>({ source: () => [this.page(), this.command()], computation: () => null });
+  private readonly detailRes = rxResource({
+    params: () => {
+      const id = this.openId();
+      return id === null ? undefined : { guildId: this.guildId(), id };
+    },
+    stream: ({ params }) => this.api.botError(params.guildId, params.id),
+  });
+  protected readonly detail = computed(() => (this.detailRes.hasValue() ? this.detailRes.value() : null));
+  protected readonly detailError = errorText(this.detailRes);
+  protected readonly when = errorWhen;
 
   setCommand(value: string): void {
     this.command.set(value || null);
-    void this.load(1);
   }
 
-  async load(page: number): Promise<void> {
-    const request = ++this.request;
-    this.loading.set(true);
-    this.error.set('');
-    this.openId.set(null);
-    try {
-      const d = await firstValueFrom(this.api.botErrors(this.guildId(), page, this.command()));
-      if (request === this.request) this.data.set(d);
-    } catch (err) {
-      if (request === this.request) this.error.set(errorMessage(err));
-    } finally {
-      if (request === this.request) this.loading.set(false);
-    }
-  }
-
-  async toggle(id: number): Promise<void> {
-    if (this.openId() === id) {
-      this.openId.set(null);
-      return;
-    }
-    this.openId.set(id);
-    this.detail.set(null);
-    this.detailError.set('');
-    try {
-      const d = await firstValueFrom(this.api.botError(this.guildId(), id));
-      if (this.openId() === id) this.detail.set(d);
-    } catch (err) {
-      if (this.openId() === id) this.detailError.set(errorMessage(err));
-    }
+  toggle(id: number): void {
+    this.openId.update((open) => (open === id ? null : id));
   }
 }

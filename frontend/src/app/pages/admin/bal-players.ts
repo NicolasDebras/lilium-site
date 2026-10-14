@@ -1,14 +1,14 @@
-import { Component, OnInit, computed, inject, input, signal } from '@angular/core';
-import { firstValueFrom } from 'rxjs';
+import { Component, computed, inject, input, signal } from '@angular/core';
+import { rxResource } from '@angular/core/rxjs-interop';
 
-import { ApiService, errorMessage } from '../../core/api.service';
+import { ApiService } from '../../core/api.service';
+import { debouncedSignal } from '../../core/debounce';
+import { lastValue, errorText } from '../../core/resource';
 import { BalPeriod, BalPlayer } from '../../core/models';
 import { fullSilver } from '../../shared/charts';
 import { Icon } from '../../shared/icon';
 import { PeriodPicker } from '../../shared/period-picker';
 import { BalOperations } from '../bal/bal-operations';
-
-const SEARCH_DELAY_MS = 250;
 
 /** Page Admin → BAL par joueur : recherche, historique complet d'un joueur (réutilise
  *  le composant de « Ma BAL ») et export CSV de toute la BAL de la guilde. */
@@ -58,9 +58,7 @@ const SEARCH_DELAY_MS = 250;
 
         <div class="detail">
           @if (selected(); as p) {
-            @for (s of [p]; track s.uid) {
-              <app-bal-operations [guildId]="guildId()" [userId]="s.uid" [title]="'Historique de ' + s.name" />
-            }
+            <app-bal-operations [guildId]="guildId()" [userId]="p.uid" [title]="'Historique de ' + p.name" />
           } @else {
             <div class="card empty"><app-icon name="search" [size]="22" /><p class="muted">Choisis un joueur dans la liste.</p></div>
           }
@@ -70,7 +68,6 @@ const SEARCH_DELAY_MS = 250;
   `,
   styles: `
     .players { margin-top: 32px; }
-    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
     .section-head { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
     .section-head h2 { margin: 0; }
     .section-head p { margin: 4px 0 0; }
@@ -96,43 +93,27 @@ const SEARCH_DELAY_MS = 250;
     }
   `,
 })
-export class BalPlayers implements OnInit {
+export class BalPlayers {
   private readonly api = inject(ApiService);
   readonly guildId = input.required<string>();
 
   protected readonly query = signal('');
-  protected readonly players = signal<BalPlayer[] | null>(null);
+  /** Recherche à la frappe, avec un court délai pour ne pas interroger l'API à chaque lettre. */
+  private readonly debouncedQuery = debouncedSignal(computed(() => this.query().trim()));
+  private readonly playersRes = rxResource({
+    params: () => ({ guildId: this.guildId(), q: this.debouncedQuery() }),
+    stream: ({ params }) => this.api.balPlayers(params.guildId, params.q),
+  });
+  /** Dernière liste reçue : reste affichée (grisée) pendant la recherche suivante. */
+  protected readonly players = lastValue(this.playersRes);
+  protected readonly loading = this.playersRes.isLoading;
+  protected readonly error = errorText(this.playersRes);
   protected readonly selected = signal<BalPlayer | null>(null);
-  protected readonly loading = signal(false);
-  protected readonly error = signal('');
   protected readonly period = signal<BalPeriod>('30d');
   protected readonly guildCsvUrl = computed(() => this.api.guildBalCsvUrl(this.guildId(), this.period()));
   protected readonly full = fullSilver;
-  private request = 0;
-  private timer: ReturnType<typeof setTimeout> | undefined;
 
-  ngOnInit(): void {
-    void this.load();
-  }
-
-  /** Recherche à la frappe, avec un court délai pour ne pas interroger l'API à chaque lettre. */
   search(value: string): void {
     this.query.set(value);
-    clearTimeout(this.timer);
-    this.timer = setTimeout(() => void this.load(), SEARCH_DELAY_MS);
-  }
-
-  async load(): Promise<void> {
-    const request = ++this.request;
-    this.loading.set(true);
-    this.error.set('');
-    try {
-      const list = await firstValueFrom(this.api.balPlayers(this.guildId(), this.query().trim()));
-      if (request === this.request) this.players.set(list);
-    } catch (err) {
-      if (request === this.request) this.error.set(errorMessage(err));
-    } finally {
-      if (request === this.request) this.loading.set(false);
-    }
   }
 }

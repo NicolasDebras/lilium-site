@@ -29,15 +29,27 @@ export function normalize(text: string): string {
   return text.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase().trim();
 }
 
-/** Objets d'un emplacement qui correspondent à la recherche (nom FR, nom EN ou famille). */
-/** `slot` null = tous les emplacements (swaps). */
+/** Texte de recherche normalisé de chaque objet, calculé une fois (le catalogue ne change pas). */
+const searchText = new WeakMap<Item, string>();
+
+function haystack(item: Item): string {
+  let text = searchText.get(item);
+  if (text === undefined) {
+    text = normalize(`${item.name} ${item.name_en} ${item.category}`);
+    searchText.set(item, text);
+  }
+  return text;
+}
+
+/** Objets d'un emplacement qui correspondent à la recherche (nom FR, nom EN ou famille).
+ *  `slot` null = tous les emplacements (swaps). */
 export function filterItems(items: readonly Item[], slot: Slot | null, query = '', category = ''): Item[] {
   const q = normalize(query);
   return items.filter(
     (i) =>
       (slot === null || i.slot === slot) &&
       (!category || i.category === category) &&
-      (!q || normalize(`${i.name} ${i.name_en} ${i.category}`).includes(q)),
+      (!q || haystack(i).includes(q)),
   );
 }
 

@@ -13,6 +13,13 @@ Schéma = bot (`botDiscord/db.py`). `api/app/shared/` et `api/app/assets/` = cop
 - `frontend/src/app/core/` — `api.service.ts`, `models.ts`, guards (`levelGuard`, `hasLevel`)
 - `frontend/src/app/pages/` — builds, compos, bal, admin… ; `shared/` — charts, pager, icon, item-picker
 
+## Front : conventions (Angular 22, zoneless, OnPush par défaut)
+- État = signals ; jamais de propriété simple modifiée en asynchrone (la vue ne suivrait pas).
+- Chargement = `rxResource`/`httpResource` (params réactifs, pas de `ngOnInit` + `subscribe`) ; `lastValue`/`errorText` (`core/resource.ts`), recherche à la frappe = `debouncedSignal` (`core/debounce.ts`).
+- Formulaires = Signal Forms (`@angular/forms/signals`, `form()` + `[formField]`, validation dans le schéma) ; pas de `ngModel` ni de mutation en place.
+- Pas de méthode qui recrée un tableau dans un template : `computed` (vue précalculée par élément si besoin) ; `host: {}` plutôt que `@HostListener`.
+- Specs : une ressource en cours bloque `whenStable()` → répondre aux requêtes (enfants compris) avant ; après une interaction, `detectChanges()` avant `expectOne`.
+
 ## À chaque changement
 - README.md mis à jour si visible (page, route, variable d'env, lancement local).
 - Design : uniquement les variables CSS de `frontend/src/styles.scss`.
