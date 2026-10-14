@@ -54,7 +54,7 @@ export interface Command { name: string; usage: string; who: string; text: strin
 
 export const COMMANDS: Command[] = [
   // Activités
-  { group: 'Activités', name: 'acti', usage: '/acti', who: 'Membre', text: 'Créer une activité de guilde (à partir d’une compo ou d’un template).' },
+  { group: 'Activités', name: 'acti', usage: '/acti', who: 'Membre', text: 'Créer une activité de guilde (à partir d’une compo ou d’un template). En BAL (partage du butin en fin d’acti) si tu es Caller, Officier ou GM ; sinon l’acti est libre.' },
   { group: 'Activités', name: 'templates', usage: '/templates', who: 'Membre', text: 'Afficher les templates et compos disponibles.' },
   { group: 'Activités', name: 'massup', usage: '/massup [message]', who: 'Créateur, Caller, Officier', text: 'Ping tous les inscrits d’une activité (une fois toutes les 2 min) et envoie à chacun l’image de son build en MP.' },
   { group: 'Activités', name: 'kickacti', usage: '/kickacti @joueur', who: 'Organisateur, Officier, Caller', text: 'Retirer un joueur d’une activité.' },
