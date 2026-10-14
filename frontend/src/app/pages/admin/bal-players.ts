@@ -58,9 +58,7 @@ import { BalOperations } from '../bal/bal-operations';
 
         <div class="detail">
           @if (selected(); as p) {
-            @for (s of [p]; track s.uid) {
-              <app-bal-operations [guildId]="guildId()" [userId]="s.uid" [title]="'Historique de ' + s.name" />
-            }
+            <app-bal-operations [guildId]="guildId()" [userId]="p.uid" [title]="'Historique de ' + p.name" />
           } @else {
             <div class="card empty"><app-icon name="search" [size]="22" /><p class="muted">Choisis un joueur dans la liste.</p></div>
           }

@@ -2,29 +2,13 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
-import { ActivityStats } from '../../core/models';
+import { activityStats as stats } from '../../../testing/admin-data';
 import { ActivityStatsPanel } from './activity-stats';
 
 async function settle(fixture: { whenStable(): Promise<unknown>; detectChanges(): void }) {
   await new Promise((resolve) => setTimeout(resolve));
   fixture.detectChanges();
   await fixture.whenStable();
-}
-
-export function stats(over: Partial<ActivityStats['totals']> = {}): ActivityStats {
-  return {
-    period: '30d', days: 30, start: '2026-09-09', bucket: 'day',
-    totals: { activities: 12, cancelled: 2, players: 25, avg_players: 8.5, fill_rate: 76, ...over },
-    timeline: [
-      { start: '2026-10-07', finacti: 2, fin: 1, 'annulée': 1 },
-      { start: '2026-10-08', finacti: 3, fin: 0, 'annulée': 0 },
-    ],
-    heatmap: Array.from({ length: 7 }, () => Array(24).fill(0)),
-    top_players: [{ name: 'Bnkiller', count: 9 }],
-    top_callers: [{ name: 'Lily', count: 6 }],
-    top_templates: [{ name: 'ZvZ', count: 7 }],
-    missing_roles: [{ name: 'HEAL', count: 5 }],
-  };
 }
 
 describe('ActivityStatsPanel (page Admin)', () => {

@@ -2,9 +2,8 @@ import { Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { AuthService } from '../../core/auth.service';
+import { LEVEL_LABEL } from '../../core/models';
 import { Icon } from '../../shared/icon';
-
-const LEVEL_LABEL = { none: '', member: 'Membre', staff: 'Staff', admin: 'Admin' } as const;
 
 @Component({
   selector: 'app-guilds',

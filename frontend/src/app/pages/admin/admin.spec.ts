@@ -4,10 +4,9 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import localeFr from '@angular/common/locales/fr';
 import { TestBed } from '@angular/core/testing';
 
+import { activityStats, botErrorsPage as botErrors } from '../../../testing/admin-data';
 import { BalPeriod, BalStats } from '../../core/models';
 import { AdminPage } from './admin';
-import { stats as activityStats } from './activity-stats.spec';
-import { errors as botErrors } from './bot-errors.spec';
 
 /** Laisse ngOnInit (async) finir après le flush HTTP, puis rafraîchit la vue. */
 async function settle(fixture: { whenStable(): Promise<unknown>; detectChanges(): void }) {

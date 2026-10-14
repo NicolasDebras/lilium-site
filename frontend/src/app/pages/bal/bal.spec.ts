@@ -38,6 +38,11 @@ describe('BalPage (Ma BAL)', () => {
     const req = http.expectOne((q) => q.url === '/api/guilds/111/bal/me/history');
     req.flush(h);
     http.expectOne('/api/guilds/111/bal/me').flush({ amount: 14_665_993, ig_name: 'Lilium122' });
+    // Le solde affiché fait apparaître l'historique complet (composant enfant, testé à part) :
+    // on lui répond à vide avant d'attendre que la page se stabilise.
+    await new Promise((resolve) => setTimeout(resolve));
+    fixture.detectChanges();
+    http.expectOne((q) => q.url === '/api/guilds/111/bal/me/operations').flush({ items: [], total: 0, page: 1, page_size: 25 });
     await settle(fixture);
     return { fixture, http, el: fixture.nativeElement as HTMLElement, req };
   }

@@ -65,6 +65,22 @@ describe('BalPlayers (Admin → BAL par joueur)', () => {
       .toBe('/api/guilds/111/admin/bal/players/10/operations.csv');
   });
 
+  it('passer à un autre joueur recharge son historique (même composant)', async () => {
+    const { fixture, http, el } = await loaded();
+    const rows = el.querySelectorAll<HTMLButtonElement>('.list .row');
+    rows[0].click();
+    fixture.detectChanges();
+    http.expectOne((q) => q.url === '/api/guilds/111/admin/bal/players/10/operations').flush({ items: [], total: 0, page: 1, page_size: 25 });
+    await settle(fixture);
+    rows[1].click();
+    fixture.detectChanges();
+    const req = http.expectOne((q) => q.url === '/api/guilds/111/admin/bal/players/11/operations');
+    expect(req.request.params.get('page')).toBe('1');
+    req.flush({ items: [], total: 0, page: 1, page_size: 25 });
+    await settle(fixture);
+    expect(el.querySelector('app-bal-operations h3')?.textContent).toContain('Historique de Ariia I');
+  });
+
   it('l’export de la guilde suit la période choisie', async () => {
     const { fixture, el } = await loaded();
     const link = () => el.querySelector('.export a[download]')?.getAttribute('href');

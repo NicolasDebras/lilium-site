@@ -1,6 +1,5 @@
 import { Component, computed, inject, input, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
@@ -25,7 +24,7 @@ interface BuildEntry {
 
 @Component({
   selector: 'app-builds-list',
-  imports: [FormsModule, RouterLink, Gear, GearSwaps, Icon, Pager],
+  imports: [RouterLink, Gear, GearSwaps, Icon, Pager],
   template: `
     <div class="page-head">
       <div>
@@ -47,8 +46,8 @@ interface BuildEntry {
           type="search"
           placeholder="Rechercher un build, une arme, un objet…"
           aria-label="Rechercher un build"
-          [ngModel]="query()"
-          (ngModelChange)="query.set($event); page.set(1)"
+          [value]="query()"
+          (input)="query.set($any($event.target).value); page.set(1)"
         />
       </label>
       <div class="chips" role="group" aria-label="Filtrer par rôle">

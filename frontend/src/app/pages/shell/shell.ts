@@ -1,10 +1,10 @@
-import { Component, HostListener, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import { filter, map, startWith } from 'rxjs';
+import { filter, map } from 'rxjs';
 
 import { AuthService } from '../../core/auth.service';
-import { hasLevel } from '../../core/models';
+import { LEVEL_LABEL, hasLevel } from '../../core/models';
 import { Icon, IconName } from '../../shared/icon';
 import { Logo } from '../../shared/logo';
 import { Toasts } from '../../shared/toasts';
@@ -27,6 +27,7 @@ export const NAV_LINKS: NavLink[] = [
 /** Mise en page connectée : barre du haut (verre dépoli) + contenu + notifications. */
 @Component({
   selector: 'app-shell',
+  host: { '(document:click)': 'closeMenus()', '(document:keydown.escape)': 'closeMenus()' },
   imports: [RouterOutlet, RouterLink, RouterLinkActive, Icon, Logo, Toasts],
   template: `
     <header class="nav glass">
@@ -71,7 +72,7 @@ export const NAV_LINKS: NavLink[] = [
                     <img [src]="u.avatar_url" alt="" class="avatar big" />
                     <div>
                       <strong>{{ u.username }}</strong>
-                      @if (guild(); as g) { <span class="muted level">{{ levelLabel(g.level) }} · {{ g.name }}</span> }
+                      @if (guild(); as g) { <span class="muted level">{{ levelLabel[g.level] }} · {{ g.name }}</span> }
                     </div>
                   </div>
                   <a role="menuitem" routerLink="/" (click)="accountOpen.set(false)">
@@ -171,7 +172,6 @@ export class Shell {
     this.router.events.pipe(
       filter((e) => e instanceof NavigationEnd),
       map(() => this.router.url),
-      startWith(this.router.url),
     ),
     { initialValue: this.router.url },
   );
@@ -181,18 +181,15 @@ export class Shell {
   protected readonly isAdmin = computed(() => hasLevel(this.guild()?.level, 'admin'));
   protected readonly links = computed(() => NAV_LINKS.filter((l) => !l.admin || this.isAdmin()));
 
-  protected levelLabel(level: string): string {
-    return ({ member: 'Membre', staff: 'Staff', admin: 'Admin' } as Record<string, string>)[level] ?? '';
-  }
+  protected readonly levelLabel = LEVEL_LABEL;
 
   toggleAccount(event: Event): void {
     event.stopPropagation();
     this.accountOpen.update((v) => !v);
   }
 
-  @HostListener('document:click')
-  @HostListener('document:keydown.escape')
-  closeMenus(): void {
+  /** Clic ailleurs ou Échap : ferme le menu du compte. */
+  protected closeMenus(): void {
     this.accountOpen.set(false);
   }
 

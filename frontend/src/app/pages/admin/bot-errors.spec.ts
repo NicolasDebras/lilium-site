@@ -2,25 +2,13 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
-import { BotErrorsPage } from '../../core/models';
+import { botErrorsPage as errors } from '../../../testing/admin-data';
 import { BotErrors, errorWhen } from './bot-errors';
 
 async function settle(fixture: { whenStable(): Promise<unknown>; detectChanges(): void }) {
   await new Promise((resolve) => setTimeout(resolve));
   fixture.detectChanges();
   await fixture.whenStable();
-}
-
-export function errors(total = 30): BotErrorsPage {
-  return {
-    items: [
-      { id: 42, ts: '2026-10-08T09:12:44+00:00', command: 'acti', user_id: '123', error_type: 'KeyError',
-        error_message: "'slots'" },
-      { id: 41, ts: '2026-10-07T20:00:00+00:00', command: 'finacti', user_id: null, error_type: 'TimeoutError',
-        error_message: '<script>alert(1)</script>' },
-    ],
-    total, page: 1, page_size: 25, commands: ['acti', 'finacti'],
-  };
 }
 
 describe('BotErrors (page Admin)', () => {
