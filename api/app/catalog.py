@@ -131,7 +131,7 @@ def build_catalog(raw_items: dict, localized: list[dict]) -> list[dict]:
         if base_id in REMOVED_ITEMS:
             continue
         variants.sort(key=lambda v: v[0])
-        top_tier, top_name, top_item = variants[-1]
+        _top_tier, top_name, top_item = variants[-1]
         category = top_item.get("@shopsubcategory1") or ""
         if category == "other":  # capes décoratives (sans stats)
             continue

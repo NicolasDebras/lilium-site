@@ -1,5 +1,5 @@
 """Admin → BAL par joueur : recherche, historique d'un joueur, exports CSV."""
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, UTC
 
 import pytest
 
@@ -34,7 +34,7 @@ def test_search_players_empty_query_keeps_order_and_limit():
 
 
 def test_guild_csv_has_player_columns_and_neutralises_formulas():
-    ts = datetime(2026, 10, 1, 18, 0, tzinfo=timezone.utc)
+    ts = datetime(2026, 10, 1, 18, 0, tzinfo=UTC)
     events = [
         {"ts": ts, "action": "finacti", "template": "ZvZ", "uid": "1", "name": "=cmd()", "delta": 300, "by_user": "Off"},
         {"ts": ts + timedelta(hours=1), "action": "retirebal", "template": "", "uid": "2", "name": "Bob",
@@ -81,7 +81,7 @@ def test_player_csv(login):
 
 
 def test_guild_csv_only_this_guild_and_period(login, fake_db):
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     fake_db.bal_events = [
         {"guild_id": GUILD, "ts": now - timedelta(days=2), "action": "finacti", "template": "ZvZ",
          "uid": "1", "name": "Récent", "delta": 100, "by_user": "x"},

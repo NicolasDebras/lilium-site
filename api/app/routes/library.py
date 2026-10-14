@@ -52,7 +52,7 @@ async def _import(db, guild_id: int, snap: dict, name: str, user: dict) -> str:
     try:
         name = clean_compo_name(name)
     except ValueError as e:
-        raise HTTPException(status_code=422, detail=str(e))
+        raise HTTPException(status_code=422, detail=str(e)) from e
     await check_new_compo_name(db, guild_id, name)
     target = await db.get_builds(guild_id)
     reuse, create = plan_builds(snap, target)
@@ -69,7 +69,7 @@ async def _import(db, guild_id: int, snap: dict, name: str, user: dict) -> str:
     try:
         entry = rebuild_template(snap, name, trial_map, trial_builds)
     except InvalidCompo as e:
-        raise HTTPException(status_code=422, detail=str(e))
+        raise HTTPException(status_code=422, detail=str(e)) from e
     if not entry.get("pf_1"):
         raise HTTPException(status_code=422, detail="La compo doit contenir au moins un rôle en PF1.")
 

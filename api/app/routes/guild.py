@@ -1,6 +1,6 @@
 """Routes « divers » d'un serveur : sa BAL, la liste des rôles, la page Admin."""
 import asyncio
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, Request
@@ -37,7 +37,7 @@ async def my_bal_history_route(guild_id: int, request: Request, period: Period =
     """Page « Ma BAL » : courbe du solde, gains par période, dernières opérations, rang.
     Uniquement les données de l'utilisateur connecté."""
     db, user_id = request.app.state.db, int(user["id"])
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     events, rank = await asyncio.gather(
         db.get_my_bal_events(guild_id, user_id, fetch_since(period, now, with_previous=False)),
         db.get_bal_rank(guild_id, user_id),
@@ -89,7 +89,7 @@ async def admin_bal(guild_id: int, request: Request, period: Period = "30d",
                     user: dict = Depends(require_admin)):
     """Tableau de bord BAL de la page Admin (période + période précédente pour les variations)."""
     db = request.app.state.db
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     events, balances = await asyncio.gather(
         db.get_bal_events(guild_id, fetch_since(period, now)), db.get_bal_balances(guild_id)
     )
@@ -127,7 +127,7 @@ async def admin_player_operations_csv(guild_id: int, request: Request, uid: str 
 async def admin_guild_operations_csv(guild_id: int, request: Request, period: Period = "30d",
                                      user: dict = Depends(require_admin)):
     """Tout le bal_log de la guilde sur la période (une ligne par joueur et par opération)."""
-    since = fetch_since(period, datetime.now(timezone.utc), with_previous=False)
+    since = fetch_since(period, datetime.now(UTC), with_previous=False)
     events = await request.app.state.db.get_bal_events(guild_id, since)
     return _csv_response(guild_operations_csv(events), f"bal-guilde-{period}.csv")
 
@@ -137,7 +137,7 @@ async def admin_activity(guild_id: int, request: Request, period: Period = "30d"
                          user: dict = Depends(require_admin)):
     """Stats d'activité : actis par jour, remplissage, rôles qui manquent, joueurs et callers les plus présents."""
     db = request.app.state.db
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     rows, names = await asyncio.gather(
         db.get_activity_log(guild_id, fetch_since(period, now, with_previous=False)), db.get_player_names(guild_id)
     )

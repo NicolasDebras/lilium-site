@@ -8,7 +8,7 @@
 """
 import time
 from enum import IntEnum
-from typing import Callable
+from collections.abc import Callable
 
 from fastapi import Depends, HTTPException, Path, Request
 

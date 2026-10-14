@@ -1,4 +1,4 @@
-from datetime import date, datetime, timezone
+from datetime import date, datetime, UTC
 
 import pytest
 
@@ -7,11 +7,11 @@ from app.bal_stats import (
     previous_bounds,
 )
 
-NOW = datetime(2026, 10, 1, 12, 0, tzinfo=timezone.utc)   # jeudi 1er octobre
+NOW = datetime(2026, 10, 1, 12, 0, tzinfo=UTC)   # jeudi 1er octobre
 
 
 def ev(id, day, action, delta, template="", uid="1", hour=12, by="Chef", month=9):
-    return {"id": id, "ts": datetime(2026, month, day, hour, 0, tzinfo=timezone.utc), "action": action,
+    return {"id": id, "ts": datetime(2026, month, day, hour, 0, tzinfo=UTC), "action": action,
             "template": template, "uid": uid, "name": f"J{uid}", "delta": delta, "by_user": by}
 
 
@@ -35,7 +35,7 @@ def test_period_bounds():
 
 def test_week_uses_paris_time_on_sunday_night():
     """Dimanche 23h30 UTC = lundi 1h30 à Paris : c'est déjà la nouvelle semaine."""
-    sunday_night = datetime(2026, 10, 4, 23, 30, tzinfo=timezone.utc)
+    sunday_night = datetime(2026, 10, 4, 23, 30, tzinfo=UTC)
     assert period_bounds("week", sunday_night) == (date(2026, 10, 5), date(2026, 10, 5), 1)
 
 
@@ -189,9 +189,9 @@ def test_every_period_works(period):
 # ── Export CSV ───────────────────────────────────────────────────────────────
 
 def test_bal_operations_csv_neutralises_formulas():
-    from datetime import datetime, timezone
+    from datetime import datetime
     from app.bal_stats import bal_operations_csv
-    rows = [{"ts": datetime(2026, 10, 1, 18, 0, tzinfo=timezone.utc), "action": "finacti",
+    rows = [{"ts": datetime(2026, 10, 1, 18, 0, tzinfo=UTC), "action": "finacti",
              "template": "=HYPERLINK(\"http://x\")", "by_user": "@Officier", "delta": -5, "total": 10}]
     lines = bal_operations_csv(rows).strip().split("\r\n")
     assert lines[1].split(";")[:2] == ["2026-10-01T20:00+02:00", "finacti"]

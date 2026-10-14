@@ -1,6 +1,5 @@
 """Connexion Discord OAuth2 (scope "identify" uniquement) + session signée par
 cookie (rien stocké côté serveur). Repris de botDiscord/web/auth.py."""
-import asyncio
 import secrets
 from urllib.parse import urlencode
 
@@ -56,8 +55,8 @@ async def exchange_code(settings: Settings, code: str) -> str:
                     raise HTTPException(status_code=400, detail="Échec de l'authentification Discord.")
                 payload = await resp.json()
         return payload["access_token"]
-    except (aiohttp.ClientError, asyncio.TimeoutError, KeyError, TypeError, ValueError):
-        raise HTTPException(status_code=400, detail="Échec de l'authentification Discord.")
+    except (TimeoutError, aiohttp.ClientError, KeyError, TypeError, ValueError) as err:
+        raise HTTPException(status_code=400, detail="Échec de l'authentification Discord.") from err
 
 
 async def fetch_discord_user(access_token: str) -> dict:
@@ -68,8 +67,8 @@ async def fetch_discord_user(access_token: str) -> dict:
                 if resp.status != 200:
                     raise HTTPException(status_code=400, detail="Impossible de récupérer le profil Discord.")
                 return await resp.json()
-    except (aiohttp.ClientError, asyncio.TimeoutError, ValueError):
-        raise HTTPException(status_code=400, detail="Impossible de récupérer le profil Discord.")
+    except (TimeoutError, aiohttp.ClientError, ValueError) as err:
+        raise HTTPException(status_code=400, detail="Impossible de récupérer le profil Discord.") from err
 
 
 def session_payload(user: dict) -> dict:

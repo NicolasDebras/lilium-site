@@ -47,7 +47,7 @@ def test_no_path_traversal(static):
 
 
 def test_missing_build_fails_fast(tmp_path):
-    with pytest.raises(RuntimeError, match="index.html"):
+    with pytest.raises(RuntimeError, match=r"index\.html"):
         create_app(make_settings(static_dir=str(tmp_path)), db=FakeDB(), discord=FakeDiscord(), oauth=FakeOAuth())
 
 

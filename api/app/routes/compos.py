@@ -48,7 +48,7 @@ async def _entry(db, guild_id: int, body: CompoIn) -> dict:
     try:
         entry = build_template_entry(body.model_dump(), builds_by_id)
     except InvalidCompo as e:
-        raise HTTPException(status_code=422, detail=str(e))
+        raise HTTPException(status_code=422, detail=str(e)) from e
     if not entry["pf_1"]:
         raise HTTPException(status_code=422, detail="La compo doit contenir au moins un rôle en PF1.")
     return entry
