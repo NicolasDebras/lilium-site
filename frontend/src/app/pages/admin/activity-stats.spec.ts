@@ -11,7 +11,7 @@ async function settle(fixture: { whenStable(): Promise<unknown>; detectChanges()
   await fixture.whenStable();
 }
 
-function stats(over: Partial<ActivityStats['totals']> = {}): ActivityStats {
+export function stats(over: Partial<ActivityStats['totals']> = {}): ActivityStats {
   return {
     period: '30d', days: 30, start: '2026-09-09', bucket: 'day',
     totals: { activities: 12, cancelled: 2, players: 25, avg_players: 8.5, fill_rate: 76, ...over },
@@ -80,6 +80,7 @@ describe('ActivityStatsPanel (page Admin)', () => {
     http.expectOne((q) => q.url === '/api/guilds/111/admin/activity').flush(stats());
     await settle(fixture);
     fixture.componentInstance.setPeriod('7d');
+    fixture.detectChanges();
     const req = http.expectOne((q) => q.url === '/api/guilds/111/admin/activity');
     expect(req.request.params.get('period')).toBe('7d');
     req.flush(stats());

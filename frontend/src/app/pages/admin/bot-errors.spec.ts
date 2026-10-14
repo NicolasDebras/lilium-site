@@ -11,7 +11,7 @@ async function settle(fixture: { whenStable(): Promise<unknown>; detectChanges()
   await fixture.whenStable();
 }
 
-function errors(total = 30): BotErrorsPage {
+export function errors(total = 30): BotErrorsPage {
   return {
     items: [
       { id: 42, ts: '2026-10-08T09:12:44+00:00', command: 'acti', user_id: '123', error_type: 'KeyError',
@@ -53,6 +53,7 @@ describe('BotErrors (page Admin)', () => {
   it('charge le traceback au clic seulement', async () => {
     const { fixture, http, el } = await loaded();
     (el.querySelector('.row') as HTMLButtonElement).click();
+    fixture.detectChanges();
     http.expectOne('/api/guilds/111/admin/errors/42').flush({ ...errors().items[0], traceback: 'Traceback (most recent call last):' });
     await settle(fixture);
     expect(el.querySelector('pre')?.textContent).toContain('Traceback (most recent call last):');
@@ -60,10 +61,11 @@ describe('BotErrors (page Admin)', () => {
   });
 
   it('filtre par commande et repart page 1', async () => {
-    const { http, el } = await loaded();
+    const { fixture, http, el } = await loaded();
     const select = el.querySelector('select') as HTMLSelectElement;
     select.value = 'finacti';
     select.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
     const req = http.expectOne((q) => q.url === '/api/guilds/111/admin/errors');
     expect(req.request.params.get('command')).toBe('finacti');
     expect(req.request.params.get('page')).toBe('1');

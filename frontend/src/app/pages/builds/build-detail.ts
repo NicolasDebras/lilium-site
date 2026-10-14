@@ -3,6 +3,7 @@ import { rxResource } from '@angular/core/rxjs-interop';
 import { Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
+import { errorText } from '../../core/resource';
 import { ApiService, errorMessage } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
 import { ItemsService } from '../../core/items.service';
@@ -119,7 +120,7 @@ export class BuildDetailPage {
     stream: ({ params }) => this.api.buildDetail(params.guildId, params.id),
   });
   protected readonly build = computed(() => (this.detail.hasValue() ? this.detail.value() : null));
-  protected readonly error = computed(() => (this.detail.error() ? errorMessage(this.detail.error()) : ''));
+  protected readonly error = errorText(this.detail);
   protected readonly busy = signal(false);
   protected readonly canEdit = computed(() => hasLevel(this.auth.levelFor(this.guildId()), 'staff'));
   protected readonly imageUrl = computed(() => this.api.buildImageUrl(this.guildId(), Number(this.buildId())));

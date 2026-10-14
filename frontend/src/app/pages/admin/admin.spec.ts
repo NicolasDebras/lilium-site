@@ -6,6 +6,8 @@ import { TestBed } from '@angular/core/testing';
 
 import { BalPeriod, BalStats } from '../../core/models';
 import { AdminPage } from './admin';
+import { stats as activityStats } from './activity-stats.spec';
+import { errors as botErrors } from './bot-errors.spec';
 
 /** Laisse ngOnInit (async) finir après le flush HTTP, puis rafraîchit la vue. */
 async function settle(fixture: { whenStable(): Promise<unknown>; detectChanges(): void }) {
@@ -43,6 +45,14 @@ export function balStats(period: BalPeriod = '30d', due = 174_873_783): BalStats
   };
 }
 
+/** Les panneaux Activité, BAL par joueur et Erreurs du bot chargent aussi : on leur répond à vide
+ *  (testés à part), sinon la page n'est jamais « stable ». */
+function flushPanels(http: HttpTestingController): void {
+  http.match((q) => q.url === '/api/guilds/111/admin/activity').forEach((req) => req.flush(activityStats({ activities: 0, cancelled: 0 })));   // historique vide : pas de graphiques
+  http.match((q) => q.url === '/api/guilds/111/admin/bal/players').forEach((req) => req.flush([]));
+  http.match((q) => q.url === '/api/guilds/111/admin/errors').forEach((req) => req.flush(botErrors()));
+}
+
 describe('AdminPage', () => {
   beforeAll(() => registerLocaleData(localeFr));
 
@@ -61,6 +71,7 @@ describe('AdminPage', () => {
     const r = await render();
     r.http.expectOne((q) => q.url === '/api/guilds/111/admin/bal').flush(balStats());
     r.http.expectOne('/api/guilds/111/admin/overview').flush(OVERVIEW);
+    flushPanels(r.http);
     await settle(r.fixture);
     return r;
   }
@@ -85,6 +96,7 @@ describe('AdminPage', () => {
     expect(req.request.params.get('period')).toBe('30d');
     req.flush(balStats());
     r.http.expectOne('/api/guilds/111/admin/overview').flush(OVERVIEW);
+    flushPanels(r.http);
     await settle(r.fixture);
 
     expect(r.el.querySelector('.hero-value')?.textContent?.trim()).toBe('175 M');

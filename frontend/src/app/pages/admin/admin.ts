@@ -1,9 +1,10 @@
 import { DecimalPipe } from '@angular/common';
-import { Component, OnInit, computed, inject, input, signal } from '@angular/core';
-import { firstValueFrom } from 'rxjs';
+import { Component, computed, inject, input, signal } from '@angular/core';
+import { rxResource } from '@angular/core/rxjs-interop';
 
-import { ApiService, errorMessage } from '../../core/api.service';
-import { AdminOverview, BalPeriod, BalStats } from '../../core/models';
+import { ApiService } from '../../core/api.service';
+import { BalPeriod, BalStats } from '../../core/models';
+import { errorText, lastValue } from '../../core/resource';
 import {
   Delta, DonutChart, DonutSlice, FlowChart, HBarChart, HBarRow, Heatmap, LineChart, compactSilver, donutSlices,
   fullSilver, longDate,
@@ -37,7 +38,7 @@ interface Tile {
       </div>
       @if (overview(); as o) {
         <div class="overview">
-          @for (s of stats(o); track s.label) {
+          @for (s of stats(); track s.label) {
             <div class="stat">
               <app-icon [name]="s.icon" [size]="16" />
               <strong class="value">{{ s.value | number: '1.0-0' : 'fr-FR' }}</strong>
@@ -77,7 +78,7 @@ interface Tile {
             <span class="muted">silver · {{ b.totals.players }} joueur{{ b.totals.players > 1 ? 's' : '' }} avec de la BAL</span>
           </div>
           <div class="tiles">
-            @for (t of tiles(b); track t.label) {
+            @for (t of tiles(); track t.label) {
               <div class="card tile">
                 <span class="muted tile-label"><app-icon [name]="t.icon" [size]="14" /> {{ t.label }}</span>
                 <div class="tile-value">
@@ -132,23 +133,23 @@ interface Tile {
 
           <div class="card chart span-5">
             <h3><app-icon name="flag" [size]="16" /> Top callers <span class="muted">— silver distribué</span></h3>
-            <app-hbar-chart [rows]="callers(b)" empty="Aucune fin d'activité sur la période." />
+            <app-hbar-chart [rows]="callers()" empty="Aucune fin d'activité sur la période." />
           </div>
 
           <div class="card chart span-6">
             <h3><app-icon name="trend" [size]="16" /> Top gagnants <span class="muted">— sur la période</span></h3>
-            <app-hbar-chart [rows]="earners(b)" />
+            <app-hbar-chart [rows]="earners()" />
           </div>
 
           <div class="card chart span-6">
             <h3><app-icon name="crown" [size]="16" /> Plus grosses BAL dues <span class="muted">— part de la BAL due</span></h3>
-            <app-donut-chart [slices]="topPlayers(b)" label="BAL due par joueur" centerLabel="BAL due"
+            <app-donut-chart [slices]="topPlayers()" label="BAL due par joueur" centerLabel="BAL due"
                              empty="Aucun joueur n'a de BAL." />
           </div>
 
           <div class="card chart wide">
             <h3>Silver gagné par compo <span class="muted">— fins d'activité</span></h3>
-            <app-hbar-chart [rows]="byTemplate(b)" />
+            <app-hbar-chart [rows]="byTemplate()" />
           </div>
         </div>
       } @else if (!balError()) {
@@ -217,19 +218,25 @@ interface Tile {
     }
   `,
 })
-export class AdminPage implements OnInit {
+export class AdminPage {
   private readonly api = inject(ApiService);
   readonly guildId = input.required<string>();
 
-  protected readonly overview = signal<AdminOverview | null>(null);
-  protected readonly error = signal('');
+  private readonly overviewRes = rxResource({ params: () => this.guildId(), stream: ({ params }) => this.api.adminOverview(params) });
+  protected readonly overview = computed(() => (this.overviewRes.hasValue() ? this.overviewRes.value() : null));
+  protected readonly error = errorText(this.overviewRes);
+
   protected readonly period = signal<BalPeriod>('30d');
-  protected readonly bal = signal<BalStats | null>(null);
-  protected readonly balLoading = signal(false);
-  protected readonly balError = signal('');
+  private readonly balRes = rxResource({
+    params: () => ({ guildId: this.guildId(), period: this.period() }),
+    stream: ({ params }) => this.api.adminBal(params.guildId, params.period),
+  });
+  /** Garde l'ancien rendu (estompé) pendant le rechargement d'une autre période. */
+  protected readonly bal = lastValue(this.balRes);
+  protected readonly balLoading = this.balRes.isLoading;
+  protected readonly balError = errorText(this.balRes);
   protected readonly compact = compactSilver;
   protected readonly long = longDate;
-  private balRequest = 0;
 
   protected readonly netLabel = computed(() => {
     const b = this.bal();
@@ -238,15 +245,39 @@ export class AdminPage implements OnInit {
     return `${net >= 0 ? '+' : '−'}${compactSilver(Math.abs(net))}`;
   });
 
-  stats(o: AdminOverview): { label: string; value: number; icon: IconName }[] {
-    return [
+  protected readonly stats = computed((): { label: string; value: number; icon: IconName }[] => {
+    const o = this.overview();
+    return o ? [
       { label: 'profils (/register)', value: o.profiles, icon: 'users' },
       { label: 'builds', value: o.builds, icon: 'sword' },
       { label: 'compos', value: o.compos, icon: 'shield' },
-    ];
+    ] : [];
+  });
+
+  // Données des graphiques : recalculées seulement quand les stats changent (pas à chaque rendu).
+  protected readonly tiles = computed(() => this.withBal((b) => this.makeTiles(b)));
+  /** 7 plus grosses BAL dues + « Autres » (reste de la BAL due totale). */
+  protected readonly topPlayers = computed((): DonutSlice[] =>
+    this.withBal((b) => donutSlices(b.top_players.map((p) => ({ label: p.name, value: p.amount })), b.totals.due)));
+  protected readonly earners = computed((): HBarRow[] =>
+    this.withBal((b) => b.top_earners.map((p) => ({ label: p.name, value: p.amount }))));
+  protected readonly callers = computed((): HBarRow[] => this.withBal((b) => b.top_callers.map((c) => ({
+    label: c.name, value: c.silver, sub: `${c.activities} activité${c.activities > 1 ? 's' : ''}`,
+  }))));
+  protected readonly byTemplate = computed((): HBarRow[] => this.withBal((b) => b.by_template.map((t) => ({
+    label: t.template, value: t.silver, sub: `${t.activities} activité${t.activities > 1 ? 's' : ''}`,
+  }))));
+
+  setPeriod(period: BalPeriod): void {
+    this.period.set(period);
   }
 
-  tiles(b: BalStats): Tile[] {
+  private withBal<T>(make: (b: BalStats) => T[]): T[] {
+    const b = this.bal();
+    return b ? make(b) : [];
+  }
+
+  private makeTiles(b: BalStats): Tile[] {
     const full = (n: number) => `${fullSilver(n)} silver`;
     const t = b.totals;
     return [
@@ -260,56 +291,5 @@ export class AdminPage implements OnInit {
       { label: 'Gain moyen / acti', value: compactSilver(t.avg_per_activity), title: full(t.avg_per_activity), icon: 'sparkles' },
       { label: 'Joueurs moyens / acti', value: t.avg_players_per_activity.toLocaleString('fr-FR'), title: 'Joueurs payés par fin d’activité', icon: 'users' },
     ];
-  }
-
-  /** 7 plus grosses BAL dues + « Autres » (reste de la BAL due totale). */
-  topPlayers(b: BalStats): DonutSlice[] {
-    return donutSlices(b.top_players.map((p) => ({ label: p.name, value: p.amount })), b.totals.due);
-  }
-
-  earners(b: BalStats): HBarRow[] {
-    return b.top_earners.map((p) => ({ label: p.name, value: p.amount }));
-  }
-
-  callers(b: BalStats): HBarRow[] {
-    return b.top_callers.map((c) => ({
-      label: c.name, value: c.silver, sub: `${c.activities} activité${c.activities > 1 ? 's' : ''}`,
-    }));
-  }
-
-  byTemplate(b: BalStats): HBarRow[] {
-    return b.by_template.map((t) => ({
-      label: t.template, value: t.silver, sub: `${t.activities} activité${t.activities > 1 ? 's' : ''}`,
-    }));
-  }
-
-  async ngOnInit(): Promise<void> {
-    void this.loadBal();
-    try {
-      this.overview.set(await firstValueFrom(this.api.adminOverview(this.guildId())));
-    } catch (err) {
-      this.error.set(errorMessage(err));
-    }
-  }
-
-  setPeriod(period: BalPeriod): void {
-    if (period === this.period()) return;
-    this.period.set(period);
-    void this.loadBal();
-  }
-
-  /** Garde l'ancien rendu (estompé) pendant le rechargement ; ignore les réponses périmées. */
-  async loadBal(): Promise<void> {
-    const request = ++this.balRequest;
-    this.balLoading.set(true);
-    this.balError.set('');
-    try {
-      const stats = await firstValueFrom(this.api.adminBal(this.guildId(), this.period()));
-      if (request === this.balRequest) this.bal.set(stats);
-    } catch (err) {
-      if (request === this.balRequest) this.balError.set(errorMessage(err));
-    } finally {
-      if (request === this.balRequest) this.balLoading.set(false);
-    }
   }
 }
