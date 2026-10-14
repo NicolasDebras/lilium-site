@@ -62,7 +62,6 @@ import { BAL_ACTIONS, balAction, opWhen } from './bal-actions';
   `,
   styles: `
     .history { display: grid; gap: 10px; margin-top: 16px; }
-    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
     .head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
     .head h3 { margin: 0; font-size: 1rem; }
     .tools { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }

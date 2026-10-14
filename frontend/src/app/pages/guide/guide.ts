@@ -1,7 +1,4 @@
-import { HttpClient } from '@angular/common/http';
-import {
-  Component, DestroyRef, ElementRef, HostListener, OnInit, afterNextRender, computed, inject, signal,
-} from '@angular/core';
+import { Component, DestroyRef, ElementRef, afterNextRender, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { AuthService } from '../../core/auth.service';
@@ -13,26 +10,11 @@ import {
   ARTICLE_AUDIENCE, AUDIENCES, Article, Audience, COMMANDS, FAQ, PRIVACY, SITE, TUTORIAL, TUTORIAL_AUDIENCE,
   commandAudience,
 } from './guide-content';
+import { GuideTutorial } from './guide-tutorial';
 import { Highlight } from './highlight';
+import { anchorOf, matches } from './search';
 
-const DONE_KEY = 'lilium.guide.done';
-
-/** Minuscules sans accents : la recherche ignore accents et majuscules. */
-export function fold(text: string): string {
-  return text.normalize('NFKD').replace(/\p{M}/gu, '').toLowerCase();
-}
-
-/** Tous les mots de la recherche doivent apparaître dans le texte. */
-export function matches(query: string, ...texts: string[]): boolean {
-  const words = fold(query).split(/\s+/).filter(Boolean);
-  const hay = fold(texts.join(' '));
-  return words.every((w) => hay.includes(w));
-}
-
-/** « webadmin add » → ancre « webadmin-add » (lien /guide#webadmin-add). */
-export function anchorOf(name: string): string {
-  return name.replace(/\s+/g, '-');
-}
+export { anchorOf, fold, matches } from './search';
 
 interface Section { id: string; title: string; icon: IconName }
 
@@ -50,7 +32,8 @@ const AUDIENCE_LABEL: Record<Audience, string> = { joueur: 'Joueur', staff: 'Sta
  *  Sommaire qui suit la lecture, recherche surlignée, filtre par public, liens copiables. */
 @Component({
   selector: 'app-guide',
-  imports: [Highlight, Icon, Logo, RouterLink, Toasts],
+  imports: [GuideTutorial, Highlight, Icon, Logo, RouterLink, Toasts],
+  host: { '(window:scroll)': 'onScroll()' },
   template: `
     <div class="guide">
       <aside class="toc">
@@ -94,35 +77,7 @@ const AUDIENCE_LABEL: Record<Audience, string> = { joueur: 'Joueur', staff: 'Sta
               <span class="tag admin">Admin</span>
               <button type="button" class="copy" (click)="copyLink('tuto')" aria-label="Copier le lien de la section"><app-icon name="link" [size]="15" /></button>
             </div>
-            <div class="progress" role="progressbar" [attr.aria-valuenow]="doneCount()" aria-valuemin="0" [attr.aria-valuemax]="tutorial.length">
-              <span [style.width.%]="doneCount() / tutorial.length * 100"></span>
-            </div>
-            <p class="muted small">{{ doneCount() }} / {{ tutorial.length }} étapes faites — coche-les au fur et à mesure (mémorisé dans ce navigateur).</p>
-            <ol class="steps">
-              @for (s of tutorial; track s.id; let i = $index) {
-                <li class="card step" [id]="s.id" [class.done]="done().has(s.id)">
-                  <label class="check">
-                    <input type="checkbox" [checked]="done().has(s.id)" (change)="toggle(s.id)" />
-                    <span class="num">@if (done().has(s.id)) {<app-icon name="check" [size]="14" />} @else {{{ i + 1 }}}</span>
-                    <strong><app-hl [text]="s.title" [q]="query()" /></strong>
-                  </label>
-                  <p><app-hl [text]="s.text" [q]="query()" /></p>
-                  @if (s.action === 'invite' && inviteUrl(); as url) {
-                    <a class="btn btn-sm btn-primary" [href]="url" target="_blank" rel="noopener"><app-icon name="discord" [size]="16" /> Ajouter le bot</a>
-                  }
-                  @if (s.action === 'login') {
-                    @if (auth.me()) {
-                      <a class="btn btn-sm btn-primary" routerLink="/">Mes serveurs</a>
-                    } @else {
-                      <button type="button" class="btn btn-sm btn-primary" (click)="auth.login()"><app-icon name="discord" [size]="16" /> Se connecter avec Discord</button>
-                    }
-                  }
-                  @if (s.help) {
-                    <details [open]="filtering() && hasHit(s.help)"><summary>Ça ne marche pas ?</summary><p class="muted"><app-hl [text]="s.help" [q]="query()" /></p></details>
-                  }
-                </li>
-              }
-            </ol>
+            <app-guide-tutorial [query]="query()" />
           </section>
         }
 
@@ -203,7 +158,7 @@ const AUDIENCE_LABEL: Record<Audience, string> = { joueur: 'Joueur', staff: 'Sta
         }
 
         @if (filtering() && !visibleSections().length) {
-          <div class="empty card">
+          <div class="empty">
             <app-icon name="search" [size]="28" />
             <p>Rien ne correspond à ta recherche.</p>
             <button type="button" class="btn btn-sm" (click)="reset()">Tout afficher</button>
@@ -231,17 +186,16 @@ const AUDIENCE_LABEL: Record<Audience, string> = { joueur: 'Joueur', staff: 'Sta
     .toc nav { display: grid; gap: 2px; }
     .toc nav a { display: flex; align-items: center; gap: 8px; color: var(--text-muted); padding: 7px 10px; border-radius: 10px;
                  font-size: .9rem; border-left: 2px solid transparent; transition: background .15s, color .15s; }
-    .toc nav a:hover { background: var(--lilac-soft); color: var(--lilac); text-decoration: none; }
-    .toc nav a.active { color: var(--lilac); background: var(--lilac-soft); border-left-color: var(--lilac-strong); font-weight: 600; }
+    .toc nav a:hover, .toc nav a.active { background: var(--lilac-soft); color: var(--lilac); text-decoration: none; }
+    .toc nav a.active { border-left-color: var(--lilac-strong); font-weight: 600; }
     .count { margin-left: auto; font-size: .72rem; color: var(--text-faint); font-variant-numeric: tabular-nums; }
-    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
     .small { font-size: .82rem; }
-    .linklike { background: none; border: 0; padding: 0; color: var(--lilac); cursor: pointer; font: inherit; }
 
     .intro { margin-bottom: 28px; background: radial-gradient(ellipse at 0% 0%, rgba(167, 123, 243, .22), transparent 65%), var(--surface); }
     .intro h1 { margin: 0 0 6px; font-size: clamp(1.7rem, 4vw, 2.3rem); }
     .intro p { margin: 0; }
-    .block { display: grid; gap: 12px; margin-bottom: 40px; scroll-margin-top: 16px; }
+    main [id] { scroll-margin-top: 16px; }
+    .block { display: grid; gap: 12px; margin-bottom: 40px; }
     .section-head { display: flex; align-items: center; gap: 10px; }
     .section-head h2 { margin: 0; font-size: 1.35rem; }
     .section-icon { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 10px; background: var(--lilac-soft); color: var(--lilac); flex: none; }
@@ -254,33 +208,18 @@ const AUDIENCE_LABEL: Record<Audience, string> = { joueur: 'Joueur', staff: 'Sta
     .tag.staff { background: var(--lilac-soft); color: var(--lilac); }
     .tag.admin { background: var(--danger-soft); color: var(--danger); }
 
-    .progress { height: 6px; border-radius: 999px; background: var(--surface-3); overflow: hidden; }
-    .progress span { display: block; height: 100%; background: var(--gradient); transition: width .3s var(--ease); }
-    .steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
-    .step { display: grid; gap: 8px; justify-items: start; scroll-margin-top: 16px; transition: opacity .2s; }
-    .step p { margin: 0; }
-    .step.done { opacity: .65; }
-    .check { display: flex; align-items: center; gap: 10px; cursor: pointer; }
-    .check input { width: 18px; height: 18px; accent-color: var(--lilac-strong); }
-    .num { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--gradient); color: var(--on-lilac); font-weight: 700; font-size: .85rem; }
-    .step.done strong { text-decoration: line-through; }
-    details summary { cursor: pointer; color: var(--text-muted); }
-    details p { margin: 6px 0 0; }
 
     .group { margin: 10px 0 0; font-size: .8rem; text-transform: uppercase; letter-spacing: .08em; color: var(--text-faint); }
     .cmds { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 330px), 1fr)); }
-    .cmd { display: grid; gap: 6px; align-content: start; padding: 12px 14px; scroll-margin-top: 16px; }
-    .cmd:target, article:target, .step:target, .faq-item:target { box-shadow: var(--shadow-glow); }
+    .cmd { display: grid; gap: 6px; align-content: start; padding: 12px 14px; }
+    .cmd:target, article:target, .faq-item:target { box-shadow: var(--shadow-glow); }
     .cmd-head { display: flex; align-items: center; gap: 8px; min-width: 0; }
     .cmd-head h3 { margin: 0; font-size: 1rem; }
     .cmd p { margin: 0; font-size: .9rem; }
     code { color: var(--lilac); font-size: .88rem; overflow-wrap: anywhere; }
     .articles { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 380px), 1fr)); }
     article.card p, .faq-item p { margin: 6px 0 0; }
-    article { scroll-margin-top: 16px; }
-    .faq-item summary { font-weight: 600; color: var(--text); }
-    .empty { display: grid; justify-items: center; gap: 8px; padding: 40px; color: var(--text-muted); }
-    .empty p { margin: 0; }
+    .faq-item summary { cursor: pointer; font-weight: 600; color: var(--text); }
 
     .to-top { position: fixed; right: 20px; bottom: 20px; z-index: 20; display: grid; place-items: center; width: 44px; height: 44px;
               border-radius: 50%; border: 1px solid var(--lilac-strong); background: var(--surface-2); color: var(--lilac);
@@ -297,13 +236,11 @@ const AUDIENCE_LABEL: Record<Audience, string> = { joueur: 'Joueur', staff: 'Sta
     }
   `,
 })
-export class GuidePage implements OnInit {
+export class GuidePage {
   protected readonly auth = inject(AuthService);
-  private readonly http = inject(HttpClient);
   private readonly toast = inject(ToastService);
   private readonly host = inject(ElementRef<HTMLElement>);
 
-  protected readonly tutorial = TUTORIAL;
   protected readonly privacy = PRIVACY;
   protected readonly audiences = AUDIENCES;
   protected readonly audienceLabel = AUDIENCE_LABEL;
@@ -312,9 +249,6 @@ export class GuidePage implements OnInit {
   protected readonly audience = signal<Audience | null>(null);
   protected readonly active = signal('tuto');
   protected readonly showTop = signal(false);
-  protected readonly inviteUrl = signal<string | null>(null);
-  protected readonly done = signal<Set<string>>(readDone());
-  protected readonly doneCount = computed(() => TUTORIAL.filter((s) => this.done().has(s.id)).length);
   protected readonly filtering = computed(() => !!this.query().trim() || this.audience() !== null);
 
   private keep(audience: Audience): boolean {
@@ -348,6 +282,7 @@ export class GuidePage implements OnInit {
   protected readonly visibleSections = computed(() => SECTIONS.filter((s) => this.show(s.id)));
 
   constructor() {
+    void this.auth.load().catch(() => null);
     const destroyRef = inject(DestroyRef);
     afterNextRender(() => {
       // Lien partagé (/guide#transferbal) : la page est rendue, on peut y aller.
@@ -367,13 +302,7 @@ export class GuidePage implements OnInit {
     });
   }
 
-  ngOnInit(): void {
-    void this.auth.load().catch(() => null);
-    this.http.get<{ invite_url: string }>('/api/public/info').subscribe({ next: (i) => this.inviteUrl.set(i.invite_url), error: () => {} });
-  }
-
-  @HostListener('window:scroll')
-  onScroll(): void {
+  protected onScroll(): void {
     this.showTop.set(window.scrollY > 600);
   }
 
@@ -390,10 +319,6 @@ export class GuidePage implements OnInit {
 
   audienceOf(id: string): Audience {
     return ARTICLE_AUDIENCE[id] ?? 'joueur';
-  }
-
-  hasHit(text: string): boolean {
-    return !!this.query().trim() && matches(this.query(), text);
   }
 
   reset(): void {
@@ -431,28 +356,8 @@ export class GuidePage implements OnInit {
     history.replaceState(null, '', `/guide#${id}`);
   }
 
-  toggle(id: string): void {
-    const next = new Set(this.done());
-    if (next.has(id)) next.delete(id);
-    else next.add(id);
-    this.done.set(next);
-    try {
-      localStorage.setItem(DONE_KEY, JSON.stringify([...next]));
-    } catch {
-      /* stockage indisponible (navigation privée) : la case reste cochée pour la session */
-    }
-  }
-
   private filterArticles(list: Article[]): Article[] {
     return list.filter((a) => this.keep(this.audienceOf(a.id)) && matches(this.query(), a.title, ...a.paragraphs));
   }
 }
 
-function readDone(): Set<string> {
-  try {
-    const raw = JSON.parse(localStorage.getItem(DONE_KEY) ?? '[]');
-    return new Set(Array.isArray(raw) ? raw.filter((x) => typeof x === 'string') : []);
-  } catch {
-    return new Set();
-  }
-}

@@ -145,7 +145,6 @@ import { roleColor, sortByRole } from '../../shared/roles';
     .build-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .9rem; }
     .foot { padding-top: 12px; border-top: 1px solid var(--border-soft); flex-wrap: wrap; }
     .copy { width: auto; }
-    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   `,
 })
 export class ComposList implements OnInit {

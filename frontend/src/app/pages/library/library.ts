@@ -88,7 +88,6 @@ const SEARCH_DELAY_MS = 250;
     }
   `,
   styles: `
-    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
     .toolbar { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; padding: 12px; margin-bottom: 18px; }
     .toolbar .input { flex: 1 1 240px; }
     .filters { gap: 6px; }

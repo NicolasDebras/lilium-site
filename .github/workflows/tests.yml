@@ -14,16 +14,16 @@ jobs:
   api:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           path: lilium-site
       # Le bot à côté du site : tests/test_shared_sync.py vérifie que les copies
       # de app/shared/ et app/assets/ sont identiques à celles du bot (branche main).
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           repository: NicolasDebras/botDiscord
           path: botDiscord
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.13"
           cache: pip
@@ -39,8 +39,8 @@ jobs:
       run:
         working-directory: frontend
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: "24"
           cache: npm

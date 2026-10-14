@@ -135,6 +135,10 @@ a {
 .faint { color: var(--text-faint); }
 .error-text { color: var(--danger); }
 .num { font-variant-numeric: tabular-nums; }
+/* Texte lu par les lecteurs d'écran seulement (libellés de champs sans titre visible). */
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+/* Bouton qui ressemble à un lien. */
+.linklike { background: none; border: 0; padding: 0; color: var(--lilac); cursor: pointer; font: inherit; }
 .gradient-text {
   background: var(--gradient);
   -webkit-background-clip: text;

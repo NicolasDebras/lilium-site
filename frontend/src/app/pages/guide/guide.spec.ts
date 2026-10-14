@@ -11,7 +11,7 @@ import { highlight } from './highlight';
 describe('GuidePage', () => {
   beforeEach(() => localStorage.clear());
 
-  function render() {
+  async function render() {
     TestBed.configureTestingModule({
       imports: [GuidePage],
       providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting(), fakeAuth({ me: null })],
@@ -19,6 +19,7 @@ describe('GuidePage', () => {
     const f = TestBed.createComponent(GuidePage);
     f.detectChanges();
     TestBed.inject(HttpTestingController).expectOne('/api/public/info').flush({ invite_url: 'https://discord.com/oauth2/authorize?x' });
+    await f.whenStable();
     f.detectChanges();
     const el = f.nativeElement as HTMLElement;
     const search = (q: string) => {
@@ -52,23 +53,23 @@ describe('GuidePage', () => {
     expect(commandAudience('Admin serveur, Maitre de guilde')).toBe('admin');
   });
 
-  it('affiche le tuto pas à pas avec le bouton d’invitation et la connexion', () => {
-    const { el } = render();
+  it('affiche le tuto pas à pas avec le bouton d’invitation et la connexion', async () => {
+    const { el } = await render();
     expect(el.querySelectorAll('#tuto .step').length).toBe(TUTORIAL.length);
     expect(el.querySelector('#inviter a')?.getAttribute('href')).toContain('discord.com/oauth2/authorize');
     expect(el.querySelector('#connexion button')?.textContent).toContain('Se connecter');
   });
 
-  it('cocher une étape la mémorise et fait avancer la barre', () => {
-    const { f, el } = render();
+  it('cocher une étape la mémorise et fait avancer la barre', async () => {
+    const { f, el } = await render();
     (el.querySelector('#register input[type=checkbox]') as HTMLInputElement).click();
     f.detectChanges();
     expect(el.querySelector('#tuto p.small')?.textContent).toContain(`1 / ${TUTORIAL.length}`);
     expect(JSON.parse(localStorage.getItem('lilium.guide.done')!)).toEqual(['register']);
   });
 
-  it('chaque commande a une ancre partageable ; la recherche filtre et surligne', () => {
-    const { el, search } = render();
+  it('chaque commande a une ancre partageable ; la recherche filtre et surligne', async () => {
+    const { el, search } = await render();
     expect(el.querySelectorAll('#commandes .cmd').length).toBe(COMMANDS.length);
     expect(el.querySelector('#transferbal')).not.toBeNull();
     expect(el.querySelector(`#${anchorOf('webadmin add')}`)?.textContent).toContain('/webadmin add @membre');
@@ -79,8 +80,8 @@ describe('GuidePage', () => {
     expect(el.querySelector('.toc nav .count')?.textContent).toBe('1');
   });
 
-  it('filtre par public : Joueur cache le tuto (admin) et les commandes d’officier', () => {
-    const { el, chip } = render();
+  it('filtre par public : Joueur cache le tuto (admin) et les commandes d’officier', async () => {
+    const { el, chip } = await render();
     chip('Joueur');
     expect(el.querySelector('#tuto')).toBeNull();
     expect(el.querySelector('#monbal')).not.toBeNull();
@@ -90,8 +91,8 @@ describe('GuidePage', () => {
     expect(el.querySelector(`#${anchorOf('webadmin add')}`)).not.toBeNull();
   });
 
-  it('rien ne correspond : message et bouton « Tout afficher »', () => {
-    const { f, el, search } = render();
+  it('rien ne correspond : message et bouton « Tout afficher »', async () => {
+    const { f, el, search } = await render();
     search('zzzzz');
     expect(el.querySelector('.empty')?.textContent).toContain('Rien ne correspond');
     (el.querySelector('.empty button') as HTMLButtonElement).click();

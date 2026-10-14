@@ -70,7 +70,6 @@ const SEARCH_DELAY_MS = 250;
   `,
   styles: `
     .players { margin-top: 32px; }
-    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
     .section-head { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
     .section-head h2 { margin: 0; }
     .section-head p { margin: 4px 0 0; }
