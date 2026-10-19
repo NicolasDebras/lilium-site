@@ -42,8 +42,10 @@ describe('Shell', () => {
     expect(member.el.querySelectorAll('.links a app-icon').length).toBe(4);
   });
 
-  it('sélecteur de langue : EN traduit la navigation et met à jour <html lang>', async () => {
+  it('sélecteur de langue (menu du compte) : EN traduit la navigation et met à jour <html lang>', async () => {
     const { fixture, el } = await render('member');
+    el.querySelector<HTMLButtonElement>('.avatar-btn')!.click();
+    fixture.detectChanges();
     const en = [...el.querySelectorAll<HTMLButtonElement>('app-lang-switch button')].find((b) => b.textContent?.trim() === 'EN')!;
     en.click();
     fixture.detectChanges();

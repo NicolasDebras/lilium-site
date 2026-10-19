@@ -47,7 +47,6 @@ export const NAV_LINKS: NavLink[] = [
         }
 
         <div class="right">
-          <app-lang-switch />
           @if (guild(); as g) {
             <a routerLink="/" class="guild-pill" [title]="t().shell.switchGuild">
               @if (g.icon) {
@@ -83,6 +82,10 @@ export const NAV_LINKS: NavLink[] = [
                   <a role="menuitem" routerLink="/guide" (click)="accountOpen.set(false)">
                     <app-icon name="book" [size]="16" /> {{ t().shell.guide }}
                   </a>
+                  <div class="lang-row">
+                    <span><app-icon name="globe" [size]="16" /> {{ t().lang.label }}</span>
+                    <app-lang-switch />
+                  </div>
                   <button type="button" role="menuitem" class="logout" (click)="logout()">
                     <app-icon name="logout" [size]="16" /> {{ t().shell.logout }}
                   </button>
@@ -146,6 +149,8 @@ export const NAV_LINKS: NavLink[] = [
     .menu a, .menu button { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 9px; border: 0;
                             background: transparent; color: var(--text); font: inherit; font-size: .9rem; cursor: pointer; text-align: left; }
     .menu a:hover, .menu button:hover { background: var(--surface-3); text-decoration: none; }
+    .lang-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 4px 4px 4px 10px; font-size: .9rem; }
+    .lang-row span { display: flex; align-items: center; gap: 10px; }
     .logout { color: var(--danger) !important; }
 
     .burger { display: none; }
