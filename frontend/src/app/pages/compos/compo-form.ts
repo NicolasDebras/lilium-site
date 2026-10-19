@@ -85,14 +85,15 @@ function toModel({ total: _t, custom: _c, ...compo }: Compo): CompoModel {
         <input id="image" class="input" type="url" [formField]="form.image" />
       </div>
 
-      <div class="field">
-        <label class="check">
-          <input type="checkbox" [formField]="form.custom_shares" />
-          Parts de paie personnalisées
-        </label>
-        <p class="muted help">Ajoute une colonne « Parts » à chaque ligne : nombre de parts du rôle à /finacti
-          (1 par défaut, 2 = double part, 0,5 = demi-part, 0 = non payé).</p>
-      </div>
+      <label class="check" [class.on]="model().custom_shares">
+        <span class="check-icon" aria-hidden="true">💰</span>
+        <span class="check-text">
+          <strong>Parts de paie personnalisées</strong>
+          <span class="muted">Une colonne « Parts » par ligne pour /finacti : 1 par défaut, 2 = double part,
+            0,5 = demi-part, 0 = non payé.</span>
+        </span>
+        <input type="checkbox" role="switch" [formField]="form.custom_shares" />
+      </label>
       </div>
 
       <div class="card preview">
@@ -202,7 +203,25 @@ function toModel({ total: _t, custom: _c, ...compo }: Compo): CompoModel {
     .slot.with-shares, .slot-head { grid-template-columns: minmax(0, 1fr) 68px 68px 34px; }
     .slot-head { display: grid; gap: 8px; font-size: .75rem; font-weight: 600; text-transform: uppercase;
                  letter-spacing: .06em; color: var(--text-faint); }
-    .check { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }
+    /* Option « parts de paie » : carte cliquable + interrupteur, lilas quand activée */
+    .check { display: flex; align-items: center; gap: 14px; padding: 12px 14px; cursor: pointer;
+             border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg-2);
+             transition: border-color .15s, background .15s, box-shadow .15s; }
+    .check:hover { border-color: var(--lilac-deep); }
+    .check.on { border-color: var(--lilac-strong); background: var(--lilac-soft); box-shadow: var(--shadow-glow); }
+    .check-icon { display: grid; place-items: center; flex: none; width: 38px; height: 38px; border-radius: 10px;
+                  background: var(--surface-2); font-size: 1.15rem; }
+    .check.on .check-icon { background: var(--lilac-soft); }
+    .check-text { display: grid; gap: 2px; flex: 1; min-width: 0; }
+    .check-text .muted { font-size: .85rem; }
+    .check input { appearance: none; flex: none; position: relative; width: 42px; height: 24px; margin: 0;
+                   border-radius: 999px; background: var(--surface-2); border: 1px solid var(--border);
+                   cursor: pointer; transition: background .15s, border-color .15s; }
+    .check input::after { content: ''; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px;
+                          border-radius: 50%; background: var(--text-muted); transition: transform .15s, background .15s; }
+    .check input:checked { background: var(--lilac-strong); border-color: var(--lilac-strong); }
+    .check input:checked::after { transform: translateX(18px); background: var(--on-lilac); }
+    .check input:focus-visible { outline: 2px solid var(--lilac); outline-offset: 2px; }
     .detail { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
     .free-row .select { width: auto; min-width: 150px; }
     .free-row .input { flex: 1 1 200px; }
