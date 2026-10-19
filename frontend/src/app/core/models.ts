@@ -7,9 +7,6 @@ export function hasLevel(level: Level | undefined, minimum: Level): boolean {
   return LEVEL_RANK[level ?? 'none'] >= LEVEL_RANK[minimum];
 }
 
-/** Libellé affiché d'un niveau (vide pour « none »). */
-export const LEVEL_LABEL: Record<Level, string> = { none: '', member: 'Membre', staff: 'Staff', admin: 'Admin' };
-
 export interface User {
   id: string;
   username: string;
@@ -33,17 +30,6 @@ export type TypeActi = 'PVP' | 'PVE';
 // ── Équipement Albion (catalogue /api/items) ──────────────────────────────────
 export const SLOTS = ['mainhand', 'offhand', 'head', 'armor', 'shoes', 'cape', 'food', 'potion'] as const;
 export type Slot = (typeof SLOTS)[number];
-
-export const SLOT_LABELS: Record<Slot, string> = {
-  mainhand: 'Arme',
-  offhand: 'Main gauche',
-  head: 'Tête',
-  armor: 'Armure',
-  shoes: 'Bottes',
-  cape: 'Cape',
-  food: 'Bouffe',
-  potion: 'Potion',
-};
 
 /** Valeur d'une case « au choix du joueur » (rien d'imposé). */
 export const FREE_CHOICE = '*';

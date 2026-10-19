@@ -1,4 +1,5 @@
 """Règles de validation partagées par les routes (logique pure)."""
+from app.i18n import tr
 
 
 # Le nom d'une compo sert de clé côté bot et d'URL côté site : pas de / \ ? # % ni de caractère de contrôle
@@ -8,7 +9,7 @@ _FORBIDDEN_NAME_CHARS = set("/\\?#%")
 def clean_compo_name(value: str) -> str:
     value = value.strip()
     if not value or len(value) > 100 or any(c in _FORBIDDEN_NAME_CHARS or not c.isprintable() for c in value):
-        raise ValueError("Nom invalide : 1 à 100 caractères, sans / \\ ? # % ni caractère spécial invisible.")
+        raise ValueError(tr("bad_name"))
     return value
 
 
@@ -31,5 +32,5 @@ def https_url_or_empty(value: str) -> str:
     et le site l'affiche : pas de javascript:, data:, ni http:// en clair."""
     value = value.strip()
     if value and (not value.lower().startswith("https://") or any(c.isspace() for c in value)):
-        raise ValueError("L'image doit être un lien https:// (ou rester vide).")
+        raise ValueError(tr("bad_image"))
     return value

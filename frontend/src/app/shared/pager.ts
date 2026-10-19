@@ -1,4 +1,6 @@
-import { Component, computed, input, output } from '@angular/core';
+import { Component, computed, inject, input, output } from '@angular/core';
+
+import { I18nService } from '../core/i18n/i18n';
 
 /** Numéros de pages à afficher : toujours la 1re et la dernière, la page courante ± 1,
  *  et « … » pour les trous (ex. 1 … 4 5 6 … 12). Pages numérotées à partir de 1. */
@@ -19,22 +21,22 @@ export function pageNumbers(page: number, pageCount: number): (number | '…')[]
   selector: 'app-pager',
   template: `
     @if (pageCount() > 1) {
-      <nav class="pager" aria-label="Pagination">
-        <span class="muted range">{{ from() }}–{{ to() }} sur {{ total() }} {{ label() }}</span>
+      <nav class="pager" [attr.aria-label]="t().pager.aria">
+        <span class="muted range">{{ t().pager.range(from(), to(), total(), label() || t().pager.items) }}</span>
         <div class="pages">
           <button type="button" class="btn btn-sm" [disabled]="page() <= 1" (click)="go(page() - 1)"
-                  aria-label="Page précédente">‹ Précédent</button>
+                  [attr.aria-label]="t().pager.prevAria">{{ t().pager.prev }}</button>
           @for (p of numbers(); track $index) {
             @if (p === '…') {
               <span class="gap muted" aria-hidden="true">…</span>
             } @else {
               <button type="button" class="btn btn-sm num" [class.on]="p === page()"
-                      [attr.aria-current]="p === page() ? 'page' : null" [attr.aria-label]="'Page ' + p"
+                      [attr.aria-current]="p === page() ? 'page' : null" [attr.aria-label]="t().pager.page(p)"
                       (click)="go(p)">{{ p }}</button>
             }
           }
           <button type="button" class="btn btn-sm" [disabled]="page() >= pageCount()" (click)="go(page() + 1)"
-                  aria-label="Page suivante">Suivant ›</button>
+                  [attr.aria-label]="t().pager.nextAria">{{ t().pager.next }}</button>
         </div>
       </nav>
     }
@@ -52,7 +54,9 @@ export class Pager {
   readonly page = input.required<number>();
   readonly pageSize = input.required<number>();
   readonly total = input.required<number>();
-  readonly label = input('éléments');
+  /** Ce qui est compté (« builds »…) ; vide = « éléments ». */
+  readonly label = input('');
+  protected readonly t = inject(I18nService).t;
   readonly pageChange = output<number>();
 
   protected readonly pageCount = computed(() => Math.max(1, Math.ceil(this.total() / this.pageSize())));

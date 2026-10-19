@@ -5,6 +5,7 @@ import { firstValueFrom } from 'rxjs';
 
 import { ApiService, errorMessage } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
+import { I18nService } from '../../core/i18n/i18n';
 import { debouncedSignal } from '../../core/debounce';
 import { PublicCompo, hasLevel } from '../../core/models';
 import { errorText, lastValue } from '../../core/resource';
@@ -21,18 +22,18 @@ import { roleColor } from '../../shared/roles';
   template: `
     <div class="page-head">
       <div>
-        <h1>Modèles de compos</h1>
-        <p class="subtitle">Compos publiées par les guildes qui utilisent le bot. Importe-les dans ton serveur, builds compris.</p>
+        <h1>{{ t().library.title }}</h1>
+        <p class="subtitle">{{ t().library.subtitle }}</p>
       </div>
     </div>
 
     <div class="card toolbar">
-      <label class="sr-only" for="lib-search">Chercher un modèle</label>
-      <input id="lib-search" class="input" type="search" placeholder="Chercher un modèle…" maxlength="100"
+      <label class="sr-only" for="lib-search">{{ t().library.search }}</label>
+      <input id="lib-search" class="input" type="search" [placeholder]="t().library.searchPlaceholder" maxlength="100"
              [value]="query()" (input)="search($any($event.target).value)" />
       <div class="row filters">
-        @for (t of types; track t.label) {
-          <button type="button" class="btn btn-sm" [class.on]="typeActi() === t.value" (click)="setType(t.value)">{{ t.label }}</button>
+        @for (type of types; track type.label) {
+          <button type="button" class="btn btn-sm" [class.on]="typeActi() === type.value" (click)="setType(type.value)">{{ type.value ? type.label : t().common.all }}</button>
         }
       </div>
     </div>
@@ -48,8 +49,8 @@ import { roleColor } from '../../shared/roles';
                 <h2>{{ m.name }}</h2>
                 <div class="row">
                   <span class="badge badge-outline">{{ m.type_acti }}</span>
-                  <span class="badge"><app-icon name="users" [size]="12" /> {{ m.total }} joueurs</span>
-                  <span class="faint small">par {{ m.author_name || 'anonyme' }} · {{ m.imports }} import{{ m.imports > 1 ? 's' : '' }}</span>
+                  <span class="badge"><app-icon name="users" [size]="12" /> {{ t().common.players(m.total) }}</span>
+                  <span class="faint small">{{ t().library.by(m.author_name || t().library.anonymous) }} · {{ t().common.imports(m.imports) }}</span>
                 </div>
               </header>
               @if (m.description) { <p class="muted desc">{{ m.description }}</p> }
@@ -60,28 +61,28 @@ import { roleColor } from '../../shared/roles';
               </ul>
               @if (m.builds) {
                 @if (shown() === m.id) {
-                  <img [src]="imageUrl(m.id)" [alt]="'Image du modèle ' + m.name" class="preview" loading="lazy" />
+                  <img [src]="imageUrl(m.id)" [alt]="t().library.imageAlt(m.name)" class="preview" loading="lazy" />
                 } @else {
-                  <button type="button" class="btn btn-sm btn-ghost" (click)="shown.set(m.id)">Voir l'image</button>
+                  <button type="button" class="btn btn-sm btn-ghost" (click)="shown.set(m.id)">{{ t().library.showImage }}</button>
                 }
               }
               <div class="row foot">
                 @if (canImport()) {
                   <button type="button" class="btn btn-sm btn-primary" [disabled]="busy() === m.id" (click)="importModel(m)">
-                    <app-icon name="plus" [size]="14" /> Importer dans ce serveur
+                    <app-icon name="plus" [size]="14" /> {{ t().library.import }}
                   </button>
                 }
-                <button type="button" class="btn btn-sm btn-ghost danger" (click)="remove(m)" title="Auteur, admin du serveur d'origine ou propriétaire du site">
-                  <app-icon name="trash" [size]="14" /> Retirer
+                <button type="button" class="btn btn-sm btn-ghost danger" (click)="remove(m)" [title]="t().library.removeTitle">
+                  <app-icon name="trash" [size]="14" /> {{ t().library.remove }}
                 </button>
               </div>
             </article>
           }
         </div>
-        <app-pager [page]="d.page" [pageSize]="d.page_size" [total]="d.total" label="modèles" (pageChange)="page.set($event)" />
+        <app-pager [page]="d.page" [pageSize]="d.page_size" [total]="d.total" [label]="t().library.pagerLabel" (pageChange)="page.set($event)" />
       } @else {
         <div class="empty"><app-icon name="book" [size]="32" />
-          <p>Aucun modèle{{ query() || typeActi() ? ' ne correspond' : ' publié pour l’instant' }}. Publie une compo depuis la page Compos !</p>
+          <p>{{ t().library.none(!!(query() || typeActi())) }}</p>
         </div>
       }
     } @else {
@@ -115,6 +116,7 @@ export class LibraryPage {
   private readonly auth = inject(AuthService);
   private readonly toast = inject(ToastService);
   private readonly router = inject(Router);
+  protected readonly t = inject(I18nService).t;
   readonly guildId = input.required<string>();
 
   protected readonly types = [
@@ -159,11 +161,11 @@ export class LibraryPage {
     this.busy.set(m.id);
     try {
       const { name } = await firstValueFrom(this.api.importPublicCompo(this.guildId(), m.id, newName));
-      this.toast.success(`Compo « ${name} » importée avec ses builds.`);
+      this.toast.success(this.t().library.imported(name));
       await this.router.navigate(['/g', this.guildId(), 'compos']);
     } catch (err) {
       const status = (err as { status?: number }).status;
-      const other = status === 409 ? prompt(`${errorMessage(err)}\nNouveau nom pour la compo importée :`, `${m.name} 2`) : null;
+      const other = status === 409 ? prompt(this.t().library.newName(errorMessage(err)), `${m.name} 2`) : null;
       if (other) await this.importModel(m, other);
       else this.toast.error(errorMessage(err));
     } finally {
@@ -172,10 +174,10 @@ export class LibraryPage {
   }
 
   async remove(m: PublicCompo): Promise<void> {
-    if (!confirm(`Retirer le modèle « ${m.name} » de la bibliothèque ?`)) return;
+    if (!confirm(this.t().library.confirmRemove(m.name))) return;
     try {
       await firstValueFrom(this.api.deletePublicCompo(m.id));
-      this.toast.success('Modèle retiré.');
+      this.toast.success(this.t().library.removed);
       this.models.reload();
     } catch (err) {
       this.toast.error(errorMessage(err));

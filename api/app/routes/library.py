@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field, field_validator
 
 from app.auth import require_user
 from app.compos import InvalidCompo
+from app.i18n import tr
 from app.images import compo_png
 from app.library import plan_builds, public_summary, rebuild_template, snapshot
 from app.permissions import Level, access_level, require_staff
@@ -57,9 +58,7 @@ async def _import(db, guild_id: int, snap: dict, name: str, user: dict) -> str:
     target = await db.get_builds(guild_id)
     reuse, create = plan_builds(snap, target)
     if len(target) + len(create) > builds_routes.MAX_BUILDS:
-        raise HTTPException(status_code=409, detail=(
-            f"Il faudrait créer {len(create)} build(s) : {builds_routes.MAX_BUILDS} maximum par serveur."
-        ))
+        raise HTTPException(status_code=409, detail=tr("import_too_many_builds", count=len(create), max=builds_routes.MAX_BUILDS))
 
     by_id = {b["id"]: b for b in target}
     id_map: dict[str, int] = dict(reuse)
@@ -71,7 +70,7 @@ async def _import(db, guild_id: int, snap: dict, name: str, user: dict) -> str:
     except InvalidCompo as e:
         raise HTTPException(status_code=422, detail=str(e)) from e
     if not entry.get("pf_1"):
-        raise HTTPException(status_code=422, detail="La compo doit contenir au moins un rôle en PF1.")
+        raise HTTPException(status_code=422, detail=tr("compo_needs_pf1"))
 
     for old, build in create:
         new_id = await db.add_build(guild_id, build, user["id"], user["username"])
@@ -84,7 +83,7 @@ async def _import(db, guild_id: int, snap: dict, name: str, user: dict) -> str:
 async def _guild_snapshot(db, guild_id: int, name: str) -> tuple[dict, dict]:
     templates = await db.get_custom_templates(guild_id)
     if name not in templates:
-        raise HTTPException(status_code=404, detail="Compo introuvable.")
+        raise HTTPException(status_code=404, detail=tr("compo_not_found"))
     builds_by_id = {b["id"]: b for b in await db.get_builds(guild_id)}
     return templates[name], snapshot(templates[name], builds_by_id)
 
@@ -114,7 +113,7 @@ async def copy_compo(guild_id: int, body: CopyIn, request: Request, user: dict =
     state = request.app.state
     level = await access_level(state.db, state.discord, body.source_guild_id, int(user["id"]), state.levels)
     if level < Level.STAFF:
-        raise HTTPException(status_code=403, detail="Tu dois être staff du serveur d'origine pour copier ses compos.")
+        raise HTTPException(status_code=403, detail=tr("copy_needs_staff"))
     _, snap = await _guild_snapshot(state.db, body.source_guild_id, body.name)
     return {"name": await _import(state.db, guild_id, snap, body.new_name or body.name, user)}
 
@@ -128,7 +127,7 @@ async def publish_compo(guild_id: int, name: str, request: Request, user: dict =
     db = request.app.state.db
     template, snap = await _guild_snapshot(db, guild_id, name)
     if await db.count_public_compos(guild_id) >= MAX_PUBLIC_PER_GUILD:
-        raise HTTPException(status_code=409, detail=f"{MAX_PUBLIC_PER_GUILD} modèles publiés maximum par serveur.")
+        raise HTTPException(status_code=409, detail=tr("max_public", max=MAX_PUBLIC_PER_GUILD))
     public_id = await db.add_public_compo(
         name, str(template.get("description") or "")[:2000], template.get("type_acti") or "PVP",
         str(template.get("image") or "")[:500], snap, guild_id, str(user["id"]), user.get("username") or "",
@@ -149,7 +148,7 @@ async def list_public(request: Request, q: str = Query("", max_length=100),
 async def _public_or_404(db, public_id: int) -> dict:
     row = await db.get_public_compo(public_id)
     if not row:
-        raise HTTPException(status_code=404, detail="Modèle introuvable.")
+        raise HTTPException(status_code=404, detail=tr("model_not_found"))
     return row
 
 
@@ -169,7 +168,7 @@ async def public_image(request: Request, public_id: int = Path(gt=0, lt=2**31)):
     builds_by_id = {int(k): v for k, v in (snap.get("builds") or {}).items()}
     png = await compo_png(row["name"], snap.get("template") or {}, builds_by_id)
     if png is None:
-        raise HTTPException(status_code=404, detail="Ce modèle n'a aucun build : pas d'image.")
+        raise HTTPException(status_code=404, detail=tr("model_no_build"))
     return Response(png, media_type="image/png", headers={"Cache-Control": "public, max-age=300"})
 
 
@@ -193,5 +192,5 @@ async def delete_public(request: Request, public_id: int = Path(gt=0, lt=2**31),
         level = await access_level(state.db, state.discord, row["source_guild_id"], int(user["id"]), state.levels)
         allowed = level >= Level.ADMIN
     if not allowed:
-        raise HTTPException(status_code=403, detail="Seul l'auteur, un admin du serveur d'origine ou le propriétaire du site peut retirer ce modèle.")
+        raise HTTPException(status_code=403, detail=tr("model_remove_denied"))
     await state.db.delete_public_compo(public_id)

@@ -1,5 +1,6 @@
 import { Component, inject, input } from '@angular/core';
 
+import { I18nService } from '../core/i18n/i18n';
 import { ToastService } from '../core/toast.service';
 
 /** Nom de fichier sûr : « Raid AVA #2 » → « raid-ava-2 ». */
@@ -15,8 +16,8 @@ export function fileSlug(name: string): string {
     <figure class="share">
       <img [src]="src()" [alt]="alt()" loading="lazy" />
       <figcaption class="row">
-        <a class="btn btn-sm" [href]="src()" [download]="fileName() + '.png'">Télécharger</a>
-        <button type="button" class="btn btn-sm" (click)="copy()">Copier l'image</button>
+        <a class="btn btn-sm" [href]="src()" [download]="fileName() + '.png'">{{ t().imageShare.download }}</a>
+        <button type="button" class="btn btn-sm" (click)="copy()">{{ t().imageShare.copy }}</button>
       </figcaption>
     </figure>
   `,
@@ -28,6 +29,7 @@ export function fileSlug(name: string): string {
 })
 export class ImageShare {
   private readonly toast = inject(ToastService);
+  protected readonly t = inject(I18nService).t;
   readonly src = input.required<string>();
   readonly alt = input('');
   readonly fileName = input('lilium');
@@ -36,9 +38,9 @@ export class ImageShare {
     try {
       const blob = await (await fetch(this.src())).blob();
       await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-      this.toast.success('Image copiée : colle-la dans Discord.');
+      this.toast.success(this.t().imageShare.copied);
     } catch {
-      this.toast.error('Ton navigateur ne permet pas de copier l’image : utilise « Télécharger ».');
+      this.toast.error(this.t().imageShare.copyFailed);
     }
   }
 }

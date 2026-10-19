@@ -12,6 +12,7 @@ from app.bal_stats import (
 )
 from app.activity_stats import compute_activity_stats
 from app.constants import ROLES
+from app.i18n import tr
 from app.permissions import require_admin, require_member
 
 router = APIRouter(prefix="/guilds/{guild_id}", tags=["guild"])
@@ -164,5 +165,5 @@ async def admin_error(guild_id: int, error_id: int, request: Request, user: dict
     """Détail d'une erreur avec son traceback — 404 si elle appartient à un autre serveur."""
     row = await request.app.state.db.get_error_log(guild_id, error_id)
     if not row:
-        raise HTTPException(404, "Erreur introuvable.")
+        raise HTTPException(404, tr("error_not_found"))
     return _error_row(row)

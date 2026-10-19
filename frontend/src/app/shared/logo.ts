@@ -1,4 +1,6 @@
-import { Component, input } from '@angular/core';
+import { Component, inject, input } from '@angular/core';
+
+import { I18nService } from '../core/i18n/i18n';
 
 /** Logo Lilium : lys stylisé en dégradé lilas + nom + pastille BETA. */
 @Component({
@@ -23,7 +25,7 @@ import { Component, input } from '@angular/core';
       </svg>
       <span class="name">Lilium</span>
       @if (beta()) {
-        <span class="beta" title="Site en cours de développement">BETA</span>
+        <span class="beta" [title]="t().logo.beta">BETA</span>
       }
     </span>
   `,
@@ -40,4 +42,5 @@ import { Component, input } from '@angular/core';
 export class Logo {
   readonly size = input<'normal' | 'big'>('normal');
   readonly beta = input(true);
+  protected readonly t = inject(I18nService).t;
 }

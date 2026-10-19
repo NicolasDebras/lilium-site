@@ -43,7 +43,7 @@ describe('GuideTutorial', () => {
 
   it('la recherche ouvre l’aide « Ça ne marche pas ? » qui contient le mot', async () => {
     const step = TUTORIAL.find((s) => s.help)!;
-    const word = step.help!.split(/\s+/).find((w) => w.length > 5)!;
+    const word = step.help!.fr.split(/\s+/).find((w) => w.length > 5)!;
     const { el } = await render(word);
     expect(el.querySelector<HTMLDetailsElement>(`#${step.id} details`)!.open).toBe(true);
   });

@@ -2,6 +2,7 @@ import { Component, computed, inject, input, linkedSignal, signal } from '@angul
 import { rxResource } from '@angular/core/rxjs-interop';
 
 import { ApiService } from '../../core/api.service';
+import { I18nService, locale } from '../../core/i18n/i18n';
 import { errorText, lastValue } from '../../core/resource';
 import { Icon } from '../../shared/icon';
 import { Pager } from '../../shared/pager';
@@ -9,7 +10,7 @@ import { Pager } from '../../shared/pager';
 /** « 2026-10-08T09:12:44+00:00 » → « 08/10/2026 11:12 » (heure locale du navigateur). */
 export function errorWhen(ts: string): string {
   const d = new Date(ts);
-  return isNaN(d.getTime()) ? ts : d.toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' });
+  return isNaN(d.getTime()) ? ts : d.toLocaleString(locale(), { dateStyle: 'short', timeStyle: 'short' });
 }
 
 /** Page Admin → erreurs du bot sur ce serveur (équivalent web de /errors).
@@ -21,15 +22,15 @@ export function errorWhen(ts: string): string {
     <section class="errors" aria-labelledby="errors-title">
       <div class="section-head">
         <div>
-          <h2 id="errors-title">Erreurs du bot</h2>
-          <p class="muted">Équivalent de <code>/errors</code> sur Discord — 30 derniers jours.</p>
+          <h2 id="errors-title">{{ t().admin.errorsTitle }}</h2>
+          <p class="muted">{{ t().admin.errorsHelp[0] }}<code>/errors</code>{{ t().admin.errorsHelp[1] }}</p>
         </div>
         @if (data(); as d) {
           @if (d.commands.length) {
             <div>
-              <label class="sr-only" for="errors-filter">Commande</label>
+              <label class="sr-only" for="errors-filter">{{ t().admin.command }}</label>
               <select id="errors-filter" class="select" [value]="command() ?? ''" (change)="setCommand($any($event.target).value)">
-                <option value="">Toutes les commandes</option>
+                <option value="">{{ t().admin.allCommands }}</option>
                 @for (c of d.commands; track c) {
                   <option [value]="c">{{ c }}</option>
                 }
@@ -58,12 +59,12 @@ export function errorWhen(ts: string): string {
                 @if (openId() === e.id) {
                   @if (detailError()) {
                     <p class="alert">{{ detailError() }}</p>
-                  } @else if (detail(); as t) {
+                  } @else if (detail(); as tb) {
                     <div class="detail">
-                      @if (t.user_id) {
-                        <p class="muted">Utilisateur Discord : <code>{{ t.user_id }}</code></p>
+                      @if (tb.user_id) {
+                        <p class="muted">{{ t().admin.discordUser }} <code>{{ tb.user_id }}</code></p>
                       }
-                      <pre>{{ t.traceback }}</pre>
+                      <pre>{{ tb.traceback }}</pre>
                     </div>
                   } @else {
                     <div class="skeleton small"></div>
@@ -72,9 +73,9 @@ export function errorWhen(ts: string): string {
               </li>
             }
           </ul>
-          <app-pager [page]="d.page" [pageSize]="d.page_size" [total]="d.total" label="erreurs" (pageChange)="page.set($event)" />
+          <app-pager [page]="d.page" [pageSize]="d.page_size" [total]="d.total" [label]="t().admin.errorsLabel" (pageChange)="page.set($event)" />
         } @else {
-          <p class="muted">Aucune erreur enregistrée. 🎉</p>
+          <p class="muted">{{ t().admin.noErrors }}</p>
         }
       } @else {
         <div class="skeleton"></div>
@@ -114,6 +115,7 @@ export function errorWhen(ts: string): string {
 })
 export class BotErrors {
   private readonly api = inject(ApiService);
+  protected readonly t = inject(I18nService).t;
   readonly guildId = input.required<string>();
 
   protected readonly command = signal<string | null>(null);

@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field, field_validator
 
 from app.compos import InvalidCompo, build_template_entry, template_to_compo
 from app.constants import DEFAULT_TEMPLATES, default_templates_for
+from app.i18n import tr
 from app.images import compo_png
 from app.permissions import require_member, require_staff
 from app.validation import clean_compo_name, https_url_or_empty
@@ -53,7 +54,7 @@ async def _entry(db, guild_id: int, body: CompoIn) -> dict:
     except InvalidCompo as e:
         raise HTTPException(status_code=422, detail=str(e)) from e
     if not entry["pf_1"]:
-        raise HTTPException(status_code=422, detail="La compo doit contenir au moins un rôle en PF1.")
+        raise HTTPException(status_code=422, detail=tr("compo_needs_pf1"))
     return entry
 
 
@@ -70,18 +71,17 @@ async def list_compos(guild_id: int, request: Request, user: dict = Depends(requ
 async def get_compo(guild_id: int, name: str, request: Request, user: dict = Depends(require_member)):
     custom = await request.app.state.db.get_custom_templates(guild_id)
     if name not in custom:
-        raise HTTPException(status_code=404, detail="Compo introuvable.")
+        raise HTTPException(status_code=404, detail=tr("compo_not_found"))
     return template_to_compo(name, custom[name], custom=True)
 
 
-NO_BUILD_IMAGE = "Aucun rôle de cette compo n'a de build : pas d'image à générer."
 
 
 async def _png_response(db, guild_id: int, name: str, entry: dict) -> Response:
     builds_by_id = {b["id"]: b for b in await db.get_builds(guild_id)}
     png = await compo_png(name, entry, builds_by_id)
     if png is None:
-        raise HTTPException(status_code=404, detail=NO_BUILD_IMAGE)
+        raise HTTPException(status_code=404, detail=tr("no_build_image"))
     return Response(png, media_type="image/png", headers={"Cache-Control": "private, max-age=60"})
 
 
@@ -91,7 +91,7 @@ async def compo_image(guild_id: int, name: str, request: Request, user: dict = D
     db = request.app.state.db
     custom = await db.get_custom_templates(guild_id)
     if name not in custom:
-        raise HTTPException(status_code=404, detail="Compo introuvable.")
+        raise HTTPException(status_code=404, detail=tr("compo_not_found"))
     return await _png_response(db, guild_id, name, custom[name])
 
 
@@ -105,12 +105,12 @@ async def preview_compo_image(guild_id: int, body: CompoIn, request: Request, us
 async def check_new_compo_name(db, guild_id: int, name: str) -> None:
     """Nouvelle compo : nom libre (casse ignorée, templates par défaut compris) et quota non atteint."""
     if name.casefold() in {n.casefold() for n in DEFAULT_TEMPLATES}:
-        raise HTTPException(status_code=409, detail=f"« {name} » est un template par défaut, choisis un autre nom.")
+        raise HTTPException(status_code=409, detail=tr("default_template_name", name=name))
     existing = await db.get_custom_templates(guild_id)
     if name.casefold() in {n.casefold() for n in existing}:
-        raise HTTPException(status_code=409, detail=f"Une compo « {name} » existe déjà.")
+        raise HTTPException(status_code=409, detail=tr("compo_exists", name=name))
     if len(existing) >= MAX_COMPOS:
-        raise HTTPException(status_code=409, detail=f"{MAX_COMPOS} compos maximum par serveur : supprimes-en d'abord.")
+        raise HTTPException(status_code=409, detail=tr("max_compos", max=MAX_COMPOS))
 
 
 @router.post("", status_code=201)
@@ -126,7 +126,7 @@ async def update_compo(guild_id: int, name: str, body: CompoIn, request: Request
                        user: dict = Depends(require_staff)):
     db = request.app.state.db
     if name not in await db.get_custom_templates(guild_id):
-        raise HTTPException(status_code=404, detail="Compo introuvable.")
+        raise HTTPException(status_code=404, detail=tr("compo_not_found"))
     # Le nom sert de clé côté bot (/acti) : on ne le renomme pas ici.
     await db.save_custom_template(guild_id, name, await _entry(db, guild_id, body))
     return {"name": name}
@@ -135,4 +135,4 @@ async def update_compo(guild_id: int, name: str, body: CompoIn, request: Request
 @router.delete("/{name}", status_code=204)
 async def delete_compo(guild_id: int, name: str, request: Request, user: dict = Depends(require_staff)):
     if not await request.app.state.db.delete_custom_template(guild_id, name):
-        raise HTTPException(status_code=404, detail="Compo introuvable.")
+        raise HTTPException(status_code=404, detail=tr("compo_not_found"))

@@ -5,7 +5,8 @@ import { firstValueFrom } from 'rxjs';
 
 import { ApiService, errorMessage } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
-import { ItemsService, normalize } from '../../core/items.service';
+import { I18nService } from '../../core/i18n/i18n';
+import { ItemsService, itemName, normalize } from '../../core/items.service';
 import { Build, hasLevel } from '../../core/models';
 import { ToastService } from '../../core/toast.service';
 import { Gear, GearSwaps, choiceName, describeGear, describeSwaps } from '../../shared/gear';
@@ -28,12 +29,12 @@ interface BuildEntry {
   template: `
     <div class="page-head">
       <div>
-        <h1>Builds</h1>
-        <p class="subtitle">L'équipement imposé pour chaque rôle — utilisé par les compos et envoyé en MP par <code>/massup</code>.</p>
+        <h1>{{ t().builds.title }}</h1>
+        <p class="subtitle">{{ t().builds.subtitle[0] }}<code>/massup</code>{{ t().builds.subtitle[1] }}</p>
       </div>
       @if (canEdit()) {
         <a class="btn btn-primary" [routerLink]="['/g', guildId(), 'builds', 'new']">
-          <app-icon name="plus" /> Nouveau build
+          <app-icon name="plus" /> {{ t().builds.new }}
         </a>
       }
     </div>
@@ -44,23 +45,23 @@ interface BuildEntry {
         <input
           class="input search"
           type="search"
-          placeholder="Rechercher un build, une arme, un objet…"
-          aria-label="Rechercher un build"
+          [placeholder]="t().builds.searchPlaceholder"
+          [attr.aria-label]="t().builds.searchAria"
           [value]="query()"
           (input)="query.set($any($event.target).value); page.set(1)"
         />
       </label>
-      <div class="chips" role="group" aria-label="Filtrer par rôle">
-        <button type="button" class="chip" [class.on]="!role()" [attr.aria-pressed]="!role()" (click)="setRole('')">Tous</button>
+      <div class="chips" role="group" [attr.aria-label]="t().builds.filterRole">
+        <button type="button" class="chip" [class.on]="!role()" [attr.aria-pressed]="!role()" (click)="setRole('')">{{ t().builds.allTypes }}</button>
         @for (r of roles(); track r.name) {
           <button type="button" class="chip role-chip" [class.on]="role() === r.name" [attr.aria-pressed]="role() === r.name"
                   [style.--role-color]="color(r.name)" (click)="setRole(r.name)">{{ r.emoji }} {{ r.name }}</button>
         }
       </div>
-      <div class="segmented" role="group" aria-label="Filtrer par type">
-        @for (t of types; track t.value) {
-          <button type="button" [class.on]="typeActi() === t.value" [attr.aria-pressed]="typeActi() === t.value"
-                  (click)="setType(t.value)">{{ t.label }}</button>
+      <div class="segmented" role="group" [attr.aria-label]="t().builds.filterType">
+        @for (type of types; track type) {
+          <button type="button" [class.on]="typeActi() === type" [attr.aria-pressed]="typeActi() === type"
+                  (click)="setType(type)">{{ type || t().builds.allTypes }}</button>
         }
       </div>
     </div>
@@ -74,7 +75,7 @@ interface BuildEntry {
         @for (s of [1, 2, 3]; track s) { <div class="skeleton tall"></div> }
       </div>
     } @else if (visible().length) {
-      <p class="count muted">{{ visible().length }} build{{ visible().length > 1 ? 's' : '' }}</p>
+      <p class="count muted">{{ t().builds.count(visible().length) }}</p>
       <div class="grid">
         @for (e of pageBuilds(); track e.build.id; let i = $index) {
           @let b = e.build;
@@ -101,14 +102,14 @@ interface BuildEntry {
               <p class="muted notes">{{ b.notes }}</p>
             }
             <div class="foot">
-              <span class="faint by">par {{ b.created_by_name }}</span>
+              <span class="faint by">{{ t().builds.by(b.created_by_name) }}</span>
               @if (canEdit()) {
                 <div class="row actions">
                   <a class="btn btn-sm btn-ghost" [routerLink]="['/g', guildId(), 'builds', b.id, 'edit']">
-                    <app-icon name="edit" [size]="14" /> Modifier
+                    <app-icon name="edit" [size]="14" /> {{ t().common.edit }}
                   </a>
                   <button type="button" class="btn btn-sm btn-danger" (click)="remove(b)">
-                    <app-icon name="trash" [size]="14" /> Supprimer
+                    <app-icon name="trash" [size]="14" /> {{ t().common.delete }}
                   </button>
                 </div>
               }
@@ -116,12 +117,12 @@ interface BuildEntry {
           </article>
         }
       </div>
-      <app-pager [page]="currentPage()" [pageSize]="pageSize" [total]="visible().length" label="builds"
+      <app-pager [page]="currentPage()" [pageSize]="pageSize" [total]="visible().length" [label]="t().builds.pagerLabel"
                  (pageChange)="goToPage($event)" />
     } @else if (entries().length) {
-      <div class="empty"><app-icon name="search" [size]="32" /><p>Aucun build ne correspond à « {{ query() }} ».</p></div>
+      <div class="empty"><app-icon name="search" [size]="32" /><p>{{ t().builds.noMatch(query()) }}</p></div>
     } @else {
-      <div class="empty"><app-icon name="sword" [size]="32" /><p>Aucun build pour l'instant.</p></div>
+      <div class="empty"><app-icon name="sword" [size]="32" /><p>{{ t().builds.none }}</p></div>
     }
   `,
   styles: `
@@ -162,11 +163,8 @@ export class BuildsList {
 
   readonly guildId = input.required<string>();
 
-  protected readonly types = [
-    { value: '', label: 'Tous' },
-    { value: 'PVP', label: 'PVP' },
-    { value: 'PVE', label: 'PVE' },
-  ];
+  protected readonly t = inject(I18nService).t;
+  protected readonly types = ['', 'PVP', 'PVE'];
   protected readonly role = signal('');
   protected readonly typeActi = signal('');
   protected readonly query = signal('');
@@ -195,9 +193,9 @@ export class BuildsList {
     const get = (id: string) => this.items.get(id);
     return builds.map((build) => {
       const gearNames = describeGear(build.items, get)
-        .map((g) => (g.free ? `${g.label} au choix` : g.items.map(choiceName).join(' ou ')))
+        .map((g) => (g.free ? this.t().builds.slotFree(g.label) : g.items.map(choiceName).join(this.t().gear.or)))
         .join(' · ');
-      const swapNames = describeSwaps(build.items, get).map((i) => i.name).join(' ');
+      const swapNames = describeSwaps(build.items, get).map((i) => `${i.name} ${i.name_en}`).join(' ');
       const haystack = normalize(
         [build.name, build.role, build.type_acti, build.weapon, build.notes, build.created_by_name, gearNames, swapNames].join(' '),
       );
@@ -247,11 +245,11 @@ export class BuildsList {
   }
 
   async remove(build: Build): Promise<void> {
-    if (!confirm(`Supprimer le build « ${build.name} » ?`)) return;
+    if (!confirm(this.t().builds.confirmDelete(build.name))) return;
     try {
       await firstValueFrom(this.api.deleteBuild(this.guildId(), build.id));
       this.buildsRes.update((list) => list?.filter((b) => b.id !== build.id));
-      this.toast.success(`Build « ${build.name} » supprimé.`);
+      this.toast.success(this.t().builds.deleted(build.name));
     } catch (err) {
       this.actionError.set(errorMessage(err));
     }

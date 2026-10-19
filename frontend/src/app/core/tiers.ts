@@ -1,3 +1,4 @@
+import { dict } from './i18n/i18n';
 import { Item } from './models';
 
 /** Tiers qu'un build peut imposer. */
@@ -51,11 +52,11 @@ export function equivalents(tier: number, enchant: number): [number, number][] {
     .filter(([, e]) => e >= 0 && e <= 4);
 }
 
-/** « 8.1 minimum ou équivalent (7.2, 6.3, 5.4) » ; « 8.1 » pour un consommable ; '' si tier libre. */
+/** « 8.1 minimum ou équivalent (7.2, 6.3, 5.4) » (traduit) ; « 8.1 » pour un consommable ; '' si tier libre. */
 export function tierText(item: Pick<Item, 'slot' | 'tier' | 'enchant'>): string {
   if (item.tier == null) return '';
   const label = tierLabel(item.tier, item.enchant ?? 0);
   if (isConsumable(item)) return label;
   const eq = equivalents(item.tier, item.enchant ?? 0).map(([t, e]) => tierLabel(t, e));
-  return `${label} minimum${eq.length ? ` ou équivalent (${eq.join(', ')})` : ''}`;
+  return dict().tiers.minimum(label, eq.join(', '));
 }

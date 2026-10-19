@@ -1,7 +1,8 @@
 import { Component, computed, inject, input, output, signal } from '@angular/core';
 
-import { ItemsService, filterItems, itemIconUrl, useFallbackIcon } from '../core/items.service';
-import { FREE_CHOICE, Item, MAX_CHOICES, SLOT_LABELS, SWAPS_MAX, Slot } from '../core/models';
+import { I18nService } from '../core/i18n/i18n';
+import { ItemsService, categoryLabel, filterItems, itemIconUrl, itemName, useFallbackIcon } from '../core/items.service';
+import { FREE_CHOICE, Item, MAX_CHOICES, SWAPS_MAX, Slot } from '../core/models';
 import { allowedTiers, makeChoice, maxEnchant, parseChoice } from '../core/tiers';
 import { choiceName } from './gear';
 import { TierBadge } from './tier-badge';
@@ -26,14 +27,14 @@ export const lastPick = signal<{ tier: number | null; enchant: number }>({ tier:
             [title]="disabledReason() || summary()"
             (click)="open.set(true)">
       @if (isFree()) {
-        <span class="free">Au choix</span>
+        <span class="free">{{ t().picker.free }}</span>
       } @else if (items().length === 1) {
-        <img [src]="icon(items()[0].icon)" [alt]="items()[0].name" width="64" height="64" (error)="fallback($event)" />
+        <img [src]="icon(items()[0].icon)" [alt]="name(items()[0])" width="64" height="64" (error)="fallback($event)" />
         <app-tier-badge [item]="items()[0]" />
       } @else if (items().length > 1) {
         <span class="multi">
           @for (it of items(); track it.id) {
-            <img [src]="icon(it.icon)" [alt]="it.name" width="34" height="34" (error)="fallback($event)" />
+            <img [src]="icon(it.icon)" [alt]="name(it)" width="34" height="34" (error)="fallback($event)" />
           }
         </span>
       } @else {
@@ -44,72 +45,72 @@ export const lastPick = signal<{ tier: number | null; enchant: number }>({ tier:
 
     @if (open()) {
       <div class="overlay" (click)="close()"></div>
-      <div class="panel card" role="dialog" [attr.aria-label]="'Choisir : ' + label()">
+      <div class="panel card" role="dialog" [attr.aria-label]="t().picker.choose(label())">
         <div class="panel-head">
           <h3>{{ label() }} <span class="muted count">{{ items().length }}/{{ max() }}</span></h3>
-          <button type="button" class="btn btn-sm" (click)="close()" aria-label="Fermer">✕</button>
+          <button type="button" class="btn btn-sm" (click)="close()" [attr.aria-label]="t().common.close">✕</button>
         </div>
         <p class="muted hint">{{ hint() }}</p>
         @if (selection().length) {
-          <ul class="selection" aria-label="Sélection">
+          <ul class="selection" [attr.aria-label]="t().picker.selection">
             @for (s of selection(); track s.index) {
               <li>
                 <span class="sel-icon">
                   <img [src]="icon(s.item.icon)" alt="" width="36" height="36" (error)="fallback($event)" />
                   <app-tier-badge [item]="s.item" />
                 </span>
-                <span class="sel-name">{{ s.item.name }}</span>
-                <select class="select tier" [attr.aria-label]="'Tier minimum : ' + s.item.name"
+                <span class="sel-name">{{ name(s.item) }}</span>
+                <select class="select tier" [attr.aria-label]="t().picker.minTier(name(s.item))"
                         (change)="setTier(s.index, $any($event.target).value)">
-                  <option value="" [selected]="s.item.tier == null">Tier libre</option>
+                  <option value="" [selected]="s.item.tier == null">{{ t().picker.freeTier }}</option>
                   @for (t of tiersOf(s.item); track t) {
                     <option [value]="t" [selected]="s.item.tier === t">T{{ t }}</option>
                   }
                 </select>
-                <select class="select ench" [attr.aria-label]="'Enchantement : ' + s.item.name" [disabled]="s.item.tier == null"
+                <select class="select ench" [attr.aria-label]="t().picker.enchant(name(s.item))" [disabled]="s.item.tier == null"
                         (change)="setEnchant(s.index, +$any($event.target).value)">
                   @for (e of enchantsOf(s.item); track e) {
                     <option [value]="e" [selected]="(s.item.enchant ?? 0) === e">.{{ e }}</option>
                   }
                 </select>
-                <button type="button" class="btn btn-sm remove" [attr.aria-label]="'Retirer ' + s.item.name"
+                <button type="button" class="btn btn-sm remove" [attr.aria-label]="t().picker.remove(name(s.item))"
                         (click)="removeAt(s.index)">✕</button>
               </li>
             }
           </ul>
-          <p class="faint tiers-hint">Le tier est un minimum : un équivalent convient (8.1 = 7.2 = 6.3).</p>
+          <p class="faint tiers-hint">{{ t().picker.tiersHint }}</p>
         }
-        <input class="input search" type="search" placeholder="Rechercher (ex : épée, holy, cuir…)"
-               aria-label="Rechercher un objet" [value]="query()" (input)="query.set($any($event.target).value)" />
+        <input class="input search" type="search" [placeholder]="t().picker.searchPlaceholder"
+               [attr.aria-label]="t().picker.searchAria" [value]="query()" (input)="query.set($any($event.target).value)" />
         @if (categories().length > 1) {
           <div class="row chips">
-            <button type="button" class="chip" [class.on]="!category()" (click)="category.set('')">Tout</button>
+            <button type="button" class="chip" [class.on]="!category()" (click)="category.set('')">{{ t().common.all }}</button>
             @for (c of categories(); track c) {
-              <button type="button" class="chip" [class.on]="category() === c" (click)="category.set(c)">{{ c }}</button>
+              <button type="button" class="chip" [class.on]="category() === c" (click)="category.set(c)">{{ catLabel(c) }}</button>
             }
           </div>
         }
         <div class="results">
           @for (it of results(); track it.id) {
-            <button type="button" class="result" [class.selected]="isSelected(it)" [title]="it.name + ' (' + it.name_en + ')'"
+            <button type="button" class="result" [class.selected]="isSelected(it)" [title]="name(it) + ' (' + (lang() === 'en' ? it.name : it.name_en) + ')'"
                     [disabled]="!isSelected(it) && isFull()" (click)="toggle(it)">
               <img [src]="icon(it.icon)" [alt]="" width="56" height="56" loading="lazy" (error)="fallback($event)" />
-              <span>{{ it.name }}</span>
+              <span>{{ name(it) }}</span>
             </button>
           } @empty {
-            <p class="muted">Aucun objet trouvé.</p>
+            <p class="muted">{{ t().picker.noResult }}</p>
           }
         </div>
         <div class="row actions">
           @if (!swaps()) {
             <button type="button" class="btn btn-sm free-btn" [class.btn-primary]="isFree()" (click)="setFree()">
-              Au choix du joueur
+              {{ t().picker.playerChoice }}
             </button>
           }
           @if (value().length) {
-            <button type="button" class="btn btn-sm btn-danger clear" (click)="clear()">Vider la case</button>
+            <button type="button" class="btn btn-sm btn-danger clear" (click)="clear()">{{ t().picker.clear }}</button>
           }
-          <button type="button" class="btn btn-sm btn-primary done" (click)="close()">Valider</button>
+          <button type="button" class="btn btn-sm btn-primary done" (click)="close()">{{ t().picker.done }}</button>
         </div>
       </div>
     }
@@ -159,6 +160,9 @@ export const lastPick = signal<{ tier: number | null; enchant: number }>({ tier:
 })
 export class ItemPicker {
   private readonly catalog = inject(ItemsService);
+  private readonly i18n = inject(I18nService);
+  protected readonly t = this.i18n.t;
+  protected readonly lang = this.i18n.lang;
   /** Un emplacement, ou 'swaps' : objets de rechange de tous emplacements (6 max, jamais « au choix »). */
   readonly slot = input.required<Slot | 'swaps'>();
   protected readonly swaps = computed(() => this.slot() === 'swaps');
@@ -168,10 +172,9 @@ export class ItemPicker {
   readonly placeholder = input('');
   protected readonly max = computed(() => this.limit() ?? (this.swaps() ? SWAPS_MAX : MAX_CHOICES));
   protected readonly hint = computed(() => {
-    if (this.max() === 1) return this.swaps() ? 'Un objet de rechange, tous emplacements : clique pour le choisir ou le remplacer.' : 'Clique un objet.';
-    return this.swaps()
-      ? `Objets de rechange, tous emplacements : jusqu’à ${this.max()}.`
-      : `Clique jusqu’à ${this.max()} objets : le joueur aura le choix entre eux.`;
+    const t = this.t().picker;
+    if (this.max() === 1) return this.swaps() ? t.hintSwapOne : t.hintOne;
+    return this.swaps() ? t.hintSwaps(this.max()) : t.hintMany(this.max());
   });
   private readonly slotFilter = computed(() => (this.swaps() ? null : (this.slot() as Slot)));
   /** Ids choisis (1 à 3), [FREE_CHOICE] pour « au choix du joueur », [] = rien. */
@@ -184,7 +187,7 @@ export class ItemPicker {
   protected readonly query = signal('');
   protected readonly category = signal('');
 
-  protected readonly label = computed(() => (this.swaps() ? 'Swaps' : SLOT_LABELS[this.slot() as Slot]));
+  protected readonly label = computed(() => (this.swaps() ? this.t().gear.swaps : this.t().slots[this.slot() as Slot]));
   readonly isFree = computed(() => this.value()[0] === FREE_CHOICE);
   /** Objets choisis avec leur position dans `value` (ids inconnus ignorés). */
   protected readonly selection = computed(() =>
@@ -199,7 +202,7 @@ export class ItemPicker {
   /** Plus de place pour un objet de plus (une case à 1 objet n'est jamais « pleine » : on remplace). */
   readonly isFull = computed(() => this.max() > 1 && this.items().length >= this.max());
   readonly summary = computed(() =>
-    this.isFree() ? 'Au choix du joueur' : this.items().map(choiceName).join(' / ') || 'vide',
+    this.isFree() ? this.t().picker.playerChoice : this.items().map(choiceName).join(' / ') || this.t().picker.empty,
   );
   protected readonly categories = computed(() => [
     ...new Set(filterItems(this.catalog.items(), this.slotFilter()).map((i) => i.category)),
@@ -212,6 +215,14 @@ export class ItemPicker {
 
   protected fallback(event: Event): void {
     useFallbackIcon(event);
+  }
+
+  protected name(item: Item): string {
+    return itemName(item);
+  }
+
+  protected catLabel(category: string): string {
+    return categoryLabel(category);
   }
 
   /** Sélectionné quel que soit son tier (« T8_MAIN_SWORD@1 » sélectionne l'Épée large). */

@@ -1,7 +1,7 @@
 # lilium-site
 
 Site web de la guilde Lilium : **builds**, **compos** (utilisables dans `/acti`), **BAL** et **page Admin**.
-Connexion avec Discord. Thème noir & lilas.
+Connexion avec Discord. Thème noir & lilas. **Français et anglais** (sélecteur FR | EN).
 
 Un seul repo pour les deux morceaux :
 
@@ -177,6 +177,17 @@ Toutes sous `/api`. `{gid}` = id du serveur Discord.
 
 Calculs dans `api/app/bal_stats.py` (fonctions pures testées) ; graphiques SVG/HTML maison (`frontend/src/app/shared/charts.ts` : colonnes, courbe, barres, carte de chaleur, badge de variation), sans librairie. Palettes (lilas/orange, couleurs de rôle, rampe de la carte) validées pour le contraste et le daltonisme.
 
+### Langues (FR / EN)
+
+Le site est en **français et en anglais**, sans librairie ni build par langue (système maison à base de signals) :
+- **Langue** : choix mémorisé (`localStorage` `lilium.lang`), sinon langue du navigateur (`fr*` → français, le reste → anglais). Sélecteur **FR | EN** (`shared/lang-switch.ts`) dans la barre du haut, sur l'accueil, le guide et la 404 ; changement instantané, sans recharger, `<html lang>` mis à jour. Les URL ne changent pas.
+- **Textes** : `frontend/src/app/core/i18n/fr.ts` (langue source) et `en.ts`, typé `typeof fr` → **une clé oubliée dans `en.ts` fait échouer le build**. Textes à paramètres = fonctions (`builds.count(n)`, pluriels compris). Dans un composant : `protected readonly t = inject(I18nService).t;` puis `{{ t().builds.title }}` ; hors composant : `dict()`, `locale()`.
+- **Nombres et dates** : `locale()` (`fr-FR` / `en-US`) partout (`number: '1.0-0' : locale()`, `fullSilver`, `compactSilver` — « 4,02 Md » / « 4.02 B », `longDate`).
+- **Objets** : `itemName()` affiche `name` ou `name_en` du catalogue ; familles traduites par `categoryLabel()` (`en.categories`).
+- **Guide** : contenu en `{ fr, en }` dans `guide-content.ts` ; les `usage` des commandes restent tels que Discord les affiche (le bot est en français).
+- **API** : le front envoie `Accept-Language` (`core/language.interceptor.ts`) ; `api/app/i18n.py` (`LanguageMiddleware` + `tr("cle", ...)`, messages dans `MESSAGES`) traduit les erreurs. Sans en-tête : français. Un test vérifie que chaque message existe dans les deux langues avec les mêmes paramètres.
+- Restent en français : le bot, les images générées (copies du bot) et les données saisies (noms de builds, compos…).
+
 ### Design
 
 Thème noir & lilas refondu (`frontend/src/styles.scss`, toutes les couleurs en variables) : halos lilas, surfaces en verre dépoli, boutons en dégradé, pastilles de filtre, sélecteur segmenté, chargements animés (shimmer), **notifications** (« Build enregistré », « Supprimé »…), icônes SVG maison (`shared/icon.ts`) et logo lys (`shared/logo.ts`, aussi en favicon). Couleur par rôle (TANK bleu, HEAL vert, DPS orange, SUPPORT violet), toujours accompagnée du nom ou de l'emoji.
@@ -287,6 +298,7 @@ lilium-site/
 │   │   ├── auth.py          # OAuth2 Discord + cookie de session signé
 │   │   ├── discord_rest.py  # membres/serveurs via l'API Discord (cache 60 s)
 │   │   ├── permissions.py   # niveaux member / staff / admin
+│   │   ├── i18n.py          # messages d'erreur FR/EN (Accept-Language)
 │   │   ├── compos.py        # conversion lignes du site <-> format template du bot
 │   │   ├── bal_stats.py     # statistiques BAL de la page Admin (fonctions pures)
 │   │   ├── catalog.py       # catalogue d'objets Albion (génération + validation de l'équipement)
@@ -302,8 +314,8 @@ lilium-site/
     └── src/
         ├── styles.scss      # thème noir & lilas (toutes les couleurs sont ici)
         └── app/
-            ├── core/        # AuthService, ApiService, ItemsService, guards, intercepteur 401, modèles
-            ├── shared/      # item-picker, gear (rangée / mini-inventaire), charts, icon, logo, role-bar, period-picker, toasts, pager
+            ├── core/        # AuthService, ApiService, ItemsService, guards, intercepteurs (401, langue), modèles, i18n/ (fr.ts, en.ts)
+            ├── shared/      # item-picker, gear (rangée / mini-inventaire), charts, icon, logo, role-bar, period-picker, toasts, pager, lang-switch
             └── pages/       # login, guilds, shell (nav), builds, compos, bal, admin, not-found (404)
 ```
 

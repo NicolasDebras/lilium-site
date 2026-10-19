@@ -6,6 +6,7 @@ import {
   ActivityStats, AdminOverview, Bal, BalAction, BalOperationsPage, BalPeriod, BalPlayer, BalStats, BotErrorDetail, BotErrorsPage, Build, BuildDetail, BuildInput,
   Compo, CompoInput, CompoList, MyBalHistory, PublicComposPage, RoleInfo,
 } from './models';
+import { dict } from './i18n/i18n';
 
 /** Message lisible à partir d'une erreur HTTP de l'API (champ "detail" de FastAPI). */
 export function errorMessage(err: unknown): string {
@@ -14,10 +15,10 @@ export function errorMessage(err: unknown): string {
   if (err instanceof HttpErrorResponse) {
     const detail = err.error?.detail;
     if (typeof detail === 'string') return detail;
-    if (Array.isArray(detail)) return 'Formulaire invalide : vérifie les champs obligatoires.';
-    if (err.status === 0) return "L'API ne répond pas (est-elle lancée ?).";
+    if (Array.isArray(detail)) return dict().errors.invalidForm;
+    if (err.status === 0) return dict().errors.apiDown;
   }
-  return 'Une erreur est survenue.';
+  return dict().errors.generic;
 }
 
 @Injectable({ providedIn: 'root' })

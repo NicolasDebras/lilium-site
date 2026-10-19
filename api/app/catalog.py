@@ -16,6 +16,8 @@ import re
 from functools import lru_cache
 from pathlib import Path
 
+from app.i18n import current_lang, tr
+
 DATA_FILE = Path(__file__).parent / "data" / "items.json"
 
 SLOTS = ("mainhand", "offhand", "head", "armor", "shoes", "cape", "food", "potion")
@@ -174,6 +176,11 @@ class InvalidItems(ValueError):
     pass
 
 
+def item_name(item: dict) -> str:
+    """Nom d'un objet dans la langue de la requête (le catalogue a les noms FR et EN)."""
+    return (item.get("name_en") or item["name"]) if current_lang() == "en" else item["name"]
+
+
 # Tier + enchantement d'un choix : « T8_MAIN_SWORD@1 ». Aucun id de base ne commence par « T<n>_ ».
 _CHOICE = re.compile(r"^T([1-8])_([A-Z0-9_]+?)(?:@([1-4]))?$")
 BUILD_TIERS = (4, 5, 6, 7, 8)
@@ -201,18 +208,18 @@ def _check_choice(choice: str, catalog: dict[str, dict]) -> dict:
     base, tier, enchant = parse_choice(choice)
     item = catalog.get(base)
     if item is None:
-        raise InvalidItems(f"Objet inconnu : {choice}")
+        raise InvalidItems(tr("unknown_item", choice=choice))
     if tier is not None and tier not in allowed_tiers(item):
-        raise InvalidItems(f"« {item['name']} » ne se choisit pas en T{tier} (T4 à T8 selon l'objet).")
+        raise InvalidItems(tr("bad_tier", name=item_name(item), tier=tier))
     if enchant > max_enchant(item):
-        raise InvalidItems(f"« {item['name']} » : enchantement .{max_enchant(item)} maximum.")
+        raise InvalidItems(tr("max_enchant", name=item_name(item), max=max_enchant(item)))
     return item
 
 
 def _no_duplicate(choices: list[str]) -> None:
     bases = [parse_choice(c)[0] for c in choices]
     if len(set(bases)) != len(bases):
-        raise InvalidItems("Un même objet ne peut être proposé qu'une fois (un seul tier par objet).")
+        raise InvalidItems(tr("duplicate_item"))
 
 
 def _choices(value) -> list[str]:
@@ -251,23 +258,23 @@ def validate_build_items(items: dict, catalog: dict[str, dict] | None = None) ->
             cleaned[slot] = _validate_swaps(choices, catalog)
             continue
         if slot not in SLOTS:
-            raise InvalidItems(f"Emplacement inconnu : {slot}")
+            raise InvalidItems(tr("unknown_slot", slot=slot))
         if FREE_CHOICE in choices:
             if len(choices) > 1:
-                raise InvalidItems("« Au choix du joueur » ne se combine pas avec des objets.")
+                raise InvalidItems(tr("free_with_items"))
             cleaned[slot] = [FREE_CHOICE]
             continue
         if len(choices) > MAX_CHOICES:
-            raise InvalidItems(f"{MAX_CHOICES} choix maximum par case.")
+            raise InvalidItems(tr("max_choices", max=MAX_CHOICES))
         _no_duplicate(choices)
         for choice in choices:
             item = _check_choice(choice, catalog)
             if item["slot"] != slot:
-                raise InvalidItems(f"« {item['name']} » ne se porte pas à cet emplacement.")
+                raise InvalidItems(tr("wrong_slot", name=item_name(item)))
         cleaned[slot] = choices
 
     if "offhand" in cleaned and all_two_handed(cleaned.get("mainhand", []), catalog):
-        raise InvalidItems("Toutes les armes proposées sont à deux mains : pas de main gauche possible.")
+        raise InvalidItems(tr("two_handed"))
     out = {slot: cleaned[slot] for slot in SLOTS if slot in cleaned}
     if cleaned.get(SWAPS_KEY):
         out[SWAPS_KEY] = cleaned[SWAPS_KEY]
@@ -280,9 +287,9 @@ SWAPS_MAX = 6
 
 def _validate_swaps(choices: list[str], catalog: dict[str, dict]) -> list[str]:
     if FREE_CHOICE in choices:
-        raise InvalidItems("Un swap doit être un objet précis.")
+        raise InvalidItems(tr("free_swap"))
     if len(choices) > SWAPS_MAX:
-        raise InvalidItems(f"{SWAPS_MAX} swaps maximum.")
+        raise InvalidItems(tr("max_swaps", max=SWAPS_MAX))
     _no_duplicate(choices)
     for choice in choices:
         _check_choice(choice, catalog)

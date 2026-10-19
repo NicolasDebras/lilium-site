@@ -13,6 +13,7 @@ from collections.abc import Callable
 from fastapi import Depends, HTTPException, Path, Request
 
 from app.auth import require_user
+from app.i18n import tr
 
 
 class Level(IntEnum):
@@ -91,12 +92,8 @@ def _require(minimum: Level):
         state = request.app.state
         level = await access_level(state.db, state.discord, guild_id, int(user["id"]), state.levels)
         if level < minimum:
-            detail = {
-                Level.MEMBER: "Tu n'es pas membre de ce serveur (ou tu n'as pas fait /register).",
-                Level.STAFF:  "Réservé au staff du site (rôle configuré via /config).",
-                Level.ADMIN:  "Réservé aux admins du site (/webadmin).",
-            }[minimum]
-            raise HTTPException(status_code=403, detail=detail)
+            key = {Level.MEMBER: "not_member", Level.STAFF: "staff_only", Level.ADMIN: "admin_only"}[minimum]
+            raise HTTPException(status_code=403, detail=tr(key))
         return {**user, "level": level}
     return dependency
 

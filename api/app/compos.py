@@ -12,6 +12,7 @@ build : un seul build par rôle et par party, le joueur choisit son rôle et le
 build lui est imposé) ou rester libre (rôle + arme en texte, comme avant).
 Logique pure, sans I/O.
 """
+from app.i18n import tr
 
 PARTIES = (
     # (clé du site, clé nombres, clé hints, clé builds, libellé)
@@ -65,7 +66,7 @@ def _share(value) -> float:
     except (TypeError, ValueError):
         return 1.0
     if not 0 <= share <= MAX_SHARE:
-        raise InvalidCompo(f"Le nombre de parts d'un rôle doit être entre 0 et {MAX_SHARE:g}.")
+        raise InvalidCompo(tr("bad_share", max=f"{MAX_SHARE:g}"))
     return share
 
 
@@ -85,18 +86,16 @@ def _party(rows: list[dict], builds_by_id: dict[int, dict], label: str, with_sha
         if count <= 0:
             continue
         if count > MAX_COUNT:
-            raise InvalidCompo(f"{MAX_COUNT} joueurs maximum par ligne ({label}).")
+            raise InvalidCompo(tr("max_count", max=MAX_COUNT, label=label))
 
         build_id = row.get("build_id")
         if build_id is not None:
             build_id = int(build_id)
             build = builds_by_id.get(build_id)
             if build is None:
-                raise InvalidCompo(f"Build introuvable (n°{build_id}) : il a peut-être été supprimé.")
+                raise InvalidCompo(tr("compo_build_missing", id=build_id))
             if build_id in used_builds:
-                raise InvalidCompo(
-                    f"« {build['name']} » est deux fois en {label} : augmente plutôt le nombre de joueurs de sa ligne."
-                )
+                raise InvalidCompo(tr("build_twice", name=build['name'], label=label))
             used_builds.add(build_id)
             role, weapon = base_role(build["role"].strip().upper()), build["name"]
         else:

@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
+import { dict, lang } from './i18n/i18n';
 import { Item, Slot } from './models';
 import { parseChoice } from './tiers';
 
@@ -22,6 +23,16 @@ export const FALLBACK_ICON =
 export function useFallbackIcon(event: Event): void {
   const img = event.target as HTMLImageElement;
   if (img.src !== FALLBACK_ICON) img.src = FALLBACK_ICON;
+}
+
+/** Nom d'un objet dans la langue du site (le catalogue a les noms FR et EN). */
+export function itemName(item: Pick<Item, 'name' | 'name_en'>): string {
+  return lang() === 'en' ? item.name_en || item.name : item.name;
+}
+
+/** Libellé d'une famille d'objets (la valeur du catalogue est le libellé FR). */
+export function categoryLabel(category: string): string {
+  return dict().categories[category] ?? category;
 }
 
 /** Minuscules sans accents, pour une recherche « epee » → « Épée ». */

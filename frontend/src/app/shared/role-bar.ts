@@ -1,4 +1,6 @@
-import { Component, computed, input } from '@angular/core';
+import { Component, computed, inject, input } from '@angular/core';
+
+import { I18nService } from '../core/i18n/i18n';
 
 import { roleColor, sortByRole } from './roles';
 
@@ -51,8 +53,9 @@ export class RoleBar {
   readonly rows = input.required<{ role: string; count: number | null }[]>();
   readonly emojis = input<Record<string, string>>({});
   protected readonly parts = computed(() => countByRole(this.rows()));
+  private readonly t = inject(I18nService).t;
   protected readonly label = computed(() =>
-    'Composition : ' + this.parts().map((p) => `${p.count} ${p.role}`).join(', '));
+    this.t().roleBar.aria(this.parts().map((p) => `${p.count} ${p.role}`).join(', ')));
 
   protected color(role: string): string {
     return roleColor(role);

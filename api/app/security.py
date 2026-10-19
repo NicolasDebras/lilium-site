@@ -12,6 +12,8 @@ from urllib.parse import urlparse
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
+from app.i18n import tr
+
 MAX_BODY_BYTES = 128 * 1024  # un build ou une compo pèse quelques Ko
 UNSAFE_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
 
@@ -96,7 +98,7 @@ class BodyLimitMiddleware:
 
 
 async def _too_large(scope, receive, send):
-    response = JSONResponse(status_code=413, content={"detail": "Requête trop volumineuse."})
+    response = JSONResponse(status_code=413, content={"detail": tr("too_large")})
     await response(scope, receive, send)
 
 
@@ -108,7 +110,7 @@ def install_security(app: FastAPI, *, frontend_url: str, hsts: bool) -> None:
         if request.method in UNSAFE_METHODS and not origin_allowed(
             request.headers.get("origin"), frontend_url, request.headers.get("host")
         ):
-            response = JSONResponse(status_code=403, content={"detail": "Origine de la requête refusée."})
+            response = JSONResponse(status_code=403, content={"detail": tr("bad_origin")})
         else:
             response = await call_next(request)
         headers = response.headers

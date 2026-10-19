@@ -2,6 +2,7 @@ import { Component, computed, inject, input, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 
 import { ApiService } from '../../core/api.service';
+import { I18nService, locale } from '../../core/i18n/i18n';
 import { BalPeriod } from '../../core/models';
 import { errorText, lastValue } from '../../core/resource';
 import { HBarChart, HBarRow, Heatmap, LineChart, LinePoint, longDate } from '../../shared/charts';
@@ -17,9 +18,9 @@ import { PeriodPicker } from '../../shared/period-picker';
     <section class="activity" aria-labelledby="activity-title">
       <div class="section-head">
         <div>
-          <h2 id="activity-title">Activité de la guilde</h2>
+          <h2 id="activity-title">{{ t().admin.activityTitle }}</h2>
           @if (data(); as d) {
-            <p class="muted range"><app-icon name="calendar" [size]="14" /> Du {{ long(d.start) }} à aujourd'hui</p>
+            <p class="muted range"><app-icon name="calendar" [size]="14" /> {{ t().admin.since(long(d.start)) }}</p>
           }
         </div>
         <app-period-picker [value]="period()" (valueChange)="setPeriod($event)" />
@@ -31,43 +32,43 @@ import { PeriodPicker } from '../../shared/period-picker';
         @if (!d.totals.activities && !d.totals.cancelled) {
           <div class="card empty">
             <app-icon name="flag" [size]="24" />
-            <p>Aucune activité terminée sur la période. L'historique se remplit à chaque fin d'acti (<code>/finacti</code>, fin, annulation) depuis la mise à jour du bot.</p>
+            <p>{{ t().admin.noActivity[0] }}<code>/finacti</code>{{ t().admin.noActivity[1] }}</p>
           </div>
         } @else {
           <div class="grid" [class.stale]="loading()">
             <div class="tiles">
-              <div class="card tile"><span class="muted"><app-icon name="flag" [size]="14" /> Actis jouées</span><strong>{{ d.totals.activities }}</strong></div>
-              <div class="card tile"><span class="muted"><app-icon name="close" [size]="14" /> Annulées</span><strong>{{ d.totals.cancelled }}</strong></div>
-              <div class="card tile"><span class="muted"><app-icon name="users" [size]="14" /> Joueurs différents</span><strong>{{ d.totals.players }}</strong></div>
-              <div class="card tile"><span class="muted"><app-icon name="users" [size]="14" /> Joueurs / acti</span><strong>{{ fr(d.totals.avg_players) }}</strong></div>
-              <div class="card tile" title="Places prises ÷ places prévues par les compos (actis jouées)">
-                <span class="muted"><app-icon name="chart" [size]="14" /> Remplissage</span>
+              <div class="card tile"><span class="muted"><app-icon name="flag" [size]="14" /> {{ t().admin.played }}</span><strong>{{ d.totals.activities }}</strong></div>
+              <div class="card tile"><span class="muted"><app-icon name="close" [size]="14" /> {{ t().admin.cancelled }}</span><strong>{{ d.totals.cancelled }}</strong></div>
+              <div class="card tile"><span class="muted"><app-icon name="users" [size]="14" /> {{ t().admin.distinctPlayers }}</span><strong>{{ d.totals.players }}</strong></div>
+              <div class="card tile"><span class="muted"><app-icon name="users" [size]="14" /> {{ t().admin.playersPerActi }}</span><strong>{{ num(d.totals.avg_players) }}</strong></div>
+              <div class="card tile" [title]="t().admin.fillTitle">
+                <span class="muted"><app-icon name="chart" [size]="14" /> {{ t().admin.fill }}</span>
                 <strong>{{ d.totals.fill_rate === null ? '—' : d.totals.fill_rate + ' %' }}</strong>
               </div>
             </div>
 
             <div class="card chart wide">
-              <h3>Actis jouées <span class="muted">— par {{ d.bucket === 'week' ? 'semaine' : 'jour' }}</span></h3>
-              <app-line-chart [data]="timeline()" label="Actis jouées" />
+              <h3>{{ t().admin.played }} <span class="muted">{{ t().bal.per(d.bucket) }}</span></h3>
+              <app-line-chart [data]="timeline()" [label]="t().admin.played" />
             </div>
             <div class="card chart">
-              <h3><app-icon name="alert" [size]="16" /> Rôles qui manquent le plus <span class="muted">— places vides</span></h3>
-              <app-hbar-chart [rows]="bars().missing_roles" unit="places vides" empty="Toutes les compos ont été remplies." />
+              <h3><app-icon name="alert" [size]="16" /> {{ t().admin.missingRoles }} <span class="muted">{{ t().admin.missingHint }}</span></h3>
+              <app-hbar-chart [rows]="bars().missing_roles" [unit]="t().admin.emptySlots" [empty]="t().admin.allFilled" />
             </div>
             <div class="card chart">
-              <h3><app-icon name="crown" [size]="16" /> Joueurs les plus présents</h3>
-              <app-hbar-chart [rows]="bars().top_players" unit="actis" />
+              <h3><app-icon name="crown" [size]="16" /> {{ t().admin.mostPresent }}</h3>
+              <app-hbar-chart [rows]="bars().top_players" [unit]="t().admin.actis" />
             </div>
             <div class="card chart">
-              <h3><app-icon name="flag" [size]="16" /> Callers <span class="muted">— actis lancées</span></h3>
-              <app-hbar-chart [rows]="bars().top_callers" unit="actis" />
+              <h3><app-icon name="flag" [size]="16" /> {{ t().admin.callers }} <span class="muted">{{ t().admin.callersHint }}</span></h3>
+              <app-hbar-chart [rows]="bars().top_callers" [unit]="t().admin.actis" />
             </div>
             <div class="card chart">
-              <h3><app-icon name="shield" [size]="16" /> Compos les plus jouées</h3>
-              <app-hbar-chart [rows]="bars().top_templates" unit="actis" />
+              <h3><app-icon name="shield" [size]="16" /> {{ t().admin.mostPlayed }}</h3>
+              <app-hbar-chart [rows]="bars().top_templates" [unit]="t().admin.actis" />
             </div>
             <div class="card chart wide">
-              <h3>Quand la guilde joue <span class="muted">— fins d'activité par jour et heure</span></h3>
+              <h3>{{ t().admin.whenTitle }} <span class="muted">{{ t().admin.whenHint }}</span></h3>
               <app-heatmap [data]="d.heatmap" />
             </div>
           </div>
@@ -104,6 +105,7 @@ import { PeriodPicker } from '../../shared/period-picker';
 })
 export class ActivityStatsPanel {
   private readonly api = inject(ApiService);
+  protected readonly t = inject(I18nService).t;
   readonly guildId = input.required<string>();
 
   protected readonly period = signal<BalPeriod>('30d');
@@ -135,7 +137,7 @@ export class ActivityStatsPanel {
     this.period.set(period);
   }
 
-  fr(n: number): string {
-    return n.toLocaleString('fr-FR');
+  num(n: number): string {
+    return n.toLocaleString(locale());
   }
 }

@@ -3,6 +3,7 @@ import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/
 import { provideRouter, withComponentInputBinding, withRouterConfig } from '@angular/router';
 
 import { routes } from './app.routes';
+import { languageInterceptor } from './core/language.interceptor';
 import { unauthorizedInterceptor } from './core/unauthorized.interceptor';
 
 export const appConfig: ApplicationConfig = {
@@ -10,6 +11,6 @@ export const appConfig: ApplicationConfig = {
     provideBrowserGlobalErrorListeners(),
     // paramsInheritanceStrategy 'always' : les pages reçoivent aussi :guildId du parent en input.
     provideRouter(routes, withComponentInputBinding(), withRouterConfig({ paramsInheritanceStrategy: 'always' })),
-    provideHttpClient(withInterceptors([unauthorizedInterceptor])),
+    provideHttpClient(withInterceptors([languageInterceptor, unauthorizedInterceptor])),
   ],
 };

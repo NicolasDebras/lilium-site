@@ -1,8 +1,9 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { Component, computed, inject, input } from '@angular/core';
 
-import { ItemsService, itemIconUrl, useFallbackIcon } from '../core/items.service';
-import { BuildItems, FREE_CHOICE, Item, SLOTS, SLOT_LABELS, Slot } from '../core/models';
+import { I18nService, dict } from '../core/i18n/i18n';
+import { ItemsService, itemIconUrl, itemName, useFallbackIcon } from '../core/items.service';
+import { BuildItems, FREE_CHOICE, Item, SLOTS, Slot } from '../core/models';
 import { tierLabel, tierText } from '../core/tiers';
 import { TierBadge } from './tier-badge';
 
@@ -30,22 +31,23 @@ function describeSlot(items: BuildItems | undefined, slot: Slot, get: (id: strin
   const choices = items?.[slot] ?? [];
   const free = choices[0] === FREE_CHOICE;
   const found = free ? [] : choices.map(get).filter((i): i is Item => !!i);
-  return free || found.length ? { slot, label: SLOT_LABELS[slot], items: found, free } : null;
+  return free || found.length ? { slot, label: dict().slots[slot], items: found, free } : null;
 }
 
 /** « Épée large 8.1 » (nom seul si le tier est libre). */
 export function choiceName(item: Item): string {
-  return item.tier == null ? item.name : `${item.name} ${tierLabel(item.tier, item.enchant ?? 0)}`;
+  return item.tier == null ? itemName(item) : `${itemName(item)} ${tierLabel(item.tier, item.enchant ?? 0)}`;
 }
 
 /** « Épée large 8.1 minimum ou équivalent (7.2, 6.3, 5.4) » : pour le survol et la page détail. */
 export function choiceDetail(item: Item): string {
   const tier = tierText(item);
-  return tier ? `${item.name} ${tier}` : item.name;
+  return tier ? `${itemName(item)} ${tier}` : itemName(item);
 }
 
 export function gearTitle(g: GearSlot): string {
-  return `${g.label} : ${g.free ? 'au choix du joueur' : g.items.map(choiceDetail).join(' ou ')}`;
+  const t = dict().gear;
+  return t.title(g.label, g.free ? t.free : g.items.map(choiceDetail).join(t.or));
 }
 
 /** Swaps d'un build : libellé puis rangée d'icônes (rien si aucun swap). */
@@ -54,11 +56,11 @@ export function gearTitle(g: GearSlot): string {
   host: { '[class.filled]': 'swaps().length > 0' },
   template: `
     @if (swaps().length) {
-      <div class="swaps" [class.small]="size() === 'small'" aria-label="Swaps">
-        <span class="swaps-label">Swaps</span>
+      <div class="swaps" [class.small]="size() === 'small'" [attr.aria-label]="t().gear.swaps">
+        <span class="swaps-label">{{ t().gear.swaps }}</span>
         @for (s of swaps(); track s.id) {
-          <span class="cell" [title]="'Swap : ' + detail(s)">
-            <img [src]="icon(s)" [alt]="s.name" loading="lazy" (error)="fallback($event)" />
+          <span class="cell" [title]="t().gear.swap(detail(s))">
+            <img [src]="icon(s)" [alt]="name(s)" loading="lazy" (error)="fallback($event)" />
             <app-tier-badge [item]="s" />
           </span>
         }
@@ -88,8 +90,14 @@ export class GearSwaps {
     return choiceDetail(item);
   }
 
+  protected readonly t = inject(I18nService).t;
+
   protected icon(item: Item): string {
     return itemIconUrl(item.icon);
+  }
+
+  protected name(item: Item): string {
+    return itemName(item);
   }
 
   protected fallback(event: Event): void {
@@ -114,7 +122,7 @@ export class GearSwaps {
               <ng-container *ngTemplateOutlet="content; context: { $implicit: g }" />
             </span>
           } @else {
-            <span class="cell unset" [title]="cell?.label + ' : non précisé'"></span>
+            <span class="cell unset" [title]="t().gear.unset(cell.label)"></span>
           }
         }
       </div>
@@ -136,7 +144,7 @@ export class GearSwaps {
       @if (g.free) {
         <span class="free">?</span>
       } @else {
-        <img [src]="icon(g.items[0])" [alt]="g.items[0].name" loading="lazy" (error)="fallback($event)" />
+        <img [src]="icon(g.items[0])" [alt]="name(g.items[0])" loading="lazy" (error)="fallback($event)" />
         <app-tier-badge [item]="g.items[0]" />
         @if (g.items.length > 1) {
           <span class="more">+{{ g.items.length - 1 }}</span>
@@ -183,7 +191,7 @@ export class Gear {
     PAPER_DOLL.map((slot) =>
       slot === null
         ? null
-        : { label: SLOT_LABELS[slot], gear: describeSlot(this.items(), slot, (id) => this.catalog.get(id)) },
+        : { label: this.t().slots[slot], gear: describeSlot(this.items(), slot, (id) => this.catalog.get(id)) },
     ),
   );
 
@@ -191,8 +199,14 @@ export class Gear {
     return gearTitle(g);
   }
 
+  protected readonly t = inject(I18nService).t;
+
   protected icon(item: Item): string {
     return itemIconUrl(item.icon);
+  }
+
+  protected name(item: Item): string {
+    return itemName(item);
   }
 
   protected fallback(event: Event): void {

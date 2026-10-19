@@ -5,6 +5,7 @@ import { Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
 import { ApiService, errorMessage } from '../../core/api.service';
+import { I18nService } from '../../core/i18n/i18n';
 import { ToastService } from '../../core/toast.service';
 import { ItemsService } from '../../core/items.service';
 import { Build, BuildInput, FREE_CHOICE, Item, SWAPS_MAX, Slot } from '../../core/models';
@@ -43,9 +44,8 @@ export function allTwoHanded(mainhand: string[], get: (id: string) => Item | und
   template: `
     <div class="page-head">
       <div>
-        <h1>{{ buildId() ? 'Modifier le build' : 'Nouveau build' }}</h1>
-        <p class="subtitle">Choisis jusqu'à 3 objets par case, ou laisse le joueur libre (« au choix »).
-          Chaque objet a son tier minimum (T4 à T8) et son enchantement : un équivalent convient (8.1 = 7.2 = 6.3).</p>
+        <h1>{{ buildId() ? t().builds.editTitle : t().builds.new }}</h1>
+        <p class="subtitle">{{ t().builds.formSubtitle }}</p>
       </div>
     </div>
 
@@ -56,23 +56,23 @@ export function allTwoHanded(mainhand: string[], get: (id: string) => Item | und
 
       <div class="layout">
         <fieldset class="equipment card">
-          <legend><app-icon name="shield" [size]="16" /> Équipement</legend>
+          <legend><app-icon name="shield" [size]="16" /> {{ t().builds.equipment }}</legend>
           <div class="doll">
             @for (slot of doll; track $index) {
               @if (slot) {
                 <app-item-picker [slot]="slot" [value]="model().items[slot] ?? []"
                                  [disabled]="slot === 'offhand' && twoHanded()"
-                                 [disabledReason]="slot === 'offhand' && twoHanded() ? 'Toutes les armes proposées sont à deux mains : pas de main gauche' : ''"
+                                 [disabledReason]="slot === 'offhand' && twoHanded() ? t().builds.twoHanded : ''"
                                  (valueChange)="setItem(slot, $event)" />
               } @else {
                 <span class="doll-gap"><app-icon name="sparkles" [size]="22" /></span>
               }
             }
           </div>
-          <div class="swaps-row" role="group" aria-label="Swaps" title="Objets de rechange (tous emplacements)">
-            <span class="swaps-title">Swaps</span>
+          <div class="swaps-row" role="group" [attr.aria-label]="t().gear.swaps" [title]="t().builds.swapsTitle">
+            <span class="swaps-title">{{ t().gear.swaps }}</span>
             @for (i of swapSlots; track i) {
-              <app-item-picker slot="swaps" [limit]="1" placeholder="Swap"
+              <app-item-picker slot="swaps" [limit]="1" [placeholder]="t().builds.swap"
                                [value]="swapAt(i)" (valueChange)="setSwap(i, $event)" />
             }
           </div>
@@ -83,22 +83,22 @@ export function allTwoHanded(mainhand: string[], get: (id: string) => Item | und
 
         <div class="fields card form">
           <div class="field">
-            <label for="name">Nom</label>
-            <input id="name" class="input" placeholder="ex : Heal Sacré ZvZ" [formField]="form.name" />
+            <label for="name">{{ t().builds.name }}</label>
+            <input id="name" class="input" [placeholder]="t().builds.namePlaceholder" [formField]="form.name" />
           </div>
 
           <div class="row two">
             <div class="field">
-              <label for="role">Rôle</label>
+              <label for="role">{{ t().builds.role }}</label>
               <select id="role" class="select" [formField]="form.role">
-                <option value="" disabled>Choisir…</option>
+                <option value="" disabled>{{ t().builds.choose }}</option>
                 @for (r of roles(); track r.name) {
                   <option [value]="r.name">{{ r.emoji }} {{ r.name }}</option>
                 }
               </select>
             </div>
             <div class="field">
-              <label for="type">Type</label>
+              <label for="type">{{ t().builds.type }}</label>
               <select id="type" class="select" [formField]="form.type_acti">
                 <option value="PVP">PVP</option>
                 <option value="PVE">PVE</option>
@@ -107,26 +107,26 @@ export function allTwoHanded(mainhand: string[], get: (id: string) => Item | und
           </div>
 
           <div class="field">
-            <label for="weapon">Précisions sur le stuff (optionnel)</label>
-            <input id="weapon" class="input" placeholder="ex : monture, spé minimum, consignes de stuff…" [formField]="form.weapon" />
+            <label for="weapon">{{ t().builds.weapon }}</label>
+            <input id="weapon" class="input" [placeholder]="t().builds.weaponPlaceholder" [formField]="form.weapon" />
           </div>
 
           <div class="field">
-            <label for="notes">Notes</label>
-            <textarea id="notes" class="textarea" placeholder="Rotation, placement, consignes…" [formField]="form.notes"></textarea>
+            <label for="notes">{{ t().builds.notes }}</label>
+            <textarea id="notes" class="textarea" [placeholder]="t().builds.notesPlaceholder" [formField]="form.notes"></textarea>
           </div>
 
           <div class="field">
-            <label for="image">Image (URL, optionnel)</label>
+            <label for="image">{{ t().builds.image }}</label>
             <input id="image" class="input" type="url" [formField]="form.image" />
           </div>
         </div>
       </div>
 
       <div class="save-bar glass">
-        <a class="btn btn-ghost" [routerLink]="['/g', guildId(), 'builds']">Annuler</a>
+        <a class="btn btn-ghost" [routerLink]="['/g', guildId(), 'builds']">{{ t().common.cancel }}</a>
         <button type="submit" class="btn btn-primary" [disabled]="saving() || form().invalid()">
-          <app-icon name="check" /> {{ saving() ? 'Enregistrement…' : 'Enregistrer' }}
+          <app-icon name="check" /> {{ saving() ? t().builds.saving : t().common.save }}
         </button>
       </div>
     </form>
@@ -163,6 +163,7 @@ export class BuildForm {
   private readonly router = inject(Router);
   private readonly items = inject(ItemsService);
   private readonly toast = inject(ToastService);
+  protected readonly t = inject(I18nService).t;
   protected readonly doll = PAPER_DOLL;
 
   readonly guildId = input.required<string>();
@@ -249,7 +250,7 @@ export class BuildForm {
   }
 
   constructor() {
-    this.items.load().catch(() => this.itemsError.set("Impossible de charger le catalogue d'objets."));
+    this.items.load().catch(() => this.itemsError.set(this.t().builds.catalogFailed));
   }
 
   async save(): Promise<void> {
@@ -261,7 +262,7 @@ export class BuildForm {
       await firstValueFrom(
         id ? this.api.updateBuild(this.guildId(), +id, this.model()) : this.api.createBuild(this.guildId(), this.model()),
       );
-      this.toast.success(id ? 'Build enregistré.' : `Build « ${this.model().name} » créé.`);
+      this.toast.success(id ? this.t().builds.saved : this.t().builds.created(this.model().name));
       await this.router.navigate(['/g', this.guildId(), 'builds']);
     } catch (err) {
       this.saveError.set(errorMessage(err));

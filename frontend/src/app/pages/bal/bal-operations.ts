@@ -2,6 +2,7 @@ import { Component, computed, inject, input, linkedSignal, signal } from '@angul
 import { rxResource } from '@angular/core/rxjs-interop';
 
 import { ApiService } from '../../core/api.service';
+import { I18nService } from '../../core/i18n/i18n';
 import { BalAction } from '../../core/models';
 import { errorText, lastValue } from '../../core/resource';
 import { fullSilver } from '../../shared/charts';
@@ -18,16 +19,16 @@ import { BAL_ACTIONS, balAction, opWhen } from './bal-actions';
   template: `
     <section class="card history" aria-labelledby="ops-title">
       <div class="head">
-        <h3 id="ops-title">{{ title() }}</h3>
+        <h3 id="ops-title">{{ title() || t().bal.fullHistory }}</h3>
         <div class="tools">
-          <label class="sr-only" for="ops-filter">Type d'opération</label>
+          <label class="sr-only" for="ops-filter">{{ t().bal.opType }}</label>
           <select id="ops-filter" class="select" [value]="action() ?? ''" (change)="setAction($any($event.target).value)">
-            <option value="">Toutes les opérations</option>
-            @for (a of actions; track a.key) {
-              <option [value]="a.key">{{ a.label }}</option>
+            <option value="">{{ t().bal.allOps }}</option>
+            @for (a of actions; track a) {
+              <option [value]="a">{{ label(a).label }}</option>
             }
           </select>
-          <a class="btn btn-sm" [href]="csvUrl()" download>Exporter en CSV</a>
+          <a class="btn btn-sm" [href]="csvUrl()" download>{{ t().bal.exportCsv }}</a>
         </div>
       </div>
 
@@ -41,20 +42,20 @@ import { BAL_ACTIONS, balAction, opWhen } from './bal-actions';
                 <span class="op-icon" [class.out]="op.delta < 0"><app-icon [name]="label(op.action).icon" [size]="15" /></span>
                 <div class="op-main">
                   <strong>{{ label(op.action).label }}{{ op.template ? ' · ' + op.template : '' }}</strong>
-                  <span class="faint">{{ when(op.ts) }}{{ op.by ? ' · par ' + op.by : '' }}</span>
+                  <span class="faint">{{ when(op.ts) }}{{ op.by ? t().bal.by(op.by) : '' }}</span>
                 </div>
                 <div class="op-side">
                   <span class="op-delta num" [class.out]="op.delta < 0">{{ op.delta > 0 ? '+' : '−' }}{{ full(abs(op.delta)) }}</span>
                   @if (op.total !== null) {
-                    <span class="faint num">solde {{ full(op.total) }}</span>
+                    <span class="faint num">{{ t().bal.balanceAfter(full(op.total)) }}</span>
                   }
                 </div>
               </li>
             }
           </ul>
-          <app-pager [page]="d.page" [pageSize]="d.page_size" [total]="d.total" label="opérations" (pageChange)="go($event)" />
+          <app-pager [page]="d.page" [pageSize]="d.page_size" [total]="d.total" [label]="t().bal.opsLabel" (pageChange)="go($event)" />
         } @else {
-          <p class="muted">Aucune opération{{ action() ? ' de ce type' : '' }}.</p>
+          <p class="muted">{{ t().bal.noOp(!!action()) }}</p>
         }
       } @else {
         <div class="skeleton"></div>
@@ -89,7 +90,9 @@ export class BalOperations {
   readonly guildId = input.required<string>();
   /** Joueur dont on affiche l'historique (page Admin) ; null = le joueur connecté. */
   readonly userId = input<string | null>(null);
-  readonly title = input('Historique complet');
+  protected readonly t = inject(I18nService).t;
+  /** Titre de la section ; vide = « Historique complet ». */
+  readonly title = input('');
 
   protected readonly action = signal<BalAction | null>(null);
   /** Revient à la page 1 quand le joueur ou le filtre change. */
@@ -108,7 +111,7 @@ export class BalOperations {
     const uid = this.userId();
     return uid ? this.api.playerBalCsvUrl(this.guildId(), uid, this.action()) : this.api.myBalCsvUrl(this.guildId(), this.action());
   });
-  protected readonly actions = Object.entries(BAL_ACTIONS).map(([key, a]) => ({ key, label: a.label }));
+  protected readonly actions = Object.keys(BAL_ACTIONS);
   protected readonly label = balAction;
   protected readonly when = opWhen;
   protected readonly full = fullSilver;

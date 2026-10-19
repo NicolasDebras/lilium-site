@@ -2,8 +2,10 @@ import { Component, DestroyRef, ElementRef, afterNextRender, computed, inject, s
 import { RouterLink } from '@angular/router';
 
 import { AuthService } from '../../core/auth.service';
+import { I18nService } from '../../core/i18n/i18n';
 import { ToastService } from '../../core/toast.service';
 import { Icon, IconName } from '../../shared/icon';
+import { LangSwitch } from '../../shared/lang-switch';
 import { Logo } from '../../shared/logo';
 import { Toasts } from '../../shared/toasts';
 import {
@@ -16,66 +18,67 @@ import { anchorOf, matches } from './search';
 
 export { anchorOf, fold, matches } from './search';
 
-interface Section { id: string; title: string; icon: IconName }
+interface Section { id: string; icon: IconName }
 
 const SECTIONS: Section[] = [
-  { id: 'tuto', title: 'Lier ton serveur au site', icon: 'discord' },
-  { id: 'commandes', title: 'Commandes du bot', icon: 'sword' },
-  { id: 'site', title: 'Le site', icon: 'book' },
-  { id: 'faq', title: 'Ça ne marche pas ?', icon: 'alert' },
-  { id: 'confidentialite', title: 'Confidentialité', icon: 'shield' },
+  { id: 'tuto', icon: 'discord' },
+  { id: 'commandes', icon: 'sword' },
+  { id: 'site', icon: 'book' },
+  { id: 'faq', icon: 'alert' },
+  { id: 'confidentialite', icon: 'shield' },
 ];
-
-const AUDIENCE_LABEL: Record<Audience, string> = { joueur: 'Joueur', staff: 'Staff', admin: 'Admin' };
 
 /** Guide public : tuto « lier ton serveur Discord au site », commandes, le site, FAQ.
  *  Sommaire qui suit la lecture, recherche surlignée, filtre par public, liens copiables. */
 @Component({
   selector: 'app-guide',
-  imports: [GuideTutorial, Highlight, Icon, Logo, RouterLink, Toasts],
+  imports: [GuideTutorial, Highlight, Icon, LangSwitch, Logo, RouterLink, Toasts],
   host: { '(window:scroll)': 'onScroll()' },
   template: `
     <div class="guide">
       <aside class="toc">
-        <a routerLink="/accueil" class="brand" aria-label="Accueil"><app-logo /></a>
+        <div class="row" style="justify-content: space-between">
+          <a routerLink="/accueil" class="brand" [attr.aria-label]="t().guide.home"><app-logo /></a>
+          <app-lang-switch />
+        </div>
         <div class="search-box">
           <app-icon name="search" [size]="16" />
-          <label class="sr-only" for="guide-search">Chercher dans le guide</label>
-          <input id="guide-search" class="input" type="search" placeholder="Chercher (ex. transferbal)…"
+          <label class="sr-only" for="guide-search">{{ t().guide.search }}</label>
+          <input id="guide-search" class="input" type="search" [placeholder]="t().guide.searchPlaceholder"
                  [value]="query()" (input)="query.set($any($event.target).value)" />
         </div>
-        <div class="audiences" role="group" aria-label="Pour qui ?">
-          @for (a of audiences; track a.label) {
-            <button type="button" class="chip" [class.on]="audience() === a.value" [attr.aria-pressed]="audience() === a.value"
-                    (click)="audience.set(a.value)">{{ a.label }}</button>
+        <div class="audiences" role="group" [attr.aria-label]="t().guide.forWhom">
+          @for (a of audiences; track a) {
+            <button type="button" class="chip" [class.on]="audience() === a" [attr.aria-pressed]="audience() === a"
+                    (click)="audience.set(a)">{{ t().guide.audiences[a ?? 'all'] }}</button>
           }
         </div>
-        <nav aria-label="Sommaire">
+        <nav [attr.aria-label]="t().guide.toc">
           @for (s of visibleSections(); track s.id) {
             <a [href]="'/guide#' + s.id" [class.active]="active() === s.id" (click)="go($event, s.id)">
-              <app-icon [name]="s.icon" [size]="16" /> {{ s.title }}
+              <app-icon [name]="s.icon" [size]="16" /> {{ t().guide.sections[s.id] }}
               @if (counts()[s.id] !== undefined) { <span class="count">{{ counts()[s.id] }}</span> }
             </a>
           }
         </nav>
         @if (filtering() && !visibleSections().length) {
-          <p class="muted small">Rien ne correspond. <button type="button" class="linklike" (click)="reset()">Tout afficher</button></p>
+          <p class="muted small">{{ t().guide.nothing }} <button type="button" class="linklike" (click)="reset()">{{ t().guide.showAll }}</button></p>
         }
       </aside>
 
       <main>
         <header class="intro card">
           <h1>Guide <span class="gradient-text">Lilium</span></h1>
-          <p class="muted">Tout pour installer le bot, le relier au site et t'en servir. Filtre par public ou cherche un mot : les résultats se surlignent.</p>
+          <p class="muted">{{ t().guide.intro }}</p>
         </header>
 
         @if (show('tuto')) {
           <section id="tuto" class="block" data-section>
             <div class="section-head">
               <span class="section-icon"><app-icon name="discord" [size]="20" /></span>
-              <h2>Tuto : lier ton serveur Discord au site</h2>
-              <span class="tag admin">Admin</span>
-              <button type="button" class="copy" (click)="copyLink('tuto')" aria-label="Copier le lien de la section"><app-icon name="link" [size]="15" /></button>
+              <h2>{{ t().guide.tutoTitle }}</h2>
+              <span class="tag admin">{{ t().guide.audiences.admin }}</span>
+              <button type="button" class="copy" (click)="copyLink('tuto')" [attr.aria-label]="t().guide.copySection"><app-icon name="link" [size]="15" /></button>
             </div>
             <app-guide-tutorial [query]="query()" />
           </section>
@@ -85,21 +88,21 @@ const AUDIENCE_LABEL: Record<Audience, string> = { joueur: 'Joueur', staff: 'Sta
           <section id="commandes" class="block" data-section>
             <div class="section-head">
               <span class="section-icon"><app-icon name="sword" [size]="20" /></span>
-              <h2>Commandes du bot</h2>
-              <button type="button" class="copy" (click)="copyLink('commandes')" aria-label="Copier le lien de la section"><app-icon name="link" [size]="15" /></button>
+              <h2>{{ t().guide.sections['commandes'] }}</h2>
+              <button type="button" class="copy" (click)="copyLink('commandes')" [attr.aria-label]="t().guide.copySection"><app-icon name="link" [size]="15" /></button>
             </div>
             @for (g of commandGroups(); track g.group) {
-              <h3 class="group">{{ g.group }}</h3>
+              <h3 class="group">{{ t().guide.groups[g.group] }}</h3>
               <ul class="cmds">
                 @for (c of g.commands; track c.name) {
                   <li class="card cmd" [id]="anchor(c.name)">
                     <div class="cmd-head">
                       <code><app-hl [text]="c.usage" [q]="query()" /></code>
-                      <span class="tag" [class]="'tag ' + c.audience">{{ audienceLabel[c.audience] }}</span>
-                      <button type="button" class="copy" (click)="copyLink(anchor(c.name))" [attr.aria-label]="'Copier le lien de ' + c.usage"><app-icon name="link" [size]="14" /></button>
+                      <span class="tag" [class]="'tag ' + c.audience">{{ t().guide.audiences[c.audience] }}</span>
+                      <button type="button" class="copy" (click)="copyLink(anchor(c.name))" [attr.aria-label]="t().guide.copyOf(c.usage)"><app-icon name="link" [size]="14" /></button>
                     </div>
-                    <p><app-hl [text]="c.text" [q]="query()" /></p>
-                    <p class="who muted small">Qui : <app-hl [text]="c.who" [q]="query()" /></p>
+                    <p><app-hl [text]="c.text[lang()]" [q]="query()" /></p>
+                    <p class="who muted small">{{ t().guide.who }} <app-hl [text]="c.who[lang()]" [q]="query()" /></p>
                   </li>
                 }
               </ul>
@@ -111,18 +114,18 @@ const AUDIENCE_LABEL: Record<Audience, string> = { joueur: 'Joueur', staff: 'Sta
           <section id="site" class="block" data-section>
             <div class="section-head">
               <span class="section-icon"><app-icon name="book" [size]="20" /></span>
-              <h2>Le site</h2>
-              <button type="button" class="copy" (click)="copyLink('site')" aria-label="Copier le lien de la section"><app-icon name="link" [size]="15" /></button>
+              <h2>{{ t().guide.sections['site'] }}</h2>
+              <button type="button" class="copy" (click)="copyLink('site')" [attr.aria-label]="t().guide.copySection"><app-icon name="link" [size]="15" /></button>
             </div>
             <div class="articles">
               @for (a of site(); track a.id) {
                 <article class="card" [id]="a.id">
                   <div class="cmd-head">
-                    <h3><app-hl [text]="a.title" [q]="query()" /></h3>
-                    <span [class]="'tag ' + audienceOf(a.id)">{{ audienceLabel[audienceOf(a.id)] }}</span>
-                    <button type="button" class="copy" (click)="copyLink(a.id)" [attr.aria-label]="'Copier le lien de ' + a.title"><app-icon name="link" [size]="14" /></button>
+                    <h3><app-hl [text]="a.title[lang()]" [q]="query()" /></h3>
+                    <span [class]="'tag ' + audienceOf(a.id)">{{ t().guide.audiences[audienceOf(a.id)] }}</span>
+                    <button type="button" class="copy" (click)="copyLink(a.id)" [attr.aria-label]="t().guide.copyOf(a.title[lang()])"><app-icon name="link" [size]="14" /></button>
                   </div>
-                  @for (p of a.paragraphs; track $index) { <p><app-hl [text]="p" [q]="query()" /></p> }
+                  @for (p of a.paragraphs[lang()]; track $index) { <p><app-hl [text]="p" [q]="query()" /></p> }
                 </article>
               }
             </div>
@@ -133,13 +136,13 @@ const AUDIENCE_LABEL: Record<Audience, string> = { joueur: 'Joueur', staff: 'Sta
           <section id="faq" class="block" data-section>
             <div class="section-head">
               <span class="section-icon"><app-icon name="alert" [size]="20" /></span>
-              <h2>Ça ne marche pas ?</h2>
-              <button type="button" class="copy" (click)="copyLink('faq')" aria-label="Copier le lien de la section"><app-icon name="link" [size]="15" /></button>
+              <h2>{{ t().guide.sections['faq'] }}</h2>
+              <button type="button" class="copy" (click)="copyLink('faq')" [attr.aria-label]="t().guide.copySection"><app-icon name="link" [size]="15" /></button>
             </div>
             @for (a of faq(); track a.id) {
               <details class="card faq-item" [id]="a.id" [open]="filtering()">
-                <summary><app-hl [text]="a.title" [q]="query()" /></summary>
-                @for (p of a.paragraphs; track $index) { <p><app-hl [text]="p" [q]="query()" /></p> }
+                <summary><app-hl [text]="a.title[lang()]" [q]="query()" /></summary>
+                @for (p of a.paragraphs[lang()]; track $index) { <p><app-hl [text]="p" [q]="query()" /></p> }
               </details>
             }
           </section>
@@ -149,10 +152,10 @@ const AUDIENCE_LABEL: Record<Audience, string> = { joueur: 'Joueur', staff: 'Sta
           <section id="confidentialite" class="block" data-section>
             <div class="section-head">
               <span class="section-icon"><app-icon name="shield" [size]="20" /></span>
-              <h2>{{ privacy.title }}</h2>
+              <h2>{{ privacy.title[lang()] }}</h2>
             </div>
             <div class="card">
-              @for (p of privacy.paragraphs; track $index) { <p><app-hl [text]="p" [q]="query()" /></p> }
+              @for (p of privacy.paragraphs[lang()]; track $index) { <p><app-hl [text]="p" [q]="query()" /></p> }
             </div>
           </section>
         }
@@ -160,22 +163,21 @@ const AUDIENCE_LABEL: Record<Audience, string> = { joueur: 'Joueur', staff: 'Sta
         @if (filtering() && !visibleSections().length) {
           <div class="empty">
             <app-icon name="search" [size]="28" />
-            <p>Rien ne correspond à ta recherche.</p>
-            <button type="button" class="btn btn-sm" (click)="reset()">Tout afficher</button>
+            <p>{{ t().guide.noMatch }}</p>
+            <button type="button" class="btn btn-sm" (click)="reset()">{{ t().guide.showAll }}</button>
           </div>
         }
       </main>
     </div>
 
     @if (showTop()) {
-      <button type="button" class="to-top" (click)="toTop()" aria-label="Revenir en haut"><app-icon name="arrow-up" [size]="18" /></button>
+      <button type="button" class="to-top" (click)="toTop()" [attr.aria-label]="t().guide.toTop"><app-icon name="arrow-up" [size]="18" /></button>
     }
     <app-toasts />
   `,
   styles: `
     .guide { display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: 32px; max-width: 1180px; margin: 0 auto; padding: 32px var(--gutter) 80px; }
     .toc { position: sticky; top: 24px; align-self: start; display: grid; gap: 14px; }
-    .brand { justify-self: start; }
     .search-box { position: relative; }
     .search-box app-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text-faint); pointer-events: none; }
     .search-box .input { padding-left: 34px; width: 100%; }
@@ -240,10 +242,12 @@ export class GuidePage {
   protected readonly auth = inject(AuthService);
   private readonly toast = inject(ToastService);
   private readonly host = inject(ElementRef<HTMLElement>);
+  private readonly i18n = inject(I18nService);
+  protected readonly t = this.i18n.t;
+  protected readonly lang = this.i18n.lang;
 
   protected readonly privacy = PRIVACY;
   protected readonly audiences = AUDIENCES;
-  protected readonly audienceLabel = AUDIENCE_LABEL;
   protected readonly anchor = anchorOf;
   protected readonly query = signal('');
   protected readonly audience = signal<Audience | null>(null);
@@ -256,17 +260,19 @@ export class GuidePage {
   }
 
   protected readonly showTuto = computed(() => this.keep(TUTORIAL_AUDIENCE)
-    && (!this.query().trim() || TUTORIAL.some((s) => matches(this.query(), s.title, s.text, s.help ?? ''))));
+    && (!this.query().trim() || TUTORIAL.some((s) => matches(this.query(), s.title[this.lang()], s.text[this.lang()], s.help?.[this.lang()] ?? ''))));
   protected readonly commandGroups = computed(() => {
-    const found = COMMANDS.map((c) => ({ ...c, audience: commandAudience(c.who) }))
-      .filter((c) => this.keep(c.audience) && matches(this.query(), c.usage, c.who, c.text, c.group));
+    const lang = this.lang();
+    const found = COMMANDS.map((c) => ({ ...c, audience: commandAudience(c.who.fr) }))
+      .filter((c) => this.keep(c.audience)
+        && matches(this.query(), c.usage, c.who[lang], c.text[lang], this.t().guide.groups[c.group]));
     const groups = [...new Set(found.map((c) => c.group))];
     return groups.map((group) => ({ group, commands: found.filter((c) => c.group === group) }));
   });
   protected readonly site = computed(() => this.filterArticles(SITE));
   protected readonly faq = computed(() => this.filterArticles(FAQ));
   protected readonly showPrivacy = computed(() =>
-    this.audience() === null && matches(this.query(), PRIVACY.title, ...PRIVACY.paragraphs));
+    this.audience() === null && matches(this.query(), PRIVACY.title[this.lang()], ...PRIVACY.paragraphs[this.lang()]));
 
   /** Nombre de résultats par section (affiché dans le sommaire pendant un filtre). */
   protected readonly counts = computed((): Record<string, number> => {
@@ -349,15 +355,16 @@ export class GuidePage {
     const url = `${location.origin}/guide#${id}`;
     try {
       await navigator.clipboard.writeText(url);
-      this.toast.success('Lien copié : colle-le dans Discord.');
+      this.toast.success(this.t().builds.linkCopied);
     } catch {
-      this.toast.error(`Copie impossible : ${url}`);
+      this.toast.error(this.t().guide.copyFailed(url));
     }
     history.replaceState(null, '', `/guide#${id}`);
   }
 
   private filterArticles(list: Article[]): Article[] {
-    return list.filter((a) => this.keep(this.audienceOf(a.id)) && matches(this.query(), a.title, ...a.paragraphs));
+    const lang = this.lang();
+    return list.filter((a) => this.keep(this.audienceOf(a.id)) && matches(this.query(), a.title[lang], ...a.paragraphs[lang]));
   }
 }
 

@@ -2,6 +2,7 @@ import { Component, computed, inject, input, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 
 import { ApiService } from '../../core/api.service';
+import { I18nService } from '../../core/i18n/i18n';
 import { debouncedSignal } from '../../core/debounce';
 import { lastValue, errorText } from '../../core/resource';
 import { BalPeriod, BalPlayer } from '../../core/models';
@@ -19,19 +20,19 @@ import { BalOperations } from '../bal/bal-operations';
     <section class="players" aria-labelledby="players-title">
       <div class="section-head">
         <div>
-          <h2 id="players-title">BAL par joueur</h2>
-          <p class="muted">Cherche un joueur pour voir tout son historique, ou exporte toute la BAL de la guilde.</p>
+          <h2 id="players-title">{{ t().admin.playersTitle }}</h2>
+          <p class="muted">{{ t().admin.playersHelp }}</p>
         </div>
         <div class="export">
           <app-period-picker [value]="period()" (valueChange)="period.set($event)" />
-          <a class="btn btn-sm" [href]="guildCsvUrl()" download>Exporter la guilde (CSV)</a>
+          <a class="btn btn-sm" [href]="guildCsvUrl()" download>{{ t().admin.exportGuild }}</a>
         </div>
       </div>
 
       <div class="layout">
         <div class="card list-card">
-          <label class="sr-only" for="player-search">Chercher un joueur</label>
-          <input id="player-search" class="input" type="search" placeholder="Pseudo ou id Discord…" maxlength="100"
+          <label class="sr-only" for="player-search">{{ t().admin.searchPlayer }}</label>
+          <input id="player-search" class="input" type="search" [placeholder]="t().admin.searchPlayerPlaceholder" maxlength="100"
                  [value]="query()" (input)="search($any($event.target).value)" />
           @if (error()) {
             <p class="alert">{{ error() }}</p>
@@ -49,7 +50,7 @@ import { BalOperations } from '../bal/bal-operations';
                 }
               </ul>
             } @else {
-              <p class="muted">Aucun joueur trouvé.</p>
+              <p class="muted">{{ t().admin.noPlayer }}</p>
             }
           } @else {
             <div class="skeleton"></div>
@@ -58,9 +59,9 @@ import { BalOperations } from '../bal/bal-operations';
 
         <div class="detail">
           @if (selected(); as p) {
-            <app-bal-operations [guildId]="guildId()" [userId]="p.uid" [title]="'Historique de ' + p.name" />
+            <app-bal-operations [guildId]="guildId()" [userId]="p.uid" [title]="t().admin.historyOf(p.name)" />
           } @else {
-            <div class="card empty"><app-icon name="search" [size]="22" /><p class="muted">Choisis un joueur dans la liste.</p></div>
+            <div class="card empty"><app-icon name="search" [size]="22" /><p class="muted">{{ t().admin.pickPlayer }}</p></div>
           }
         </div>
       </div>
@@ -95,6 +96,7 @@ import { BalOperations } from '../bal/bal-operations';
 })
 export class BalPlayers {
   private readonly api = inject(ApiService);
+  protected readonly t = inject(I18nService).t;
   readonly guildId = input.required<string>();
 
   protected readonly query = signal('');

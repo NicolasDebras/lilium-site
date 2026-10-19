@@ -6,33 +6,35 @@ import {
   Component, DestroyRef, ElementRef, afterNextRender, computed, inject, input, signal,
 } from '@angular/core';
 
+import { I18nService, dict, locale } from '../core/i18n/i18n';
+
 // ── Formatage ────────────────────────────────────────────────────────────────
 
-/** 174 873 783 → « 174,9 M » ; 4 016 770 211 → « 4,02 Md » ; 950 → « 950 ». */
+/** 174 873 783 → « 174,9 M » ; 4 016 770 211 → « 4,02 Md » (« 4.02 B » en anglais) ; 950 → « 950 ». */
 export function compactSilver(n: number): string {
   const abs = Math.abs(n);
   const fmt = (v: number, digits: number) =>
-    v.toLocaleString('fr-FR', { maximumFractionDigits: digits, minimumFractionDigits: 0 });
-  if (abs >= 1e9) return `${fmt(n / 1e9, 2)} Md`;
+    v.toLocaleString(locale(), { maximumFractionDigits: digits, minimumFractionDigits: 0 });
+  if (abs >= 1e9) return `${fmt(n / 1e9, 2)} ${dict().charts.billion}`;
   if (abs >= 1e6) return `${fmt(n / 1e6, abs >= 1e8 ? 0 : 1)} M`;
   if (abs >= 1e3) return `${fmt(n / 1e3, 0)} k`;
   return fmt(n, 0);
 }
 
 export function fullSilver(n: number): string {
-  return n.toLocaleString('fr-FR');
+  return n.toLocaleString(locale());
 }
 
-/** « 2026-09-28 » → « 28/09 » */
+/** « 2026-09-28 » → « 28/09 » (« 9/28 » en anglais) */
 export function shortDate(iso: string): string {
   const [, m, d] = iso.split('-');
-  return `${d}/${m}`;
+  return locale() === 'fr-FR' ? `${d}/${m}` : `${+m}/${+d}`;
 }
 
 /** « 2026-09-28 » → « lun. 28 sept. » */
 export function longDate(iso: string): string {
   const [y, m, d] = iso.split('-').map(Number);
-  return new Date(y, m - 1, d).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' });
+  return new Date(y, m - 1, d).toLocaleDateString(locale(), { weekday: 'short', day: 'numeric', month: 'short' });
 }
 
 /** Pas « rond » (1, 2, 2,5, 5 × 10ⁿ) pour ~`count` graduations jusqu'à `max`. */
@@ -100,8 +102,8 @@ export interface FlowPoint { start: string; credited: number; withdrawn: number 
   selector: 'app-flow-chart',
   template: `
     <div class="legend" aria-hidden="true">
-      <span><i class="key" style="background: var(--series-1)"></i>{{ creditLabel() }}</span>
-      <span><i class="key" style="background: var(--series-2)"></i>{{ withdrawLabel() }}</span>
+      <span><i class="key" style="background: var(--series-1)"></i>{{ creditLabel() || t().charts.creditLabel }}</span>
+      <span><i class="key" style="background: var(--series-2)"></i>{{ withdrawLabel() || t().charts.withdrawLabel }}</span>
     </div>
     <svg [attr.width]="width()" [attr.height]="H" role="img" [attr.aria-label]="ariaLabel()">
       @for (t of geo().ticks; track t.v) {
@@ -127,9 +129,9 @@ export interface FlowPoint { start: string; credited: number; withdrawn: number 
       @let p = data()[hover()!];
       <div class="tip" [style.left.px]="b.cx" [style.top.px]="0">
         <strong>{{ b.title }}</strong>
-        <div class="line"><span><i class="key" style="background: var(--series-1)"></i>Crédité</span><b>{{ full(p.credited) }}</b></div>
-        <div class="line"><span><i class="key" style="background: var(--series-2)"></i>Retiré</span><b>{{ full(p.withdrawn) }}</b></div>
-        <div class="line"><span>Net</span><b>{{ (p.credited >= p.withdrawn ? '+' : '−') + full(abs(p.credited - p.withdrawn)) }}</b></div>
+        <div class="line"><span><i class="key" style="background: var(--series-1)"></i>{{ t().charts.credited }}</span><b>{{ full(p.credited) }}</b></div>
+        <div class="line"><span><i class="key" style="background: var(--series-2)"></i>{{ t().charts.withdrawn }}</span><b>{{ full(p.withdrawn) }}</b></div>
+        <div class="line"><span>{{ t().charts.net }}</span><b>{{ (p.credited >= p.withdrawn ? '+' : '−') + full(abs(p.credited - p.withdrawn)) }}</b></div>
       </div>
     }
   `,
@@ -138,8 +140,10 @@ export interface FlowPoint { start: string; credited: number; withdrawn: number 
 export class FlowChart {
   readonly data = input.required<FlowPoint[]>();
   readonly bucket = input<'day' | 'week'>('day');
-  readonly creditLabel = input('Crédité aux joueurs');
-  readonly withdrawLabel = input('Retiré (BAL payée)');
+  /** Légendes (vides = « Crédité aux joueurs » / « Retiré (BAL payée) »). */
+  readonly creditLabel = input('');
+  readonly withdrawLabel = input('');
+  protected readonly t = inject(I18nService).t;
 
   protected readonly H = 260;
   protected readonly M = { top: 10, right: 8, bottom: 26, left: 56 };
@@ -149,8 +153,7 @@ export class FlowChart {
   protected readonly full = fullSilver;
   protected readonly abs = Math.abs;
 
-  protected readonly ariaLabel = computed(() =>
-    `Silver crédité et retiré par ${this.bucket() === 'week' ? 'semaine' : 'jour'} — détail dans le tableau`);
+  protected readonly ariaLabel = computed(() => this.t().charts.flowAria(this.bucket()));
 
   protected readonly geo = computed(() => {
     const data = this.data();
@@ -174,14 +177,14 @@ export class FlowChart {
     const bars = data.map((d, i) => {
       const bandX = left + i * band;
       const x = bandX + (band - w) / 2;
-      const title = week ? `Semaine du ${longDate(d.start)}` : longDate(d.start);
+      const title = week ? this.t().charts.weekOf(longDate(d.start)) : longDate(d.start);
       return {
         start: d.start, bandX, bandW: band, cx: bandX + band / 2, title,
         // 1 px d'écart avec la ligne de base ; rien n'est dessiné pour une valeur nulle.
         up: d.credited > 0 ? columnPath(x, zero - 1, Math.min(y(d.credited), zero - 2), w) : '',
         down: d.withdrawn > 0 ? columnPath(x, zero + 1, Math.max(y(-d.withdrawn), zero + 2), w) : '',
         label: (n - 1 - i) % every === 0 ? shortDate(d.start) : '',
-        aria: `${title} : crédité ${fullSilver(d.credited)}, retiré ${fullSilver(d.withdrawn)} silver`,
+        aria: this.t().charts.barAria(title, fullSilver(d.credited), fullSilver(d.withdrawn)),
       };
     });
     return { ticks, bars, zero };
@@ -195,7 +198,7 @@ export interface LinePoint { date: string; total: number }
 @Component({
   selector: 'app-line-chart',
   template: `
-    <svg [attr.width]="width()" [attr.height]="H" role="img" [attr.aria-label]="label() + ' — détail dans le tableau'"
+    <svg [attr.width]="width()" [attr.height]="H" role="img" [attr.aria-label]="t().charts.lineAria(label() || t().charts.value)"
          (mousemove)="move($event)" (mouseleave)="hover.set(null)">
       @for (t of geo().ticks; track t.v) {
         <line class="grid-line" [attr.x1]="M.left" [attr.x2]="width() - M.right" [attr.y1]="t.y" [attr.y2]="t.y" />
@@ -220,7 +223,7 @@ export interface LinePoint { date: string; total: number }
       @let p = geo().points[hover()!];
       <div class="tip" [style.left.px]="p.x" [style.top.px]="0">
         <strong>{{ long(data()[hover()!].date) }}</strong>
-        <div class="line"><span><i class="key" style="background: var(--series-1)"></i>{{ label() }}</span><b>{{ full(p.v) }}</b></div>
+        <div class="line"><span><i class="key" style="background: var(--series-1)"></i>{{ label() || t().charts.value }}</span><b>{{ full(p.v) }}</b></div>
       </div>
     }
   `,
@@ -231,7 +234,8 @@ export interface LinePoint { date: string; total: number }
 })
 export class LineChart {
   readonly data = input.required<LinePoint[]>();
-  readonly label = input('Valeur');
+  readonly label = input('');
+  protected readonly t = inject(I18nService).t;
 
   protected readonly H = 240;
   protected readonly M = { top: 12, right: 72, bottom: 26, left: 56 };
@@ -299,7 +303,7 @@ export interface HBarRow { label: string; value: number; sub?: string }
         }
       </ol>
     } @else {
-      <p class="muted empty-chart">{{ empty() }}</p>
+      <p class="muted empty-chart">{{ empty() || t().charts.noData }}</p>
     }
   `,
   styles: `
@@ -321,7 +325,8 @@ export interface HBarRow { label: string; value: number; sub?: string }
 })
 export class HBarChart {
   readonly rows = input.required<HBarRow[]>();
-  readonly empty = input('Aucune donnée sur la période.');
+  readonly empty = input('');
+  protected readonly t = inject(I18nService).t;
   /** Unité affichée au survol (« silver » par défaut, « actis », « places »…). */
   readonly unit = input('silver');
   protected readonly compact = compactSilver;
@@ -344,7 +349,7 @@ export const DONUT_MAX_SLICES = 7;
 export function donutSlices(rows: { label: string; value: number }[], total: number, max = DONUT_MAX_SLICES): DonutSlice[] {
   const top = rows.filter((r) => r.value > 0).slice(0, max).map((r) => ({ label: r.label, value: r.value }));
   const rest = total - top.reduce((s, r) => s + r.value, 0);
-  return rest > 0 ? [...top, { label: 'Autres', value: rest, other: true }] : top;
+  return rest > 0 ? [...top, { label: dict().charts.others, value: rest, other: true }] : top;
 }
 
 /** Secteur d'anneau entre les angles a0 et a1 (radians, 0 = midi, sens horaire). */
@@ -365,7 +370,7 @@ const DONUT_SIZE = 180;
       <div class="donut">
         <div class="ring">
           <svg [attr.width]="size" [attr.height]="size" [attr.viewBox]="'0 0 ' + size + ' ' + size" role="img"
-               [attr.aria-label]="label() + ' : ' + compact(sum()) + ' silver au total'">
+               [attr.aria-label]="t().charts.donutAria(label() || t().charts.breakdown, compact(sum()))">
             @for (a of arcs(); track a.label; let i = $index) {
               <path class="slice" [attr.d]="a.d" [style.fill]="a.color" [class.dim]="hover() !== null && hover() !== i"
                     tabindex="0" (mouseenter)="hover.set(i)" (mouseleave)="hover.set(null)"
@@ -378,7 +383,7 @@ const DONUT_SIZE = 180;
               <span class="muted">{{ arcs()[hover()!].label }}</span>
             } @else {
               <strong class="num">{{ compact(sum()) }}</strong>
-              <span class="muted">{{ centerLabel() }}</span>
+              <span class="muted">{{ centerLabel() || t().charts.inTotal }}</span>
             }
           </div>
         </div>
@@ -395,9 +400,9 @@ const DONUT_SIZE = 180;
         </ul>
       </div>
       <details>
-        <summary>Voir les données</summary>
+        <summary>{{ t().charts.showData }}</summary>
         <table class="table">
-          <thead><tr><th>Joueur</th><th>Silver</th><th>Part</th></tr></thead>
+          <thead><tr><th>{{ t().charts.player }}</th><th>Silver</th><th>{{ t().charts.share }}</th></tr></thead>
           <tbody>
             @for (a of arcs(); track a.label) {
               <tr><td>{{ a.label }}</td><td>{{ full(a.value) }}</td><td>{{ pct(a.value) }} %</td></tr>
@@ -406,7 +411,7 @@ const DONUT_SIZE = 180;
         </table>
       </details>
     } @else {
-      <p class="muted empty-chart">{{ empty() }}</p>
+      <p class="muted empty-chart">{{ empty() || t().charts.noDataShort }}</p>
     }
   `,
   styles: `
@@ -440,9 +445,10 @@ const DONUT_SIZE = 180;
 })
 export class DonutChart {
   readonly slices = input.required<DonutSlice[]>();
-  readonly label = input('Répartition');
-  readonly centerLabel = input('au total');
-  readonly empty = input('Aucune donnée.');
+  readonly label = input('');
+  readonly centerLabel = input('');
+  readonly empty = input('');
+  protected readonly t = inject(I18nService).t;
   protected readonly size = DONUT_SIZE;
   protected readonly hover = signal<number | null>(null);
   protected readonly compact = compactSilver;
@@ -466,7 +472,7 @@ export class DonutChart {
 
   pct(v: number): string {
     const p = (v / this.sum()) * 100;
-    return p.toLocaleString('fr-FR', { maximumFractionDigits: p < 10 ? 1 : 0 });
+    return p.toLocaleString(locale(), { maximumFractionDigits: p < 10 ? 1 : 0 });
   }
 }
 
@@ -484,10 +490,10 @@ export function deltaPct(current: number, previous: number): number | null {
   selector: 'app-delta',
   template: `
     @if (pct() === null) {
-      @if (current() > 0) { <span class="delta neutral" title="Rien sur la période précédente">nouveau</span> }
+      @if (current() > 0) { <span class="delta neutral" [title]="t().charts.nothingBefore">{{ t().charts.newLabel }}</span> }
     } @else {
       <span class="delta" [class.good]="tone() === 'good'" [class.bad]="tone() === 'bad'" [class.neutral]="tone() === 'neutral'"
-            [title]="'vs période précédente : ' + previousLabel()">
+            [title]="t().charts.vsPrevious(previousLabel())">
         {{ pct()! > 0 ? '▲' : pct()! < 0 ? '▼' : '=' }} {{ pct() === 0 ? '' : abs(pct()!) + ' %' }}
       </span>
     }
@@ -504,6 +510,7 @@ export class Delta {
   readonly previous = input.required<number>();
   readonly upIsGood = input<boolean | null>(true);
   readonly format = input<(n: number) => string>(compactSilver);
+  protected readonly t = inject(I18nService).t;
   protected readonly abs = Math.abs;
   protected readonly pct = computed(() => deltaPct(this.current(), this.previous()));
   protected readonly previousLabel = computed(() => this.format()(this.previous()));
@@ -515,8 +522,6 @@ export class Delta {
 }
 
 // ── Carte jour × heure ───────────────────────────────────────────────────────
-
-export const WEEKDAYS = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
 
 /** Niveau 0 (vide) à 5 d'une case, relatif au maximum de la carte. */
 export function heatLevel(value: number, max: number): number {
@@ -533,17 +538,17 @@ export function heatLevel(value: number, max: number): number {
         <span class="hour">{{ h % 3 === 0 ? h + 'h' : '' }}</span>
       }
       @for (row of data(); track $index; let d = $index) {
-        <span class="day">{{ days[d].slice(0, 3) }}</span>
+        <span class="day">{{ t().charts.weekdays[d].slice(0, 3) }}</span>
         @for (v of row; track $index; let h = $index) {
-          <span class="cell" [attr.data-level]="level(v)" [title]="days[d] + ' ' + h + 'h : ' + v + ' ' + unit() + (v > 1 ? 's' : '')"></span>
+          <span class="cell" [attr.data-level]="level(v)" [title]="t().charts.heatCell(t().charts.weekdays[d], h, v)"></span>
         }
       }
     </div>
     <div class="scale">
-      <span>moins</span>
+      <span>{{ t().charts.less }}</span>
       @for (l of [1, 2, 3, 4, 5]; track l) { <i class="cell" [attr.data-level]="l"></i> }
-      <span>plus</span>
-      @if (peak(); as p) { <span class="peak">Créneau le plus actif : <b>{{ p }}</b></span> }
+      <span>{{ t().charts.more }}</span>
+      @if (peak(); as p) { <span class="peak">{{ t().charts.peak }} <b>{{ p }}</b></span> }
     </div>
   `,
   styles: `
@@ -566,18 +571,16 @@ export function heatLevel(value: number, max: number): number {
 })
 export class Heatmap {
   readonly data = input.required<number[][]>();
-  readonly unit = input('activité');
-  protected readonly days = WEEKDAYS;
+  protected readonly t = inject(I18nService).t;
   protected readonly hours = Array.from({ length: 24 }, (_, h) => h);
   private readonly max = computed(() => Math.max(0, ...this.data().flat()));
   protected readonly peak = computed(() => {
     let best: [number, number, number] | null = null;
     this.data().forEach((row, d) => row.forEach((v, h) => { if (v > 0 && (!best || v > best[2])) best = [d, h, v]; }));
     const b = best as [number, number, number] | null;
-    return b ? `${WEEKDAYS[b[0]].toLowerCase()} ${b[1]}h–${b[1] + 1}h (${b[2]})` : '';
+    return b ? this.t().charts.peakSlot(this.t().charts.weekdays[b[0]], b[1], b[2]) : '';
   });
-  protected readonly summary = computed(() =>
-    `Fins d'activité par jour et par heure. ${this.peak() ? 'Créneau le plus actif : ' + this.peak() : 'Aucune activité.'}`);
+  protected readonly summary = computed(() => this.t().charts.heatAria(this.peak()));
 
   protected level(v: number): number {
     return heatLevel(v, this.max());

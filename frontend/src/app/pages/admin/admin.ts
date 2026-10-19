@@ -3,6 +3,7 @@ import { Component, computed, inject, input, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 
 import { ApiService } from '../../core/api.service';
+import { I18nService } from '../../core/i18n/i18n';
 import { BalPeriod, BalStats } from '../../core/models';
 import { errorText, lastValue } from '../../core/resource';
 import {
@@ -34,14 +35,14 @@ interface Tile {
     <div class="page-head">
       <div>
         <h1>Admin <span class="badge">ADMIN</span></h1>
-        <p class="subtitle">Vue d'ensemble de la guilde et de sa BAL.</p>
+        <p class="subtitle">{{ t().admin.subtitle }}</p>
       </div>
       @if (overview(); as o) {
         <div class="overview">
           @for (s of stats(); track s.label) {
             <div class="stat">
               <app-icon [name]="s.icon" [size]="16" />
-              <strong class="value">{{ s.value | number: '1.0-0' : 'fr-FR' }}</strong>
+              <strong class="value">{{ s.value | number: '1.0-0' : locale() }}</strong>
               <span class="muted">{{ s.label }}</span>
             </div>
           }
@@ -57,10 +58,9 @@ interface Tile {
     <section class="bal" aria-labelledby="bal-title">
       <div class="section-head">
         <div>
-          <h2 id="bal-title">Tableau de bord BAL</h2>
+          <h2 id="bal-title">{{ t().admin.balTitle }}</h2>
           @if (bal(); as b) {
-            <p class="muted range"><app-icon name="calendar" [size]="14" /> Du {{ long(b.start) }} à aujourd'hui
-              · comparé à la période précédente</p>
+            <p class="muted range"><app-icon name="calendar" [size]="14" /> {{ t().admin.since(long(b.start)) }}{{ t().admin.compared }}</p>
           }
         </div>
         <app-period-picker [value]="period()" (valueChange)="setPeriod($event)" />
@@ -73,18 +73,18 @@ interface Tile {
       @if (bal(); as b) {
         <div class="dashboard" [class.stale]="balLoading()">
           <div class="card hero">
-            <span class="muted label"><app-icon name="coins" [size]="16" /> BAL due aux joueurs</span>
-            <strong class="hero-value gradient-text" [title]="(b.totals.due | number: '1.0-0' : 'fr-FR') + ' silver'">{{ compact(b.totals.due) }}</strong>
-            <span class="muted">silver · {{ b.totals.players }} joueur{{ b.totals.players > 1 ? 's' : '' }} avec de la BAL</span>
+            <span class="muted label"><app-icon name="coins" [size]="16" /> {{ t().admin.due }}</span>
+            <strong class="hero-value gradient-text" [title]="(b.totals.due | number: '1.0-0' : locale()) + ' silver'">{{ compact(b.totals.due) }}</strong>
+            <span class="muted">{{ t().admin.duePlayers(b.totals.players) }}</span>
           </div>
           <div class="tiles">
-            @for (t of tiles(); track t.label) {
+            @for (tile of tiles(); track tile.label) {
               <div class="card tile">
-                <span class="muted tile-label"><app-icon [name]="t.icon" [size]="14" /> {{ t.label }}</span>
+                <span class="muted tile-label"><app-icon [name]="tile.icon" [size]="14" /> {{ tile.label }}</span>
                 <div class="tile-value">
-                  <strong [title]="t.title">{{ t.value }}</strong>
-                  @if (t.previous !== undefined) {
-                    <app-delta [current]="t.current!" [previous]="t.previous" [upIsGood]="t.upIsGood === undefined ? true : t.upIsGood" />
+                  <strong [title]="tile.title">{{ tile.value }}</strong>
+                  @if (tile.previous !== undefined) {
+                    <app-delta [current]="tile.current!" [previous]="tile.previous" [upIsGood]="tile.upIsGood === undefined ? true : tile.upIsGood" />
                   }
                 </div>
               </div>
@@ -92,17 +92,17 @@ interface Tile {
           </div>
 
           <div class="card chart wide">
-            <h3>Silver crédité et payé <span class="muted">— par {{ b.bucket === 'week' ? 'semaine' : 'jour' }}</span></h3>
+            <h3>{{ t().admin.flowTitle }} <span class="muted">{{ t().bal.per(b.bucket) }}</span></h3>
             <app-flow-chart [data]="b.flow" [bucket]="b.bucket" />
             <details>
-              <summary>Voir les données</summary>
+              <summary>{{ t().admin.showData }}</summary>
               <table class="table">
-                <thead><tr><th>{{ b.bucket === 'week' ? 'Semaine du' : 'Jour' }}</th><th>Crédité</th><th>Retiré</th></tr></thead>
+                <thead><tr><th>{{ b.bucket === 'week' ? t().admin.weekOf : t().admin.day }}</th><th>{{ t().admin.credited }}</th><th>{{ t().admin.withdrawn }}</th></tr></thead>
                 <tbody>
                   @for (f of b.flow; track f.start) {
                     <tr><td>{{ long(f.start) }}</td>
-                      <td>{{ f.credited | number: '1.0-0' : 'fr-FR' }}</td>
-                      <td>{{ f.withdrawn | number: '1.0-0' : 'fr-FR' }}</td></tr>
+                      <td>{{ f.credited | number: '1.0-0' : locale() }}</td>
+                      <td>{{ f.withdrawn | number: '1.0-0' : locale() }}</td></tr>
                   }
                 </tbody>
               </table>
@@ -110,16 +110,16 @@ interface Tile {
           </div>
 
           <div class="card chart wide">
-            <h3>Évolution de la BAL due</h3>
-            <app-line-chart [data]="b.due" label="BAL due" />
-            <p class="muted note">Reconstituée à partir de l'historique des opérations (conservé 6 mois par le bot).</p>
+            <h3>{{ t().admin.dueTitle }}</h3>
+            <app-line-chart [data]="b.due" [label]="t().admin.dueLabel" />
+            <p class="muted note">{{ t().admin.dueNote }}</p>
             <details>
-              <summary>Voir les données</summary>
+              <summary>{{ t().admin.showData }}</summary>
               <table class="table">
-                <thead><tr><th>Jour</th><th>BAL due (fin de journée)</th></tr></thead>
+                <thead><tr><th>{{ t().admin.day }}</th><th>{{ t().admin.dueEndOfDay }}</th></tr></thead>
                 <tbody>
                   @for (d of b.due; track d.date) {
-                    <tr><td>{{ long(d.date) }}</td><td>{{ d.total | number: '1.0-0' : 'fr-FR' }}</td></tr>
+                    <tr><td>{{ long(d.date) }}</td><td>{{ d.total | number: '1.0-0' : locale() }}</td></tr>
                   }
                 </tbody>
               </table>
@@ -127,28 +127,28 @@ interface Tile {
           </div>
 
           <div class="card chart span-7">
-            <h3>Quand la guilde joue <span class="muted">— fins d'activité par jour et heure</span></h3>
+            <h3>{{ t().admin.whenTitle }} <span class="muted">{{ t().admin.whenHint }}</span></h3>
             <app-heatmap [data]="b.heatmap" />
           </div>
 
           <div class="card chart span-5">
-            <h3><app-icon name="flag" [size]="16" /> Top callers <span class="muted">— silver distribué</span></h3>
-            <app-hbar-chart [rows]="callers()" empty="Aucune fin d'activité sur la période." />
+            <h3><app-icon name="flag" [size]="16" /> {{ t().admin.topCallers }} <span class="muted">{{ t().admin.topCallersHint }}</span></h3>
+            <app-hbar-chart [rows]="callers()" [empty]="t().admin.noActivityEnd" />
           </div>
 
           <div class="card chart span-6">
-            <h3><app-icon name="trend" [size]="16" /> Top gagnants <span class="muted">— sur la période</span></h3>
+            <h3><app-icon name="trend" [size]="16" /> {{ t().admin.topEarners }} <span class="muted">{{ t().admin.topEarnersHint }}</span></h3>
             <app-hbar-chart [rows]="earners()" />
           </div>
 
           <div class="card chart span-6">
-            <h3><app-icon name="crown" [size]="16" /> Plus grosses BAL dues <span class="muted">— part de la BAL due</span></h3>
-            <app-donut-chart [slices]="topPlayers()" label="BAL due par joueur" centerLabel="BAL due"
-                             empty="Aucun joueur n'a de BAL." />
+            <h3><app-icon name="crown" [size]="16" /> {{ t().admin.biggestDue }} <span class="muted">{{ t().admin.biggestDueHint }}</span></h3>
+            <app-donut-chart [slices]="topPlayers()" [label]="t().admin.duePerPlayer" [centerLabel]="t().admin.dueLabel"
+                             [empty]="t().admin.noBal" />
           </div>
 
           <div class="card chart wide">
-            <h3>Silver gagné par compo <span class="muted">— fins d'activité</span></h3>
+            <h3>{{ t().admin.byCompo }} <span class="muted">{{ t().admin.byCompoHint }}</span></h3>
             <app-hbar-chart [rows]="byTemplate()" />
           </div>
         </div>
@@ -220,6 +220,9 @@ interface Tile {
 })
 export class AdminPage {
   private readonly api = inject(ApiService);
+  private readonly i18n = inject(I18nService);
+  protected readonly t = this.i18n.t;
+  protected readonly locale = this.i18n.locale;
   readonly guildId = input.required<string>();
 
   private readonly overviewRes = rxResource({ params: () => this.guildId(), stream: ({ params }) => this.api.adminOverview(params) });
@@ -248,9 +251,9 @@ export class AdminPage {
   protected readonly stats = computed((): { label: string; value: number; icon: IconName }[] => {
     const o = this.overview();
     return o ? [
-      { label: 'profils (/register)', value: o.profiles, icon: 'users' },
-      { label: 'builds', value: o.builds, icon: 'sword' },
-      { label: 'compos', value: o.compos, icon: 'shield' },
+      { label: this.t().admin.profiles, value: o.profiles, icon: 'users' },
+      { label: this.t().admin.builds, value: o.builds, icon: 'sword' },
+      { label: this.t().admin.compos, value: o.compos, icon: 'shield' },
     ] : [];
   });
 
@@ -262,10 +265,10 @@ export class AdminPage {
   protected readonly earners = computed((): HBarRow[] =>
     this.withBal((b) => b.top_earners.map((p) => ({ label: p.name, value: p.amount }))));
   protected readonly callers = computed((): HBarRow[] => this.withBal((b) => b.top_callers.map((c) => ({
-    label: c.name, value: c.silver, sub: `${c.activities} activité${c.activities > 1 ? 's' : ''}`,
+    label: c.name, value: c.silver, sub: this.t().admin.activities(c.activities),
   }))));
   protected readonly byTemplate = computed((): HBarRow[] => this.withBal((b) => b.by_template.map((t) => ({
-    label: t.template, value: t.silver, sub: `${t.activities} activité${t.activities > 1 ? 's' : ''}`,
+    label: t.template, value: t.silver, sub: this.t().admin.activities(t.activities),
   }))));
 
   setPeriod(period: BalPeriod): void {
@@ -280,16 +283,17 @@ export class AdminPage {
   private makeTiles(b: BalStats): Tile[] {
     const full = (n: number) => `${fullSilver(n)} silver`;
     const t = b.totals;
+    const l = this.t().admin;
     return [
-      { label: 'Crédité', value: compactSilver(t.credited), title: full(t.credited), icon: 'trend',
+      { label: l.tileCredited, value: compactSilver(t.credited), title: full(t.credited), icon: 'trend',
         current: t.credited, previous: b.previous.credited },
-      { label: 'Payé (retiré)', value: compactSilver(t.withdrawn), title: full(t.withdrawn), icon: 'coins',
+      { label: l.tilePaid, value: compactSilver(t.withdrawn), title: full(t.withdrawn), icon: 'coins',
         current: t.withdrawn, previous: b.previous.withdrawn, upIsGood: null },
-      { label: 'Solde net', value: this.netLabel(), title: 'Crédité − payé sur la période', icon: 'chart' },
-      { label: "Fins d'activité", value: t.activities.toLocaleString('fr-FR'), title: '/finacti et /paybal', icon: 'flag',
+      { label: l.tileNet, value: this.netLabel(), title: l.tileNetTitle, icon: 'chart' },
+      { label: l.tileEnds, value: t.activities.toLocaleString(this.locale()), title: '/finacti et /paybal', icon: 'flag',
         current: t.activities, previous: b.previous.activities },
-      { label: 'Gain moyen / acti', value: compactSilver(t.avg_per_activity), title: full(t.avg_per_activity), icon: 'sparkles' },
-      { label: 'Joueurs moyens / acti', value: t.avg_players_per_activity.toLocaleString('fr-FR'), title: 'Joueurs payés par fin d’activité', icon: 'users' },
+      { label: l.tileAvg, value: compactSilver(t.avg_per_activity), title: full(t.avg_per_activity), icon: 'sparkles' },
+      { label: l.tileAvgPlayers, value: t.avg_players_per_activity.toLocaleString(this.locale()), title: l.tileAvgPlayersTitle, icon: 'users' },
     ];
   }
 }

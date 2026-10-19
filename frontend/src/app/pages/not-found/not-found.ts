@@ -1,27 +1,21 @@
-import { Component, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
+import { I18nService, dict } from '../../core/i18n/i18n';
 import { Icon } from '../../shared/icon';
+import { LangSwitch } from '../../shared/lang-switch';
 import { Logo } from '../../shared/logo';
-
-export const JOKES = [
-  "Cette page a été gankée en zone noire. Elle n'avait pas de monture.",
-  "Même le scout ne l'a pas trouvée… et pourtant c'était un vrai scout, pas un grille-pain.",
-  "Page perdue en Avalon. Le caller jure que c'était « juste à gauche ».",
-  'Elle est partie farmer en T4 et ne répond plus en vocal.',
-  "Le loot de cette page a été split entre 20 joueurs. Il ne reste rien. Même pas l'URL.",
-  "Erreur 404 : la page est au repair à Fort Sterling. Durée estimée : jusqu'au prochain patch.",
-  "Cette page a quitté la guilde sans prévenir. Sa BAL, elle, est restée.",
-  "Le tank a pull toute la salle, la page est morte avec le reste du groupe.",
-];
 
 /** 404 : URL inconnue (remplace l'ancienne redirection silencieuse vers l'accueil). */
 @Component({
   selector: 'app-not-found',
-  imports: [RouterLink, Icon, Logo],
+  imports: [RouterLink, Icon, LangSwitch, Logo],
   template: `
     <div class="page">
-      <a routerLink="/" class="logo-link" aria-label="Accueil Lilium"><app-logo /></a>
+      <div class="top">
+        <a routerLink="/" class="logo-link" [attr.aria-label]="t().shell.home"><app-logo /></a>
+        <app-lang-switch />
+      </div>
       <section class="lost fade-up">
         <svg class="map" viewBox="0 0 120 120" aria-hidden="true">
           <circle cx="60" cy="60" r="52" fill="none" stroke="currentColor" stroke-opacity=".25" stroke-dasharray="4 6" />
@@ -30,17 +24,18 @@ export const JOKES = [
           <circle cx="60" cy="60" r="5" fill="var(--bg)" stroke="currentColor" stroke-width="2" />
         </svg>
         <p class="code gradient-text">404</p>
-        <h1>Page introuvable</h1>
-        <p class="joke">« {{ joke() }} »</p>
+        <h1>{{ t().notFound.title }}</h1>
+        <p class="joke">{{ t().notFound.quote(t().notFound.jokes[joke()]) }}</p>
         <div class="row actions">
-          <a routerLink="/" class="btn btn-primary"><app-icon name="compass" /> Retour à l'accueil</a>
-          <button type="button" class="btn" (click)="another()"><app-icon name="sparkles" /> Une autre blague</button>
+          <a routerLink="/" class="btn btn-primary"><app-icon name="compass" /> {{ t().notFound.home }}</a>
+          <button type="button" class="btn" (click)="another()"><app-icon name="sparkles" /> {{ t().notFound.another }}</button>
         </div>
       </section>
     </div>
   `,
   styles: `
     .page { min-height: 100vh; display: grid; grid-template-rows: auto 1fr; padding: 18px var(--gutter); }
+    .top { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
     .logo-link:hover { text-decoration: none; }
     .lost { align-self: center; justify-self: center; max-width: 560px; display: grid; justify-items: center;
             text-align: center; gap: 10px; padding: 24px 0 60px; }
@@ -53,6 +48,8 @@ export const JOKES = [
   `,
 })
 export class NotFoundPage {
+  protected readonly t = inject(I18nService).t;
+  /** Index de la blague : elle reste la même quand on change de langue. */
   protected readonly joke = signal(pickJoke());
 
   another(): void {
@@ -60,8 +57,8 @@ export class NotFoundPage {
   }
 }
 
-/** Blague au hasard, différente de la précédente quand c'est possible. */
-export function pickJoke(previous?: string, random: () => number = Math.random): string {
-  const pool = JOKES.filter((j) => j !== previous);
+/** Index d'une blague au hasard, différente de la précédente quand c'est possible. */
+export function pickJoke(previous?: number, random: () => number = Math.random): number {
+  const pool = dict().notFound.jokes.map((_, i) => i).filter((i) => i !== previous);
   return pool[Math.floor(random() * pool.length)];
 }

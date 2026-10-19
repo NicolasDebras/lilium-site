@@ -14,6 +14,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from app import auth
 from app.db import Database
 from app.discord_rest import DiscordRest, DiscordUnavailable
+from app.i18n import LanguageMiddleware, tr
 from app.permissions import LevelCache
 from app.routes import auth as auth_routes, builds, compos, guild, items, library, me
 from app.security import content_security_policy, inline_script_hashes, install_security
@@ -38,6 +39,7 @@ def create_app(settings: Settings | None = None, *, db=None, discord=None, oauth
     docs = {} if not settings.static_dir else {"docs_url": None, "redoc_url": None, "openapi_url": None}
     app = FastAPI(title="Lilium API", lifespan=lifespan, **docs)
     install_security(app, frontend_url=settings.frontend_url, hsts=settings.cookie_secure)
+    app.add_middleware(LanguageMiddleware)   # le plus externe : la langue vaut aussi pour les refus de sécurité
     app.state.settings = settings
     app.state.db = db
     app.state.discord = discord or DiscordRest(settings.discord_token)
@@ -48,7 +50,7 @@ def create_app(settings: Settings | None = None, *, db=None, discord=None, oauth
 
     @app.exception_handler(DiscordUnavailable)
     async def discord_down(request: Request, exc: DiscordUnavailable):
-        return JSONResponse(status_code=503, content={"detail": "Discord ne répond pas, réessaie dans un instant."})
+        return JSONResponse(status_code=503, content={"detail": tr("discord_down")})
 
     api = APIRouter(prefix="/api")
 

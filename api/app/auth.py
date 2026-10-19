@@ -7,6 +7,7 @@ import aiohttp
 from fastapi import HTTPException, Request
 from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
 
+from app.i18n import tr
 from app.settings import Settings
 
 SESSION_COOKIE = "lilium_session"
@@ -52,11 +53,11 @@ async def exchange_code(settings: Settings, code: str) -> str:
         async with aiohttp.ClientSession(timeout=HTTP_TIMEOUT) as session:
             async with session.post("https://discord.com/api/oauth2/token", data=data) as resp:
                 if resp.status != 200:
-                    raise HTTPException(status_code=400, detail="Échec de l'authentification Discord.")
+                    raise HTTPException(status_code=400, detail=tr("auth_failed"))
                 payload = await resp.json()
         return payload["access_token"]
     except (TimeoutError, aiohttp.ClientError, KeyError, TypeError, ValueError) as err:
-        raise HTTPException(status_code=400, detail="Échec de l'authentification Discord.") from err
+        raise HTTPException(status_code=400, detail=tr("auth_failed")) from err
 
 
 async def fetch_discord_user(access_token: str) -> dict:
@@ -65,10 +66,10 @@ async def fetch_discord_user(access_token: str) -> dict:
         async with aiohttp.ClientSession(timeout=HTTP_TIMEOUT) as session:
             async with session.get("https://discord.com/api/users/@me", headers=headers) as resp:
                 if resp.status != 200:
-                    raise HTTPException(status_code=400, detail="Impossible de récupérer le profil Discord.")
+                    raise HTTPException(status_code=400, detail=tr("profile_failed"))
                 return await resp.json()
     except (TimeoutError, aiohttp.ClientError, ValueError) as err:
-        raise HTTPException(status_code=400, detail="Impossible de récupérer le profil Discord.") from err
+        raise HTTPException(status_code=400, detail=tr("profile_failed")) from err
 
 
 def session_payload(user: dict) -> dict:
@@ -110,5 +111,5 @@ def clear_session_cookie(response) -> None:
 def require_user(request: Request) -> dict:
     user = decode_session(request.app.state.settings, request.cookies.get(SESSION_COOKIE))
     if not user:
-        raise HTTPException(status_code=401, detail="Connexion requise.")
+        raise HTTPException(status_code=401, detail=tr("login_required"))
     return user

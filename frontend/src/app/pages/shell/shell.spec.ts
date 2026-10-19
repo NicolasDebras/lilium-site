@@ -42,6 +42,16 @@ describe('Shell', () => {
     expect(member.el.querySelectorAll('.links a app-icon').length).toBe(4);
   });
 
+  it('sélecteur de langue : EN traduit la navigation et met à jour <html lang>', async () => {
+    const { fixture, el } = await render('member');
+    const en = [...el.querySelectorAll<HTMLButtonElement>('app-lang-switch button')].find((b) => b.textContent?.trim() === 'EN')!;
+    en.click();
+    fixture.detectChanges();
+    expect([...el.querySelectorAll('.links a')].map((a) => a.textContent?.trim())).toEqual(['Builds', 'Comps', 'Templates', 'My balance']);
+    expect(en.getAttribute('aria-pressed')).toBe('true');
+    expect(document.documentElement.lang).toBe('en');
+  });
+
   it('un admin voit le lien Admin', async () => {
     const { el } = await render('admin');
     expect([...el.querySelectorAll('.links a')].map((a) => a.textContent?.trim())).toContain('Admin');

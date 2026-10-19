@@ -6,6 +6,7 @@ import { firstValueFrom } from 'rxjs';
 
 import { ApiService, errorMessage } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
+import { I18nService, dict } from '../../core/i18n/i18n';
 import { ItemsService } from '../../core/items.service';
 import { Build, Compo, SlotRow, hasLevel } from '../../core/models';
 import { ToastService } from '../../core/toast.service';
@@ -21,22 +22,22 @@ interface CompoCard {
   /** PF1 puis PF2 : barre des rôles. */
   rows: SlotRow[];
   /** Parties non vides, lignes rangées par rôle. */
-  parties: { label: string; rows: SlotRow[] }[];
+  parties: { key: 'pf1' | 'pf2'; rows: SlotRow[] }[];
   /** L'image ne montre que les rôles liés à un build : sans build, pas d'image. */
   hasBuilds: boolean;
 }
 
 function toCard(compo: Compo): CompoCard {
-  const parties = [{ label: 'Party 1', rows: compo.pf1 }, { label: 'Party 2', rows: compo.pf2 }]
+  const parties = [{ key: 'pf1' as const, rows: compo.pf1 }, { key: 'pf2' as const, rows: compo.pf2 }]
     .filter((pf) => pf.rows.length)
-    .map((pf) => ({ label: pf.label, rows: sortByRole(pf.rows, (r) => r.role) }));
+    .map((pf) => ({ key: pf.key, rows: sortByRole(pf.rows, (r) => r.role) }));
   const rows = [...compo.pf1, ...compo.pf2];
   return { compo, rows, parties, hasBuilds: rows.some((r) => r.build_id != null) };
 }
 
-/** Parts de paie d'une ligne, à la française : « 0,5 part », « 2 parts ». */
+/** Parts de paie d'une ligne : « 0,5 part », « 2 parts » (« 0.5 shares » en anglais). */
 export function shareLabel(share: number): string {
-  return `${String(share).replace('.', ',')} part${share >= 2 ? 's' : ''}`;
+  return dict().compos.shares(share);
 }
 
 @Component({
@@ -45,11 +46,11 @@ export function shareLabel(share: number): string {
   template: `
     <div class="page-head">
       <div>
-        <h1>Compos</h1>
-        <p class="subtitle">Utilisables directement dans <code>/acti</code> sur Discord : le joueur choisit son rôle, le build lui est imposé.</p>
+        <h1>{{ t().compos.title }}</h1>
+        <p class="subtitle">{{ t().compos.subtitle[0] }}<code>/acti</code>{{ t().compos.subtitle[1] }}</p>
       </div>
       @if (canEdit()) {
-        <a class="btn btn-primary" [routerLink]="['/g', guildId(), 'compos', 'new']"><app-icon name="plus" /> Nouvelle compo</a>
+        <a class="btn btn-primary" [routerLink]="['/g', guildId(), 'compos', 'new']"><app-icon name="plus" /> {{ t().compos.new }}</a>
       }
     </div>
 
@@ -69,11 +70,11 @@ export function shareLabel(share: number): string {
           }
         </div>
       } @else {
-        <div class="empty"><app-icon name="users" [size]="32" /><p>Aucune compo de guilde pour l'instant.</p></div>
+        <div class="empty"><app-icon name="users" [size]="32" /><p>{{ t().compos.none }}</p></div>
       }
 
       @if (defaults().length) {
-        <h2 class="section-title">Templates par défaut</h2>
+        <h2 class="section-title">{{ t().compos.defaults }}</h2>
         <div class="grid compos">
           @for (v of defaults(); track v.compo.name; let i = $index) {
             <ng-container *ngTemplateOutlet="card; context: { $implicit: v, i: i }" />
@@ -90,7 +91,7 @@ export function shareLabel(share: number): string {
             <h2>{{ c.name }}</h2>
             <div class="row">
               <span class="badge badge-outline">{{ c.type_acti }}</span>
-              <span class="badge"><app-icon name="users" [size]="12" /> {{ c.total }} joueurs</span>
+              <span class="badge"><app-icon name="users" [size]="12" /> {{ t().common.players(c.total) }}</span>
             </div>
           </div>
           @if (c.image) {
@@ -102,19 +103,19 @@ export function shareLabel(share: number): string {
         }
         <app-role-bar [rows]="v.rows" [emojis]="emojis()" />
 
-        @for (pf of v.parties; track pf.label) {
+        @for (pf of v.parties; track pf.key) {
             <section class="party">
-              <h3>{{ pf.label }}</h3>
+              <h3>{{ pf.key === 'pf1' ? t().compos.party1 : t().compos.party2 }}</h3>
               <ul class="lines">
                 @for (r of pf.rows; track $index) {
                   <li [style.--role-color]="color(r.role)">
                     <span class="role-tag">{{ emojis()[r.role] ?? '' }} {{ r.role }}</span>
-                    <span class="times num">×{{ r.count }}@if (c.custom_shares && r.share != null && r.share !== 1) {<span class="share" title="Parts de paie à /finacti"> · 💰 {{ shareLabel(r.share) }}</span>}</span>
+                    <span class="times num">×{{ r.count }}@if (c.custom_shares && r.share != null && r.share !== 1) {<span class="share" [title]="t().compos.shareTitle"> · 💰 {{ shareLabel(r.share) }}</span>}</span>
                     @if (buildOf(r); as b) {
                       <span class="build-name">{{ b.name }}</span>
                       <app-gear [items]="b.items" size="small" />
                     } @else {
-                      <span class="muted build-name">{{ r.weapon || 'Rôle libre' }}</span>
+                      <span class="muted build-name">{{ r.weapon || t().compos.freeRole }}</span>
                     }
                   </li>
                 }
@@ -125,23 +126,23 @@ export function shareLabel(share: number): string {
           <div class="foot row">
             @if (v.hasBuilds) {
               <button type="button" class="btn btn-sm" [attr.aria-expanded]="imageOf() === c.name"
-                      (click)="toggleImage(c.name)"><app-icon name="sparkles" [size]="14" /> Image</button>
+                      (click)="toggleImage(c.name)"><app-icon name="sparkles" [size]="14" /> {{ t().compos.image }}</button>
             }
             @if (canEdit()) {
-              <a class="btn btn-sm btn-ghost" [routerLink]="['/g', guildId(), 'compos', c.name, 'edit']"><app-icon name="edit" [size]="14" /> Modifier</a>
-              <button type="button" class="btn btn-sm btn-danger" (click)="remove(c)"><app-icon name="trash" [size]="14" /> Supprimer</button>
-              <button type="button" class="btn btn-sm btn-ghost" (click)="publish(c)"><app-icon name="book" [size]="14" /> Publier comme modèle</button>
+              <a class="btn btn-sm btn-ghost" [routerLink]="['/g', guildId(), 'compos', c.name, 'edit']"><app-icon name="edit" [size]="14" /> {{ t().common.edit }}</a>
+              <button type="button" class="btn btn-sm btn-danger" (click)="remove(c)"><app-icon name="trash" [size]="14" /> {{ t().common.delete }}</button>
+              <button type="button" class="btn btn-sm btn-ghost" (click)="publish(c)"><app-icon name="book" [size]="14" /> {{ t().compos.publish }}</button>
               @if (copyTargets().length) {
-                <label class="sr-only" [attr.for]="'copy-' + i">Copier vers un autre serveur</label>
+                <label class="sr-only" [attr.for]="'copy-' + i">{{ t().compos.copyTo }}</label>
                 <select class="select copy" [id]="'copy-' + i" (change)="copyTo(c, $any($event.target))">
-                  <option value="">Copier vers…</option>
+                  <option value="">{{ t().compos.copyToShort }}</option>
                   @for (g of copyTargets(); track g.id) { <option [value]="g.id">{{ g.name }}</option> }
                 </select>
               }
             }
           </div>
           @if (imageOf() === c.name) {
-            <app-image-share [src]="imageUrl(c.name)" [alt]="'Image de la compo ' + c.name" [fileName]="'compo-' + slug(c.name)" />
+            <app-image-share [src]="imageUrl(c.name)" [alt]="t().compos.imageAlt(c.name)" [fileName]="'compo-' + slug(c.name)" />
           }
         }
       </article>
@@ -177,6 +178,7 @@ export class ComposList {
   private readonly auth = inject(AuthService);
   private readonly items = inject(ItemsService);
   private readonly toast = inject(ToastService);
+  protected readonly t = inject(I18nService).t;
 
   readonly guildId = input.required<string>();
 
@@ -220,17 +222,17 @@ export class ComposList {
     if (!target) return;
     try {
       const { name } = await firstValueFrom(this.api.copyCompo(target.id, this.guildId(), c.name));
-      this.toast.success(`« ${name} » copiée vers ${target.name}, avec ses builds.`);
+      this.toast.success(this.t().compos.copied(name, target.name));
     } catch (err) {
       this.toast.error(errorMessage(err));
     }
   }
 
   async publish(c: Compo): Promise<void> {
-    if (!confirm(`Publier « ${c.name} » dans la bibliothèque ? Elle sera visible par toutes les guildes (instantané : tes modifications futures ne la changeront pas).`)) return;
+    if (!confirm(this.t().compos.confirmPublish(c.name))) return;
     try {
       await firstValueFrom(this.api.publishCompo(this.guildId(), c.name));
-      this.toast.success('Compo publiée dans les Modèles.');
+      this.toast.success(this.t().compos.published);
     } catch (err) {
       this.toast.error(errorMessage(err));
     }
@@ -244,11 +246,11 @@ export class ComposList {
     return this.api.compoImageUrl(this.guildId(), name);
   }
   async remove(compo: Compo): Promise<void> {
-    if (!confirm(`Supprimer la compo « ${compo.name} » ? Elle ne sera plus disponible dans /acti.`)) return;
+    if (!confirm(this.t().compos.confirmDelete(compo.name))) return;
     try {
       await firstValueFrom(this.api.deleteCompo(this.guildId(), compo.name));
       this.list.update((list) => list && { ...list, custom: list.custom.filter((c) => c.name !== compo.name) });
-      this.toast.success(`Compo « ${compo.name} » supprimée.`);
+      this.toast.success(this.t().compos.deleted(compo.name));
     } catch (err) {
       this.actionError.set(errorMessage(err));
     }

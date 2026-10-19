@@ -6,6 +6,7 @@ import { firstValueFrom } from 'rxjs';
 import { errorText } from '../../core/resource';
 import { ApiService, errorMessage } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
+import { I18nService } from '../../core/i18n/i18n';
 import { ItemsService } from '../../core/items.service';
 import { hasLevel } from '../../core/models';
 import { ToastService } from '../../core/toast.service';
@@ -19,7 +20,7 @@ import { roleColor } from '../../shared/roles';
   selector: 'app-build-detail',
   imports: [Gear, Icon, RouterLink],
   template: `
-    <a class="back muted" [routerLink]="['/g', guildId(), 'builds']"><app-icon name="chevron" [size]="14" class="flip" /> Tous les builds</a>
+    <a class="back muted" [routerLink]="['/g', guildId(), 'builds']"><app-icon name="chevron" [size]="14" class="flip" /> {{ t().builds.allBuilds }}</a>
 
     @if (error()) {
       <p class="alert">{{ error() }}</p>
@@ -31,13 +32,13 @@ import { roleColor } from '../../shared/roles';
             <span class="badge badge-outline">{{ b.type_acti }}</span>
           </div>
           <h1>{{ b.name }}</h1>
-          <p class="subtitle">par {{ b.created_by_name }}</p>
+          <p class="subtitle">{{ t().builds.by(b.created_by_name) }}</p>
         </div>
         <div class="row actions">
-          <button type="button" class="btn btn-sm" (click)="copyLink()"><app-icon name="swap" [size]="14" /> Copier le lien</button>
+          <button type="button" class="btn btn-sm" (click)="copyLink()"><app-icon name="swap" [size]="14" /> {{ t().builds.copyLink }}</button>
           @if (canEdit()) {
-            <button type="button" class="btn btn-sm" [disabled]="busy()" (click)="duplicate()"><app-icon name="plus" [size]="14" /> Dupliquer</button>
-            <a class="btn btn-sm btn-primary" [routerLink]="['/g', guildId(), 'builds', b.id, 'edit']"><app-icon name="edit" [size]="14" /> Modifier</a>
+            <button type="button" class="btn btn-sm" [disabled]="busy()" (click)="duplicate()"><app-icon name="plus" [size]="14" /> {{ t().builds.duplicate }}</button>
+            <a class="btn btn-sm btn-primary" [routerLink]="['/g', guildId(), 'builds', b.id, 'edit']"><app-icon name="edit" [size]="14" /> {{ t().common.edit }}</a>
           }
         </div>
       </div>
@@ -49,7 +50,7 @@ import { roleColor } from '../../shared/roles';
             <p class="muted names">{{ names }}</p>
           }
           @if (hasTiers()) {
-            <p class="tiers-hint faint">Tiers = minimum : un équivalent convient (8.1 = 7.2 = 6.3).</p>
+            <p class="tiers-hint faint">{{ t().builds.tiersHint }}</p>
           }
           @if (b.weapon) {
             <p class="weapon"><app-icon name="info" [size]="14" /> {{ b.weapon }}</p>
@@ -58,23 +59,23 @@ import { roleColor } from '../../shared/roles';
             <p class="notes">{{ b.notes }}</p>
           }
           <div class="used">
-            <h3>Utilisé dans</h3>
+            <h3>{{ t().builds.usedIn }}</h3>
             @if (b.used_by.length) {
               <ul>
                 @for (c of b.used_by; track c) { <li><span class="badge">{{ c }}</span></li> }
               </ul>
             } @else {
-              <p class="muted">Aucune compo pour l'instant.</p>
+              <p class="muted">{{ t().builds.noCompo }}</p>
             }
           </div>
         </div>
 
         <div class="card image-card">
-          <h3>Image du build <span class="muted">— la même qu'en MP avec /massup</span></h3>
-          <img [src]="imageUrl()" [alt]="'Équipement du build ' + b.name" class="preview" loading="lazy" />
+          <h3>{{ t().builds.imageTitle }} <span class="muted">{{ t().builds.imageHint }}</span></h3>
+          <img [src]="imageUrl()" [alt]="t().builds.imageAlt(b.name)" class="preview" loading="lazy" />
           <div class="row">
-            <a class="btn btn-sm" [href]="imageUrl()" [download]="fileName()">Télécharger</a>
-            <button type="button" class="btn btn-sm" (click)="copyImage()">Copier l'image</button>
+            <a class="btn btn-sm" [href]="imageUrl()" [download]="fileName()">{{ t().imageShare.download }}</a>
+            <button type="button" class="btn btn-sm" (click)="copyImage()">{{ t().imageShare.copy }}</button>
           </div>
         </div>
       </div>
@@ -112,6 +113,7 @@ export class BuildDetailPage {
   private readonly items = inject(ItemsService);
   private readonly toast = inject(ToastService);
   private readonly router = inject(Router);
+  protected readonly t = inject(I18nService).t;
   readonly guildId = input.required<string>();
   readonly buildId = input.required<string>();
 
@@ -131,7 +133,7 @@ export class BuildDetailPage {
     const b = this.build();
     if (!b) return '';
     return describeGear(b.items, (id) => this.items.get(id))
-      .map((g) => (g.free ? `${g.label} au choix` : g.items.map(choiceName).join(' ou ')))
+      .map((g) => (g.free ? this.t().builds.slotFree(g.label) : g.items.map(choiceName).join(this.t().gear.or)))
       .join(' · ');
   });
 
@@ -154,9 +156,9 @@ export class BuildDetailPage {
   async copyLink(): Promise<void> {
     try {
       await navigator.clipboard.writeText(location.href);
-      this.toast.success('Lien copié : colle-le dans Discord.');
+      this.toast.success(this.t().builds.linkCopied);
     } catch {
-      this.toast.error('Copie impossible : copie l’adresse de la page à la main.');
+      this.toast.error(this.t().builds.linkFailed);
     }
   }
 
@@ -164,9 +166,9 @@ export class BuildDetailPage {
     try {
       const blob = await (await fetch(this.imageUrl())).blob();
       await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-      this.toast.success('Image copiée : colle-la dans Discord.');
+      this.toast.success(this.t().imageShare.copied);
     } catch {
-      this.toast.error('Ton navigateur ne permet pas de copier l’image : utilise « Télécharger ».');
+      this.toast.error(this.t().imageShare.copyFailed);
     }
   }
 
@@ -174,7 +176,7 @@ export class BuildDetailPage {
     this.busy.set(true);
     try {
       const { id } = await firstValueFrom(this.api.duplicateBuild(this.guildId(), Number(this.buildId())));
-      this.toast.success('Build dupliqué : ajuste la copie.');
+      this.toast.success(this.t().builds.duplicated);
       await this.router.navigate(['/g', this.guildId(), 'builds', id, 'edit']);
     } catch (err) {
       this.toast.error(errorMessage(err));

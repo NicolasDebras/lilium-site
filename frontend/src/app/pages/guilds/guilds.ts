@@ -2,7 +2,7 @@ import { Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { AuthService } from '../../core/auth.service';
-import { LEVEL_LABEL } from '../../core/models';
+import { I18nService } from '../../core/i18n/i18n';
 import { Icon } from '../../shared/icon';
 
 @Component({
@@ -11,8 +11,8 @@ import { Icon } from '../../shared/icon';
   template: `
     <div class="page-head">
       <div>
-        <h1>Tes serveurs</h1>
-        <p class="subtitle">Choisis la guilde dont tu veux voir les builds, les compos et la BAL.</p>
+        <h1>{{ t().guilds.title }}</h1>
+        <p class="subtitle">{{ t().guilds.subtitle }}</p>
       </div>
     </div>
 
@@ -29,7 +29,7 @@ import { Icon } from '../../shared/icon';
               }
               <div class="info">
                 <strong>{{ g.name }}</strong>
-                <span class="badge">{{ levelLabel[g.level] }}</span>
+                <span class="badge">{{ t().levels[g.level] }}</span>
               </div>
               <app-icon name="chevron-right" class="go" />
             </div>
@@ -39,9 +39,8 @@ import { Icon } from '../../shared/icon';
     } @else {
       <div class="empty">
         <app-icon name="compass" [size]="36" />
-        <p><strong>Aucun serveur trouvé.</strong></p>
-        <p>Le site s'appuie sur ton profil de guilde : fais <code>/register ton_pseudo_ig</code>
-          sur le Discord de ta guilde, puis recharge cette page.</p>
+        <p><strong>{{ t().guilds.none }}</strong></p>
+        <p>{{ t().guilds.noneHelp[0] }}<code>{{ t().guilds.registerCmd }}</code>{{ t().guilds.noneHelp[1] }}</p>
       </div>
     }
   `,
@@ -60,5 +59,5 @@ import { Icon } from '../../shared/icon';
 })
 export class GuildsPage {
   protected readonly auth = inject(AuthService);
-  protected readonly levelLabel = LEVEL_LABEL;
+  protected readonly t = inject(I18nService).t;
 }

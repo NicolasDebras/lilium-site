@@ -1,7 +1,10 @@
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 
-import { JOKES, NotFoundPage, pickJoke } from './not-found';
+import { fr } from '../../core/i18n/fr';
+import { NotFoundPage, pickJoke } from './not-found';
+
+const JOKES = fr.notFound.jokes;
 
 describe('NotFoundPage (404)', () => {
   function render() {
@@ -30,8 +33,8 @@ describe('NotFoundPage (404)', () => {
 
   it('pickJoke ne renvoie jamais la blague précédente', () => {
     for (let i = 0; i < 20; i++) {
-      expect(pickJoke(JOKES[0])).not.toBe(JOKES[0]);
+      expect(pickJoke(0)).not.toBe(0);
     }
-    expect(pickJoke(undefined, () => 0)).toBe(JOKES[0]);
+    expect(pickJoke(undefined, () => 0)).toBe(0);
   });
 });

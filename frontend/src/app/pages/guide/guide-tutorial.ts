@@ -2,6 +2,7 @@ import { Component, computed, inject, input, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { AuthService } from '../../core/auth.service';
+import { I18nService } from '../../core/i18n/i18n';
 import { PublicInfoService } from '../../core/public-info.service';
 import { Icon } from '../../shared/icon';
 import { TUTORIAL } from './guide-content';
@@ -18,28 +19,28 @@ const DONE_KEY = 'lilium.guide.done';
     <div class="progress" role="progressbar" [attr.aria-valuenow]="doneCount()" aria-valuemin="0" [attr.aria-valuemax]="steps.length">
       <span [style.width.%]="doneCount() / steps.length * 100"></span>
     </div>
-    <p class="muted small">{{ doneCount() }} / {{ steps.length }} étapes faites — coche-les au fur et à mesure (mémorisé dans ce navigateur).</p>
+    <p class="muted small">{{ t().guide.progress(doneCount(), steps.length) }}</p>
     <ol class="steps">
       @for (s of steps; track s.id; let i = $index) {
         <li class="card step" [id]="s.id" [class.done]="done().has(s.id)">
           <label class="check">
             <input type="checkbox" [checked]="done().has(s.id)" (change)="toggle(s.id)" />
             <span class="num">@if (done().has(s.id)) {<app-icon name="check" [size]="14" />} @else {{{ i + 1 }}}</span>
-            <strong><app-hl [text]="s.title" [q]="query()" /></strong>
+            <strong><app-hl [text]="s.title[lang()]" [q]="query()" /></strong>
           </label>
-          <p><app-hl [text]="s.text" [q]="query()" /></p>
+          <p><app-hl [text]="s.text[lang()]" [q]="query()" /></p>
           @if (s.action === 'invite' && info.inviteUrl(); as url) {
-            <a class="btn btn-sm btn-primary" [href]="url" target="_blank" rel="noopener"><app-icon name="discord" [size]="16" /> Ajouter le bot</a>
+            <a class="btn btn-sm btn-primary" [href]="url" target="_blank" rel="noopener"><app-icon name="discord" [size]="16" /> {{ t().guide.addBot }}</a>
           }
           @if (s.action === 'login') {
             @if (auth.me()) {
-              <a class="btn btn-sm btn-primary" routerLink="/">Mes serveurs</a>
+              <a class="btn btn-sm btn-primary" routerLink="/">{{ t().landing.myServers }}</a>
             } @else {
-              <button type="button" class="btn btn-sm btn-primary" (click)="auth.login()"><app-icon name="discord" [size]="16" /> Se connecter avec Discord</button>
+              <button type="button" class="btn btn-sm btn-primary" (click)="auth.login()"><app-icon name="discord" [size]="16" /> {{ t().guide.loginDiscord }}</button>
             }
           }
-          @if (s.help) {
-            <details [open]="hasHit(s.help)"><summary>Ça ne marche pas ?</summary><p class="muted"><app-hl [text]="s.help" [q]="query()" /></p></details>
+          @if (s.help; as help) {
+            <details [open]="hasHit(help[lang()])"><summary>{{ t().guide.notWorking }}</summary><p class="muted"><app-hl [text]="help[lang()]" [q]="query()" /></p></details>
           }
         </li>
       }
@@ -66,6 +67,9 @@ const DONE_KEY = 'lilium.guide.done';
 export class GuideTutorial {
   protected readonly auth = inject(AuthService);
   protected readonly info = inject(PublicInfoService);
+  private readonly i18n = inject(I18nService);
+  protected readonly t = this.i18n.t;
+  protected readonly lang = this.i18n.lang;
 
   /** Recherche du guide : surligne les mots et ouvre les aides « Ça ne marche pas ? » qui correspondent. */
   readonly query = input('');

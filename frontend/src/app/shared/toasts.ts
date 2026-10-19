@@ -1,5 +1,6 @@
 import { Component, inject } from '@angular/core';
 
+import { I18nService } from '../core/i18n/i18n';
 import { ToastService } from '../core/toast.service';
 import { Icon } from './icon';
 
@@ -8,11 +9,11 @@ import { Icon } from './icon';
   imports: [Icon],
   template: `
     <div class="toasts" role="status" aria-live="polite">
-      @for (t of toasts.toasts(); track t.id) {
-        <div class="toast" [class]="'toast ' + t.kind">
-          <app-icon [name]="t.kind === 'error' ? 'alert' : t.kind === 'info' ? 'info' : 'check'" />
-          <span>{{ t.text }}</span>
-          <button type="button" class="x" aria-label="Fermer" (click)="toasts.dismiss(t.id)">
+      @for (toast of toasts.toasts(); track toast.id) {
+        <div class="toast" [class]="'toast ' + toast.kind">
+          <app-icon [name]="toast.kind === 'error' ? 'alert' : toast.kind === 'info' ? 'info' : 'check'" />
+          <span>{{ toast.text }}</span>
+          <button type="button" class="x" [attr.aria-label]="t().common.close" (click)="toasts.dismiss(toast.id)">
             <app-icon name="close" [size]="14" />
           </button>
         </div>
@@ -36,4 +37,5 @@ import { Icon } from './icon';
 })
 export class Toasts {
   protected readonly toasts = inject(ToastService);
+  protected readonly t = inject(I18nService).t;
 }

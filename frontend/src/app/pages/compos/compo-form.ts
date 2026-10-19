@@ -6,6 +6,7 @@ import { Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
 import { ApiService, errorMessage } from '../../core/api.service';
+import { I18nService, dict } from '../../core/i18n/i18n';
 import { ItemsService } from '../../core/items.service';
 import { Build, Compo, CompoInput, SlotRow } from '../../core/models';
 import { ToastService } from '../../core/toast.service';
@@ -50,8 +51,8 @@ function toModel({ total: _t, custom: _c, ...compo }: Compo): CompoModel {
   template: `
     <div class="page-head">
       <div>
-        <h1>{{ name() ? 'Modifier « ' + name() + ' »' : 'Nouvelle compo' }}</h1>
-        <p class="subtitle">Chaque ligne = un build × un nombre de joueurs. Un seul build par rôle et par party.</p>
+        <h1>{{ name() ? t().compos.editTitle(name()!) : t().compos.new }}</h1>
+        <p class="subtitle">{{ t().compos.formSubtitle }}</p>
       </div>
     </div>
 
@@ -63,11 +64,11 @@ function toModel({ total: _t, custom: _c, ...compo }: Compo): CompoModel {
       <div class="card form infos">
       <div class="row two">
         <div class="field">
-          <label for="name">Nom</label>
+          <label for="name">{{ t().compos.name }}</label>
           <input id="name" class="input" [formField]="form.name" />
         </div>
         <div class="field">
-          <label for="type">Type</label>
+          <label for="type">{{ t().compos.type }}</label>
           <select id="type" class="select" [formField]="form.type_acti">
             <option value="PVP">PVP</option>
             <option value="PVE">PVE</option>
@@ -76,21 +77,20 @@ function toModel({ total: _t, custom: _c, ...compo }: Compo): CompoModel {
       </div>
 
       <div class="field">
-        <label for="description">Description</label>
+        <label for="description">{{ t().compos.description }}</label>
         <textarea id="description" class="textarea" [formField]="form.description"></textarea>
       </div>
 
       <div class="field">
-        <label for="image">Image (URL, optionnel)</label>
+        <label for="image">{{ t().compos.imageUrl }}</label>
         <input id="image" class="input" type="url" [formField]="form.image" />
       </div>
 
       <label class="check" [class.on]="model().custom_shares">
         <span class="check-icon" aria-hidden="true">💰</span>
         <span class="check-text">
-          <strong>Parts de paie personnalisées</strong>
-          <span class="muted">Une colonne « Parts » par ligne pour /finacti : 1 par défaut, 2 = double part,
-            0,5 = demi-part, 0 = non payé.</span>
+          <strong>{{ t().compos.customShares }}</strong>
+          <span class="muted">{{ t().compos.customSharesHelp }}</span>
         </span>
         <input type="checkbox" role="switch" [formField]="form.custom_shares" />
       </label>
@@ -98,42 +98,42 @@ function toModel({ total: _t, custom: _c, ...compo }: Compo): CompoModel {
 
       <div class="card preview">
         <div class="preview-head">
-          <strong>Aperçu</strong>
-          <span class="badge">{{ totals().pf1 + totals().pf2 }} joueurs</span>
+          <strong>{{ t().compos.preview }}</strong>
+          <span class="badge">{{ t().common.players(totals().pf1 + totals().pf2) }}</span>
         </div>
         <app-role-bar [rows]="previewRows()" [emojis]="emojiMap()" />
-        <p class="muted help">Sur Discord, le joueur choisit son rôle et le build lui est imposé.</p>
+        <p class="muted help">{{ t().compos.previewHelp }}</p>
       </div>
 
       @for (pf of parties; track pf.key) {
         <fieldset class="party card">
-          <legend>{{ pf.label }} <span class="muted">— {{ totals()[pf.key] }} joueurs</span></legend>
+          <legend>{{ pf.key === 'pf1' ? t().compos.party1 : t().compos.party2Optional }} <span class="muted">— {{ t().common.players(totals()[pf.key]) }}</span></legend>
           @if (model().custom_shares && model()[pf.key].length) {
-            <div class="slot-head with-shares" aria-hidden="true"><span>Build</span><span>Joueurs</span><span>Parts</span></div>
+            <div class="slot-head with-shares" aria-hidden="true"><span>{{ t().compos.colBuild }}</span><span>{{ t().compos.colPlayers }}</span><span>{{ t().compos.colShares }}</span></div>
           }
           @for (field of form[pf.key]; track $index; let i = $index) {
             @let row = field().value();
             @let source = sourceOf(row);
             <div class="slot" [class.with-shares]="model().custom_shares" [attr.data-party]="pf.key">
-              <select class="select source" aria-label="Build" (change)="setSource(pf.key, i, $any($event.target).value)">
-                <option [value]="pick" disabled [selected]="source === pick">Choisir un build…</option>
+              <select class="select source" [attr.aria-label]="t().compos.colBuild" (change)="setSource(pf.key, i, $any($event.target).value)">
+                <option [value]="pick" disabled [selected]="source === pick">{{ t().compos.pickBuild }}</option>
                 @for (group of buildGroups(); track group.role) {
                   <optgroup [label]="group.role">
                     @for (b of group.builds; track b.id) {
                       @let taken = isBuildTaken(pf.key, b.id, i);
                       <option [value]="'' + b.id" [disabled]="taken" [selected]="source === '' + b.id">
-                        {{ b.name }}{{ taken ? ' (déjà dans cette party : augmente le nombre)' : '' }}
+                        {{ b.name }}{{ taken ? t().compos.taken : '' }}
                       </option>
                     }
                   </optgroup>
                 }
-                <option [value]="free" [selected]="source === free">Sans build (rôle libre)</option>
+                <option [value]="free" [selected]="source === free">{{ t().compos.noBuild }}</option>
               </select>
-              <input class="input count" type="number" aria-label="Nombre" [formField]="field.count" />
+              <input class="input count" type="number" [attr.aria-label]="t().compos.count" [formField]="field.count" />
               @if (model().custom_shares) {
-                <input class="input share" type="number" step="0.5" aria-label="Parts de paie" [formField]="field.share" />
+                <input class="input share" type="number" step="0.5" [attr.aria-label]="t().compos.sharesAria" [formField]="field.share" />
               }
-              <button type="button" class="btn btn-sm btn-danger" aria-label="Retirer la ligne"
+              <button type="button" class="btn btn-sm btn-danger" [attr.aria-label]="t().compos.removeRow"
                       (click)="removeRow(pf.key, i)">✕</button>
 
               @if (buildOf(row); as b) {
@@ -143,45 +143,45 @@ function toModel({ total: _t, custom: _c, ...compo }: Compo): CompoModel {
                 </div>
               } @else if (row.free) {
                 <div class="detail free-row">
-                  <select class="select" aria-label="Rôle" [formField]="field.role" (change)="sortRows(pf.key)">
-                    <option value="" disabled>Rôle…</option>
+                  <select class="select" [attr.aria-label]="t().compos.role" [formField]="field.role" (change)="sortRows(pf.key)">
+                    <option value="" disabled>{{ t().compos.rolePlaceholder }}</option>
                     @for (r of roles(); track r.name) {
                       <option [value]="r.name">{{ r.emoji }} {{ r.name }}</option>
                     }
                   </select>
-                  <input class="input" placeholder="Armes conseillées (optionnel)" aria-label="Armes" [formField]="field.weapon" />
+                  <input class="input" [placeholder]="t().compos.weaponsPlaceholder" [attr.aria-label]="t().compos.weapons" [formField]="field.weapon" />
                 </div>
               }
             </div>
           }
-          <button type="button" class="btn btn-sm btn-ghost add" (click)="addRow(pf.key)"><app-icon name="plus" [size]="14" /> Ajouter une ligne</button>
+          <button type="button" class="btn btn-sm btn-ghost add" (click)="addRow(pf.key)"><app-icon name="plus" [size]="14" /> {{ t().compos.addRow }}</button>
         </fieldset>
       }
 
       @if (!builds().length) {
-        <p class="muted">Aucun build sur ce serveur pour l'instant : crée d'abord des builds, ou utilise des lignes « sans build ».</p>
+        <p class="muted">{{ t().compos.noBuilds }}</p>
       }
 
       <section class="card image-preview">
         <div class="preview-head">
-          <h3>Image de la compo <span class="muted">— celle postée sous /acti</span></h3>
+          <h3>{{ t().compos.imageTitle }} <span class="muted">{{ t().compos.imageHint }}</span></h3>
           <button type="button" class="btn btn-sm" [disabled]="previewing() || form.name().invalid()" (click)="previewImage()">
-            <app-icon name="sparkles" [size]="14" /> {{ previewing() ? 'Génération…' : previewUrl() ? 'Régénérer' : "Aperçu de l'image" }}
+            <app-icon name="sparkles" [size]="14" /> {{ previewing() ? t().compos.generating : previewUrl() ? t().compos.regenerate : t().compos.previewImage }}
           </button>
         </div>
         @if (previewError()) {
           <p class="alert">{{ previewError() }}</p>
         } @else if (previewUrl(); as url) {
-          <app-image-share [src]="url" [alt]="'Aperçu de la compo ' + model().name" [fileName]="'compo-' + slug(model().name)" />
+          <app-image-share [src]="url" [alt]="t().compos.previewAlt(model().name)" [fileName]="'compo-' + slug(model().name)" />
         } @else {
-          <p class="muted help">Seuls les rôles liés à un build apparaissent sur l'image. Rien n'est enregistré.</p>
+          <p class="muted help">{{ t().compos.imageHelp }}</p>
         }
       </section>
 
       <div class="save-bar glass">
-        <a class="btn btn-ghost" [routerLink]="['/g', guildId(), 'compos']">Annuler</a>
+        <a class="btn btn-ghost" [routerLink]="['/g', guildId(), 'compos']">{{ t().common.cancel }}</a>
         <button type="submit" class="btn btn-primary" [disabled]="saving() || form().invalid()">
-          <app-icon name="check" /> {{ saving() ? 'Enregistrement…' : 'Enregistrer' }}
+          <app-icon name="check" /> {{ saving() ? t().builds.saving : t().common.save }}
         </button>
       </div>
     </form>
@@ -236,15 +236,13 @@ export class CompoForm {
   private readonly router = inject(Router);
   private readonly items = inject(ItemsService);
   private readonly toast = inject(ToastService);
+  protected readonly t = inject(I18nService).t;
 
   readonly guildId = input.required<string>();
   /** Présent en édition (/compos/:name/edit), absent en création. */
   readonly name = input<string>();
 
-  protected readonly parties: { key: Party; label: string }[] = [
-    { key: 'pf1', label: 'Party 1' },
-    { key: 'pf2', label: 'Party 2 (optionnelle)' },
-  ];
+  protected readonly parties: { key: Party }[] = [{ key: 'pf1' }, { key: 'pf2' }];
   protected readonly pick = PICK;
   protected readonly free = FREE;
 
@@ -396,7 +394,7 @@ export class CompoForm {
       await firstValueFrom(
         name ? this.api.updateCompo(this.guildId(), name, { ...body, name }) : this.api.createCompo(this.guildId(), body),
       );
-      this.toast.success(name ? 'Compo enregistrée.' : `Compo « ${body.name} » créée.`);
+      this.toast.success(name ? this.t().compos.saved : this.t().compos.created(body.name));
       await this.router.navigate(['/g', this.guildId(), 'compos']);
     } catch (err) {
       this.saveError.set(errorMessage(err));
@@ -416,7 +414,7 @@ export async function blobErrorMessage(err: unknown): Promise<string> {
     try {
       const detail = JSON.parse(await err.error.text())?.detail;
       if (typeof detail === 'string') return detail;
-      if (Array.isArray(detail)) return 'Compo invalide : vérifie les lignes (nombre de joueurs, rôles).';
+      if (Array.isArray(detail)) return dict().compos.invalid;
     } catch {
       /* corps non JSON : message générique */
     }

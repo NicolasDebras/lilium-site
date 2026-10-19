@@ -4,50 +4,52 @@ import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } fro
 import { filter, map } from 'rxjs';
 
 import { AuthService } from '../../core/auth.service';
-import { LEVEL_LABEL, hasLevel } from '../../core/models';
+import { I18nService } from '../../core/i18n/i18n';
+import { hasLevel } from '../../core/models';
 import { Icon, IconName } from '../../shared/icon';
+import { LangSwitch } from '../../shared/lang-switch';
 import { Logo } from '../../shared/logo';
 import { Toasts } from '../../shared/toasts';
 
 interface NavLink {
-  path: string;
-  label: string;
+  path: 'builds' | 'compos' | 'modeles' | 'bal' | 'admin';
   icon: IconName;
   admin?: boolean;
 }
 
 export const NAV_LINKS: NavLink[] = [
-  { path: 'builds', label: 'Builds', icon: 'sword' },
-  { path: 'compos', label: 'Compos', icon: 'users' },
-  { path: 'modeles', label: 'Modèles', icon: 'book' },
-  { path: 'bal', label: 'Ma BAL', icon: 'coins' },
-  { path: 'admin', label: 'Admin', icon: 'shield', admin: true },
+  { path: 'builds', icon: 'sword' },
+  { path: 'compos', icon: 'users' },
+  { path: 'modeles', icon: 'book' },
+  { path: 'bal', icon: 'coins' },
+  { path: 'admin', icon: 'shield', admin: true },
 ];
 
 /** Mise en page connectée : barre du haut (verre dépoli) + contenu + notifications. */
 @Component({
   selector: 'app-shell',
   host: { '(document:click)': 'closeMenus()', '(document:keydown.escape)': 'closeMenus()' },
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, Icon, Logo, Toasts],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, Icon, LangSwitch, Logo, Toasts],
   template: `
     <header class="nav glass">
       <div class="nav-inner">
-        <a routerLink="/" class="brand" aria-label="Accueil Lilium"><app-logo /></a>
+        <a routerLink="/" class="brand" [attr.aria-label]="t().shell.home"><app-logo /></a>
 
         @if (guild(); as g) {
           <nav class="links" [class.open]="menuOpen()" (click)="menuOpen.set(false)">
             @for (l of links(); track l.path) {
               <a [routerLink]="['/g', g.id, l.path]" routerLinkActive="active">
                 <app-icon [name]="l.icon" [size]="17" />
-                <span>{{ l.label }}</span>
+                <span>{{ t().shell.nav[l.path] }}</span>
               </a>
             }
           </nav>
         }
 
         <div class="right">
+          <app-lang-switch />
           @if (guild(); as g) {
-            <a routerLink="/" class="guild-pill" title="Changer de serveur">
+            <a routerLink="/" class="guild-pill" [title]="t().shell.switchGuild">
               @if (g.icon) {
                 <img [src]="g.icon" alt="" />
               } @else {
@@ -61,7 +63,7 @@ export const NAV_LINKS: NavLink[] = [
           @if (auth.user(); as u) {
             <div class="account">
               <button type="button" class="avatar-btn" (click)="toggleAccount($event)"
-                      [attr.aria-expanded]="accountOpen()" aria-haspopup="menu" aria-label="Mon compte">
+                      [attr.aria-expanded]="accountOpen()" aria-haspopup="menu" [attr.aria-label]="t().shell.account">
                 <img [src]="u.avatar_url" alt="" class="avatar" />
                 <span class="username">{{ u.username }}</span>
                 <app-icon name="chevron" [size]="14" />
@@ -72,17 +74,17 @@ export const NAV_LINKS: NavLink[] = [
                     <img [src]="u.avatar_url" alt="" class="avatar big" />
                     <div>
                       <strong>{{ u.username }}</strong>
-                      @if (guild(); as g) { <span class="muted level">{{ levelLabel[g.level] }} · {{ g.name }}</span> }
+                      @if (guild(); as g) { <span class="muted level">{{ t().levels[g.level] }} · {{ g.name }}</span> }
                     </div>
                   </div>
                   <a role="menuitem" routerLink="/" (click)="accountOpen.set(false)">
-                    <app-icon name="swap" [size]="16" /> Changer de serveur
+                    <app-icon name="swap" [size]="16" /> {{ t().shell.switchGuild }}
                   </a>
                   <a role="menuitem" routerLink="/guide" (click)="accountOpen.set(false)">
-                    <app-icon name="book" [size]="16" /> Guide
+                    <app-icon name="book" [size]="16" /> {{ t().shell.guide }}
                   </a>
                   <button type="button" role="menuitem" class="logout" (click)="logout()">
-                    <app-icon name="logout" [size]="16" /> Déconnexion
+                    <app-icon name="logout" [size]="16" /> {{ t().shell.logout }}
                   </button>
                 </div>
               }
@@ -91,7 +93,7 @@ export const NAV_LINKS: NavLink[] = [
 
           @if (guild()) {
             <button class="burger btn btn-sm btn-icon" type="button" (click)="menuOpen.set(!menuOpen())"
-                    [attr.aria-expanded]="menuOpen()" aria-label="Menu">
+                    [attr.aria-expanded]="menuOpen()" [attr.aria-label]="t().shell.menu">
               <app-icon [name]="menuOpen() ? 'close' : 'menu'" />
             </button>
           }
@@ -181,7 +183,7 @@ export class Shell {
   protected readonly isAdmin = computed(() => hasLevel(this.guild()?.level, 'admin'));
   protected readonly links = computed(() => NAV_LINKS.filter((l) => !l.admin || this.isAdmin()));
 
-  protected readonly levelLabel = LEVEL_LABEL;
+  protected readonly t = inject(I18nService).t;
 
   toggleAccount(event: Event): void {
     event.stopPropagation();
