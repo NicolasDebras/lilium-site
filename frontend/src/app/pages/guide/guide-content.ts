@@ -92,8 +92,8 @@ export const TUTORIAL: TutoStep[] = [
     id: 'bonus',
     title: { fr: 'Pour aller plus loin (optionnel)', en: 'Going further (optional)' },
     text: {
-      fr: 'Toujours dans /config : salons de bienvenue et d’au revoir, rôle donné à l’arrivée, vocaux temporaires, rôles à la carte, salon du récap recrutement, annonces des nouveautés du bot. Pour le recrutement externe : /setup-recrutement.',
-      en: 'Still in /config: welcome and goodbye channels, join role, temporary voice channels, self-assignable roles, recruitment recap channel, bot update announcements. For external recruitment: /setup-recrutement.',
+      fr: 'Toujours dans /config : salons de bienvenue et d’au revoir, rôle donné à l’arrivée, vocaux temporaires, rôles à la carte, salon du récap de 22h, vérif guilde Albion (membres hors guilde + renommage « [Guilde] Pseudo »), annonces des nouveautés du bot. Pour le recrutement externe : /setup-recrutement.',
+      en: 'Still in /config: welcome and goodbye channels, join role, temporary voice channels, self-assignable roles, 10 pm recap channel, Albion guild check (members out of the guild + "[Guild] Name" renaming), bot update announcements. For external recruitment: /setup-recrutement.',
     },
   },
 ];
