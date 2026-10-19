@@ -108,7 +108,7 @@ describe('CompoForm', () => {
   it('calcule le total en ignorant les lignes sans rôle', async () => {
     const { cmp } = await render();
     cmp.setSource('pf1', 0, '12');
-    cmp['model'].update((m) => ({ ...m, pf1: [{ ...m.pf1[0], count: 2 }, { build_id: null, role: '', count: 5, weapon: '' }] }));
+    cmp['model'].update((m) => ({ ...m, pf1: [{ ...m.pf1[0], count: 2 }, { build_id: null, role: '', count: 5, weapon: '', share: 1 }] }));
     expect(cmp.total('pf1')).toBe(2);
   });
 
@@ -136,12 +136,42 @@ describe('CompoForm', () => {
     const req = http.expectOne('/api/guilds/111/compos');
     expect(req.request.method).toBe('POST');
     expect(req.request.body.pf1).toEqual([
-      { build_id: 12, role: 'TANK', count: 1, weapon: 'Tank Masse' },
-      { build_id: null, role: 'CALLER', count: 1, weapon: 'Libre' },
+      { build_id: 12, role: 'TANK', count: 1, weapon: 'Tank Masse', share: 1 },
+      { build_id: null, role: 'CALLER', count: 1, weapon: 'Libre', share: 1 },
     ]);
+    expect(req.request.body.custom_shares).toBe(false);
     req.flush({ name: 'ZvZ' });
     await done;
     expect(navigate).toHaveBeenCalledWith(['/g', '111', 'compos']);
+  });
+
+  it('parts de paie : la case affiche la colonne « Parts » (1 par défaut) et les envoie', async () => {
+    const { fixture, cmp, http, el } = await render();
+    expect(el.querySelector('.slot input.share')).toBeNull();
+    el.querySelector<HTMLInputElement>('.check input[type="checkbox"]')!.click();
+    fixture.detectChanges();
+    expect(cmp['model']().custom_shares).toBe(true);
+    const share = el.querySelector<HTMLInputElement>('.slot input.share')!;
+    expect(share.value).toBe('1');
+    expect(el.querySelector('.slot-head')?.textContent).toContain('Parts');
+    share.value = '1.5';
+    share.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+
+    cmp['model'].update((m) => ({ ...m, name: 'ZvZ' }));
+    cmp.setSource('pf1', 0, '12');
+    const done = cmp.save();
+    const req = http.expectOne('/api/guilds/111/compos');
+    expect(req.request.body.custom_shares).toBe(true);
+    expect(req.request.body.pf1[0]).toMatchObject({ build_id: 12, share: 1.5 });
+    req.flush({ name: 'ZvZ' });
+    await done;
+  });
+
+  it('parts hors bornes : formulaire invalide', async () => {
+    const { cmp } = await render();
+    cmp['model'].update((m) => ({ ...m, name: 'ZvZ', custom_shares: true, pf1: [{ ...m.pf1[0], share: 11 }] }));
+    expect(cmp['form']().invalid()).toBe(true);
   });
 
   it('en édition : relit les builds des lignes puis fait un PUT', async () => {
@@ -154,6 +184,8 @@ describe('CompoForm', () => {
     expect(cmp.sourceOf(cmp['model']().pf1[1])).toBe('free');
     expect(el.querySelector('.free-row')).not.toBeNull();
     expect(el.querySelector<HTMLInputElement>('#name')!.disabled).toBe(true);   // pas de renommage
+    expect(cmp['model']().pf1[0].share).toBe(1);                                 // absent de l'API → 1
+    expect(cmp['model']().custom_shares).toBe(false);
 
     const done = cmp.save();
     const req = http.expectOne('/api/guilds/111/compos/ZvZ');
@@ -186,7 +218,7 @@ describe('CompoForm', () => {
     button.click();
     const req = http.expectOne('/api/guilds/111/compos/preview-image');
     expect(req.request.method).toBe('POST');
-    expect(req.request.body.pf1[0]).toEqual({ build_id: 12, role: 'TANK', count: 1, weapon: 'Tank Masse' });
+    expect(req.request.body.pf1[0]).toEqual({ build_id: 12, role: 'TANK', count: 1, weapon: 'Tank Masse', share: 1 });
     expect(req.request.body.pf1[0].free).toBeUndefined();
     req.flush(new Blob(['png'], { type: 'image/png' }));
     await new Promise((resolve) => setTimeout(resolve));

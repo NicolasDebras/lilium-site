@@ -97,6 +97,8 @@ export interface SlotRow {
   role: string;
   count: number | null;
   weapon: string;
+  /** Parts de paie à /finacti (1 par défaut) ; prises en compte si `Compo.custom_shares`. */
+  share?: number | null;
 }
 
 export interface Compo {
@@ -104,6 +106,8 @@ export interface Compo {
   description: string;
   type_acti: TypeActi;
   image: string;
+  /** Parts de paie personnalisées par ligne (sinon 1 part chacun). */
+  custom_shares?: boolean;
   pf1: SlotRow[];
   pf2: SlotRow[];
   total: number;

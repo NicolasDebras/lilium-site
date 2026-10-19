@@ -5,6 +5,7 @@ format des templates du bot (table custom_templates, même format que /addtempla
      "pf_1": {rôle: nb}, "weapon": {rôle: hint}, "builds": {rôle: build_id},
      "pf_2": {rôle: nb}, "weapon_pf2": {rôle: hint}, "builds_pf2": {rôle: build_id}}
     (les clés *_pf2 seulement si la PF2 n'est pas vide)
+    + "role_multipliers": {clé: parts} (clés PF2 préfixées « PF2: ») si les parts sont personnalisées
 
 Une ligne peut pointer vers un build (le rôle et le hint viennent alors du
 build : un seul build par rôle et par party, le joueur choisit son rôle et le
@@ -21,6 +22,7 @@ PARTIES = (
 
 # Le bot affiche une ligne par place : un nombre géant le ferait générer des millions de lignes.
 MAX_COUNT = 50
+MAX_SHARE = 10   # parts de paie max d'une ligne (/finacti : role_multipliers)
 
 
 class InvalidCompo(ValueError):
@@ -56,13 +58,24 @@ def _unique_key(base: str, wanted: str, taken: set[str]) -> str:
     return key
 
 
-def _party(rows: list[dict], builds_by_id: dict[int, dict], label: str
-           ) -> tuple[dict[str, int], dict[str, str], dict[str, int]]:
-    """Lignes du formulaire → (places, hints, builds) par clé de ligne, triées par rôle.
+def _share(value) -> float:
+    """Parts de paie d'une ligne (1 par défaut), bornées à [0, MAX_SHARE]."""
+    try:
+        share = round(float(value), 2)
+    except (TypeError, ValueError):
+        return 1.0
+    if not 0 <= share <= MAX_SHARE:
+        raise InvalidCompo(f"Le nombre de parts d'un rôle doit être entre 0 et {MAX_SHARE:g}.")
+    return share
+
+
+def _party(rows: list[dict], builds_by_id: dict[int, dict], label: str, with_shares: bool = False
+           ) ->tuple[dict[str, int], dict[str, str], dict[str, int], dict[str, float]]:
+    """Lignes du formulaire → (places, hints, builds, parts) par clé de ligne, triées par rôle.
     Plusieurs lignes du même rôle sont permises (ex. 2 tanks avec des builds différents) :
     la 1re garde la clé « TANK », les autres deviennent « TANK · Nom du build » (ou « TANK 2 »
     pour une ligne libre), car le bot range les inscriptions par clé."""
-    parsed = []   # (rôle de base, build_id | None, nombre, hint)
+    parsed = []   # (rôle de base, build_id | None, nombre, hint, parts)
     used_builds: set[int] = set()
     for row in rows:
         try:
@@ -90,24 +103,26 @@ def _party(rows: list[dict], builds_by_id: dict[int, dict], label: str
             role = base_role(str(row.get("role") or "").strip().upper())
             weapon = str(row.get("weapon") or "").strip()
         if role:
-            parsed.append((role, build_id, count, weapon))
+            parsed.append((role, build_id, count, weapon, _share(row.get("share", 1)) if with_shares else 1.0))
 
     parsed.sort(key=lambda p: role_rank(p[0]))   # tri stable : ordre de saisie gardé à rôle égal
     counts: dict[str, int] = {}
     weapons: dict[str, str] = {}
     builds: dict[str, int] = {}
-    for role, build_id, count, weapon in parsed:
+    shares: dict[str, float] = {}
+    for role, build_id, count, weapon, share in parsed:
         if role not in counts:
             key = role
         else:
             wanted = f"{role} · {weapon}" if build_id is not None and weapon else f"{role} 2"
             key = _unique_key(role, wanted, set(counts))
         counts[key] = count
+        shares[key] = share
         if weapon:
             weapons[key] = weapon
         if build_id is not None:
             builds[key] = build_id
-    return counts, weapons, builds
+    return counts, weapons, builds, shares
 
 
 def stored_ids(value) -> list[int]:
@@ -125,15 +140,29 @@ def build_template_entry(body: dict, builds_by_id: dict[int, dict] | None = None
         "type_acti":   body.get("type_acti") or "PVP",
         "image":       str(body.get("image") or "").strip(),
     }
+    multipliers: dict[str, float] = {}
+    with_shares = bool(body.get("custom_shares"))
     for site_key, count_key, weapon_key, builds_key, label in PARTIES:
-        counts, weapons, builds = _party(body.get(site_key) or [], builds_by_id, label)
+        counts, weapons, builds, shares = _party(body.get(site_key) or [], builds_by_id, label, with_shares)
         if site_key == "pf2" and not counts:
             continue
         entry[count_key] = counts
         entry[weapon_key] = weapons
         if builds:
             entry[builds_key] = builds
+        prefix = "PF2:" if site_key == "pf2" else ""
+        multipliers.update({prefix + key: share for key, share in shares.items()})
+    # Parts de paie (/finacti) : chaque clé de ligne, 1 comprise, pour qu'une ligne PF2 ne
+    # retombe pas sur la part du rôle de base PF1 (le bot cherche la clé exacte, puis le rôle).
+    if with_shares:
+        entry["role_multipliers"] = multipliers
     return entry
+
+
+def _row_share(multipliers: dict, key: str, pf2: bool) -> float:
+    """Même recherche que le bot (/finacti) : clé exacte (« PF2:… » en PF2), puis rôle de base."""
+    exact = f"PF2:{key}" if pf2 else key
+    return float(multipliers.get(exact, multipliers.get(base_role(key), 1)))
 
 
 def template_to_compo(name: str, data: dict, *, custom: bool) -> dict:
@@ -144,6 +173,8 @@ def template_to_compo(name: str, data: dict, *, custom: bool) -> dict:
         "image":       data.get("image", ""),
         "custom":      custom,
     }
+    multipliers = data.get("role_multipliers") or {}
+    compo["custom_shares"] = bool(multipliers)
     for site_key, count_key, weapon_key, builds_key, _ in PARTIES:
         weapons = data.get(weapon_key) or {}
         builds = data.get(builds_key) or {}
@@ -152,7 +183,8 @@ def template_to_compo(name: str, data: dict, *, custom: bool) -> dict:
             ids = stored_ids(builds.get(key))
             # role = rôle de base (formulaire) ; slot_key = clé réelle (« TANK · Main tank »), pour l'affichage
             rows.append({"role": base_role(key), "slot_key": key, "count": count, "weapon": weapons.get(key, ""),
-                         "build_id": ids[0] if ids else None})
+                         "build_id": ids[0] if ids else None,
+                         "share": _row_share(multipliers, key, site_key == "pf2")})
         compo[site_key] = sorted(rows, key=lambda r: role_rank(r["role"]))
     compo["total"] = sum(r["count"] for r in compo["pf1"] + compo["pf2"])
     return compo

@@ -22,6 +22,8 @@ class SlotRow(BaseModel):
     role: str = Field(default="", max_length=50)
     count: int | Annotated[str, Field(max_length=6)] | None = None
     weapon: str = Field(default="", max_length=200)
+    # Parts de paie à /finacti (prises en compte seulement si CompoIn.custom_shares)
+    share: float | None = None
 
 
 class CompoIn(BaseModel):
@@ -29,6 +31,7 @@ class CompoIn(BaseModel):
     description: str = Field(default="", max_length=2000)
     type_acti: Literal["PVP", "PVE"] = "PVP"
     image: str = Field(default="", max_length=500)
+    custom_shares: bool = False
     pf1: list[SlotRow] = Field(default=[], max_length=MAX_ROWS)
     pf2: list[SlotRow] = Field(default=[], max_length=MAX_ROWS)
 

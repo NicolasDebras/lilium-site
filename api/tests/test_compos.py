@@ -121,17 +121,17 @@ def test_template_to_compo_roundtrip_with_builds():
             "pf2": [{"build_id": 20, "count": 5}]}
     compo = template_to_compo("ZvZ", build_template_entry(body, BUILDS), custom=True)
     assert compo["pf1"] == [
-        {"role": "TANK", "slot_key": "TANK", "count": 2, "weapon": "Tank Masse", "build_id": 12},
-        {"role": "CALLER", "slot_key": "CALLER", "count": 1, "weapon": "Libre", "build_id": None},
+        {"role": "TANK", "slot_key": "TANK", "count": 2, "weapon": "Tank Masse", "build_id": 12, "share": 1},
+        {"role": "CALLER", "slot_key": "CALLER", "count": 1, "weapon": "Libre", "build_id": None, "share": 1},
     ]
-    assert compo["pf2"] == [{"role": "DPS", "slot_key": "DPS", "count": 5, "weapon": "DPS Arc", "build_id": 20}]
+    assert compo["pf2"] == [{"role": "DPS", "slot_key": "DPS", "count": 5, "weapon": "DPS Arc", "build_id": 20, "share": 1}]
     assert compo["total"] == 8
     assert compo["custom"] is True
 
 
 def test_template_to_compo_handles_bot_format_without_weapons():
     compo = template_to_compo("Donjon", {"pf_1": {"TANK": 1, "DPS": 3}}, custom=False)
-    assert compo["pf1"][1] == {"role": "DPS", "slot_key": "DPS", "count": 3, "weapon": "", "build_id": None}
+    assert compo["pf1"][1] == {"role": "DPS", "slot_key": "DPS", "count": 3, "weapon": "", "build_id": None, "share": 1}
     assert compo["pf2"] == [] and compo["description"] == ""
 
 
@@ -159,3 +159,54 @@ def test_rename_keeps_line_key_and_updates_hint():
     entry = build_template_entry({"pf1": [{"build_id": 12, "count": 1}, {"build_id": 13, "count": 1}]}, builds)
     renamed = rename_build(entry, 13, "Off tank")
     assert renamed["weapon"]["TANK · Main tank"] == "Off tank"     # clé gardée : acti en cours intacte
+
+
+# ── Parts de paie (/finacti) ─────────────────────────────────────────────────
+
+def test_custom_shares_stored_per_line_key_with_pf2_prefix():
+    builds = {**BUILDS, 13: {"id": 13, "name": "Main tank", "role": "TANK"}}
+    entry = build_template_entry({
+        "custom_shares": True,
+        "pf1": [{"build_id": 12, "count": 1, "share": 2}, {"build_id": 13, "count": 1, "share": 1.5},
+                {"role": "DPS", "count": 3}],
+        "pf2": [{"role": "TANK", "count": 1, "share": 1}],
+    }, builds)
+    assert entry["role_multipliers"] == {"TANK": 2, "TANK · Main tank": 1.5, "DPS": 1, "PF2:TANK": 1}
+
+
+def test_shares_ignored_when_not_custom():
+    entry = build_template_entry({"pf1": [{"role": "TANK", "count": 1, "share": 99}]})
+    assert "role_multipliers" not in entry
+
+
+def test_share_out_of_range_rejected():
+    with pytest.raises(InvalidCompo):
+        build_template_entry({"custom_shares": True, "pf1": [{"role": "TANK", "count": 1, "share": 11}]})
+    with pytest.raises(InvalidCompo):
+        build_template_entry({"custom_shares": True, "pf1": [{"role": "TANK", "count": 1, "share": -1}]})
+
+
+def test_shares_roundtrip_to_compo():
+    entry = build_template_entry({
+        "custom_shares": True,
+        "pf1": [{"role": "TANK", "count": 1, "share": 2}, {"role": "DPS", "count": 2}],
+        "pf2": [{"role": "TANK", "count": 1, "share": 0.5}],
+    })
+    compo = template_to_compo("C", entry, custom=True)
+    assert compo["custom_shares"] is True
+    assert [r["share"] for r in compo["pf1"]] == [2, 1]
+    assert compo["pf2"][0]["share"] == 0.5
+
+
+def test_compo_without_multipliers_has_default_shares():
+    compo = template_to_compo("C", build_template_entry({"pf1": [{"role": "TANK", "count": 1}]}), custom=True)
+    assert compo["custom_shares"] is False
+    assert compo["pf1"][0]["share"] == 1
+
+
+def test_compo_share_falls_back_to_base_role_like_the_bot():
+    # Template écrit à la main (/addtemplate) : multiplicateur par rôle de base
+    data = {"pf_1": {"SCOUT": 1, "TANK · Off": 1}, "role_multipliers": {"SCOUT": 1.5, "TANK": 2}}
+    compo = template_to_compo("C", data, custom=True)
+    shares = {r["slot_key"]: r["share"] for r in compo["pf1"]}
+    assert shares == {"SCOUT": 1.5, "TANK · Off": 2}

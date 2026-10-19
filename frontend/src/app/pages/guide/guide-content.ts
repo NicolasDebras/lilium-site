@@ -121,6 +121,7 @@ export const SITE: Article[] = [
   { id: 'compos', title: 'Compos', paragraphs: [
     'Une compo = des lignes « build × nombre de joueurs » en Party 1 et/ou Party 2. Elle apparaît dans /acti sous 2 minutes.',
     'Plusieurs lignes du même rôle (ex. 1 Def tank + 1 Main tank) : « Ajouter une ligne » autant que tu veux, elles se trient toutes seules. Dans /acti, chaque ligne est un rôle séparé (« TANK · Main tank ») avec son build.',
+    'Parts de paie personnalisées : coche la case pour ajouter une colonne « Parts » à chaque ligne (1 par défaut ; 2 = double part, 0,5 = demi-part, 0 = non payé). /finacti partage le butin selon ces parts ; l’embed de l’acti les affiche (« 💰 2 parts »).',
     'Bouton Image : l’image postée sous /acti, à télécharger ou copier. Copier vers… : la recrée dans un autre de tes serveurs.',
   ] },
   { id: 'modeles', title: 'Modèles (bibliothèque)', paragraphs: [

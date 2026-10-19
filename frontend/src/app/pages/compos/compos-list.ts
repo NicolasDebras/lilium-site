@@ -34,6 +34,11 @@ function toCard(compo: Compo): CompoCard {
   return { compo, rows, parties, hasBuilds: rows.some((r) => r.build_id != null) };
 }
 
+/** Parts de paie d'une ligne, à la française : « 0,5 part », « 2 parts ». */
+export function shareLabel(share: number): string {
+  return `${String(share).replace('.', ',')} part${share >= 2 ? 's' : ''}`;
+}
+
 @Component({
   selector: 'app-compos-list',
   imports: [NgTemplateOutlet, RouterLink, Gear, Icon, ImageShare, RoleBar],
@@ -104,7 +109,7 @@ function toCard(compo: Compo): CompoCard {
                 @for (r of pf.rows; track $index) {
                   <li [style.--role-color]="color(r.role)">
                     <span class="role-tag">{{ emojis()[r.role] ?? '' }} {{ r.role }}</span>
-                    <span class="times num">×{{ r.count }}</span>
+                    <span class="times num">×{{ r.count }}@if (c.custom_shares && r.share != null && r.share !== 1) {<span class="share" title="Parts de paie à /finacti"> · 💰 {{ shareLabel(r.share) }}</span>}</span>
                     @if (buildOf(r); as b) {
                       <span class="build-name">{{ b.name }}</span>
                       <app-gear [items]="b.items" size="small" />
@@ -160,7 +165,8 @@ function toCard(compo: Compo): CompoCard {
                 padding: 8px 10px; border-radius: 10px; background: var(--bg-2); border: 1px solid var(--border-soft);
                 border-left: 3px solid var(--role-color); }
     .lines li app-gear { grid-column: 1 / -1; }
-    .times { color: var(--text-muted); font-weight: 600; font-size: .85rem; }
+    .times { color: var(--text-muted); font-weight: 600; font-size: .85rem; white-space: nowrap; }
+    .share { color: var(--lilac); }
     .build-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .9rem; }
     .foot { padding-top: 12px; border-top: 1px solid var(--border-soft); flex-wrap: wrap; }
     .copy { width: auto; }
@@ -205,6 +211,8 @@ export class ComposList {
   color(role: string): string {
     return roleColor(role);
   }
+
+  protected readonly shareLabel = shareLabel;
 
   async copyTo(c: Compo, select: HTMLSelectElement): Promise<void> {
     const target = this.copyTargets().find((g) => g.id === select.value);

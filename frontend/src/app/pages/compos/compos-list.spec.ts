@@ -5,7 +5,7 @@ import { provideRouter } from '@angular/router';
 
 import { fakeAuth } from '../../../testing/fake-auth';
 import { Compo, CompoList, Level } from '../../core/models';
-import { ComposList } from './compos-list';
+import { ComposList, shareLabel } from './compos-list';
 
 async function settle(fixture: { whenStable(): Promise<unknown>; detectChanges(): void }) {
   await new Promise((resolve) => setTimeout(resolve));
@@ -88,5 +88,33 @@ describe('ComposList — image de la compo', () => {
     vi.spyOn(window, 'confirm').mockReturnValue(true);
     [...el.querySelectorAll('button')].find((b) => b.textContent?.includes('Publier'))!.click();
     http.expectOne('/api/guilds/111/compos/ZvZ/publish');
+  });
+});
+
+describe('ComposList — parts de paie', () => {
+  it('shareLabel : virgule française, pluriel à partir de 2', () => {
+    expect(shareLabel(0.5)).toBe('0,5 part');
+    expect(shareLabel(1.5)).toBe('1,5 part');
+    expect(shareLabel(2)).toBe('2 parts');
+  });
+
+  it('affiche les parts ≠ 1 seulement quand elles sont personnalisées', async () => {
+    TestBed.configureTestingModule({
+      imports: [ComposList],
+      providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting(), fakeAuth({ levels: { '111': 'member' } })],
+    });
+    const fixture = TestBed.createComponent(ComposList);
+    fixture.componentRef.setInput('guildId', '111');
+    fixture.detectChanges();
+    const shared = { ...compo('Parts', false), custom_shares: true,
+      pf1: [{ build_id: null, role: 'TANK', count: 1, weapon: '', share: 2 },
+            { build_id: null, role: 'DPS', count: 3, weapon: '', share: 1 }] } as Compo;
+    const plain = { ...compo('Sans', false), pf1: [{ build_id: null, role: 'TANK', count: 1, weapon: '', share: 2 }] } as Compo;
+    const http = TestBed.inject(HttpTestingController);
+    http.match(() => true).forEach((req) =>
+      req.flush(req.request.url === '/api/guilds/111/compos' ? { custom: [shared, plain], defaults: [] } : []));
+    await settle(fixture);
+    const shares = [...(fixture.nativeElement as HTMLElement).querySelectorAll('.lines .share')].map((s) => s.textContent);
+    expect(shares).toEqual([' · 💰 2 parts']);
   });
 });

@@ -22,22 +22,26 @@ const PICK = '';
 const FREE = 'free';
 
 /** Ligne du formulaire : `free` (côté écran seulement) = l'utilisateur a choisi « sans build ». */
-type Row = SlotRow & { free?: boolean };
+type Row = SlotRow & { free?: boolean; share: number | null };
 
-type CompoModel = CompoInput & { pf1: Row[]; pf2: Row[] };
+type CompoModel = Omit<CompoInput, 'custom_shares' | 'pf1' | 'pf2'> & { custom_shares: boolean; pf1: Row[]; pf2: Row[] };
+
+/** Parts de paie max d'une ligne (même borne que l'API). */
+export const MAX_SHARE = 10;
 
 function emptyRow(): Row {
-  return { build_id: null, role: '', count: 1, weapon: '' };
+  return { build_id: null, role: '', count: 1, weapon: '', share: 1 };
 }
 
 function emptyCompo(): CompoModel {
-  return { name: '', description: '', type_acti: 'PVP', image: '', pf1: [emptyRow()], pf2: [] };
+  return { name: '', description: '', type_acti: 'PVP', image: '', custom_shares: false, pf1: [emptyRow()], pf2: [] };
 }
 
 /** Compo de l'API → valeurs du formulaire (une ligne sans build est une ligne « sans build » choisie). */
 function toModel({ total: _t, custom: _c, ...compo }: Compo): CompoModel {
-  const withMode = (rows: SlotRow[]): Row[] => rows.map(({ slot_key: _k, ...r }) => ({ ...r, free: r.build_id == null }));
-  return { ...compo, pf1: withMode(compo.pf1), pf2: withMode(compo.pf2) };
+  const withMode = (rows: SlotRow[]): Row[] =>
+    rows.map(({ slot_key: _k, ...r }) => ({ ...r, share: r.share ?? 1, free: r.build_id == null }));
+  return { ...compo, custom_shares: !!compo.custom_shares, pf1: withMode(compo.pf1), pf2: withMode(compo.pf2) };
 }
 
 @Component({
@@ -80,6 +84,15 @@ function toModel({ total: _t, custom: _c, ...compo }: Compo): CompoModel {
         <label for="image">Image (URL, optionnel)</label>
         <input id="image" class="input" type="url" [formField]="form.image" />
       </div>
+
+      <div class="field">
+        <label class="check">
+          <input type="checkbox" [formField]="form.custom_shares" />
+          Parts de paie personnalisées
+        </label>
+        <p class="muted help">Ajoute une colonne « Parts » à chaque ligne : nombre de parts du rôle à /finacti
+          (1 par défaut, 2 = double part, 0,5 = demi-part, 0 = non payé).</p>
+      </div>
       </div>
 
       <div class="card preview">
@@ -94,10 +107,13 @@ function toModel({ total: _t, custom: _c, ...compo }: Compo): CompoModel {
       @for (pf of parties; track pf.key) {
         <fieldset class="party card">
           <legend>{{ pf.label }} <span class="muted">— {{ totals()[pf.key] }} joueurs</span></legend>
+          @if (model().custom_shares && model()[pf.key].length) {
+            <div class="slot-head with-shares" aria-hidden="true"><span>Build</span><span>Joueurs</span><span>Parts</span></div>
+          }
           @for (field of form[pf.key]; track $index; let i = $index) {
             @let row = field().value();
             @let source = sourceOf(row);
-            <div class="slot" [attr.data-party]="pf.key">
+            <div class="slot" [class.with-shares]="model().custom_shares" [attr.data-party]="pf.key">
               <select class="select source" aria-label="Build" (change)="setSource(pf.key, i, $any($event.target).value)">
                 <option [value]="pick" disabled [selected]="source === pick">Choisir un build…</option>
                 @for (group of buildGroups(); track group.role) {
@@ -113,6 +129,9 @@ function toModel({ total: _t, custom: _c, ...compo }: Compo): CompoModel {
                 <option [value]="free" [selected]="source === free">Sans build (rôle libre)</option>
               </select>
               <input class="input count" type="number" aria-label="Nombre" [formField]="field.count" />
+              @if (model().custom_shares) {
+                <input class="input share" type="number" step="0.5" aria-label="Parts de paie" [formField]="field.share" />
+              }
               <button type="button" class="btn btn-sm btn-danger" aria-label="Retirer la ligne"
                       (click)="removeRow(pf.key, i)">✕</button>
 
@@ -180,6 +199,10 @@ function toModel({ total: _t, custom: _c, ...compo }: Compo): CompoModel {
                 padding: 10px; border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-lg); }
     .slot { display: grid; grid-template-columns: minmax(160px, 1fr) 80px auto; gap: 8px; align-items: center;
             padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+    .slot.with-shares, .slot-head { grid-template-columns: minmax(0, 1fr) 68px 68px 34px; }
+    .slot-head { display: grid; gap: 8px; font-size: .75rem; font-weight: 600; text-transform: uppercase;
+                 letter-spacing: .06em; color: var(--text-faint); }
+    .check { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }
     .detail { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
     .free-row .select { width: auto; min-width: 150px; }
     .free-row .input { flex: 1 1 200px; }
@@ -233,6 +256,8 @@ export class CompoForm {
       applyEach(party, (row) => {
         min(row.count, 1);
         max(row.count, 50);
+        min(row.share, 0);
+        max(row.share, MAX_SHARE);
       });
     }
   });
@@ -316,7 +341,8 @@ export class CompoForm {
   private body(): CompoInput {
     const { pf1, pf2, ...rest } = this.model();
     // Champs explicites : ni « free » ni l'identifiant interne que les signal forms posent sur chaque ligne.
-    const clean = (rows: Row[]): SlotRow[] => rows.map(({ build_id, role, count, weapon }) => ({ build_id, role, count, weapon }));
+    const clean = (rows: Row[]): SlotRow[] =>
+      rows.map(({ build_id, role, count, weapon, share }) => ({ build_id, role, count, weapon, share: share ?? 1 }));
     return { ...rest, pf1: clean(pf1), pf2: clean(pf2) };
   }
 
