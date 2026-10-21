@@ -151,7 +151,10 @@ export function shareLabel(share: number): string {
   styles: `
     code { color: var(--lilac); }
     .tall { min-height: 260px; }
-    .compos { grid-template-columns: repeat(auto-fill, minmax(min(100%, 460px), 1fr)); }
+    /* Colonnes « masonry » : chaque carte garde sa hauteur et les courtes s'empilent
+       (en grille, une petite compo s'étirait à la hauteur de sa voisine → gros trou vide). */
+    .grid.compos { display: block; columns: auto 460px; column-gap: 18px; }
+    .compos > .compo { break-inside: avoid; margin-bottom: 18px; }
     .compo { display: grid; gap: 14px; align-content: start; }
     .head { display: flex; gap: 14px; justify-content: space-between; align-items: flex-start; }
     .title { display: grid; gap: 8px; min-width: 0; }
