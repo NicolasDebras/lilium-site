@@ -12,9 +12,10 @@ describe('tiers', () => {
   });
 
   it('tiers T4–T8 qui existent pour l’objet ; enchantement .4 (équipement) ou .3 (consommable)', () => {
-    expect(allowedTiers({ tiers: [3, 4, 5, 6, 7, 8] })).toEqual([4, 5, 6, 7, 8]);
-    expect(allowedTiers({ tiers: [2, 4, 6] })).toEqual([4, 6]);
-    expect(allowedTiers({ tiers: [1, 2, 3] })).toEqual([]);
+    expect(allowedTiers({ slot: 'head', tiers: [3, 4, 5, 6, 7, 8] })).toEqual([4, 5, 6, 7, 8]);
+    expect(allowedTiers({ slot: 'potion', tiers: [2, 4, 6] })).toEqual([4, 6]);
+    expect(allowedTiers({ slot: 'food', tiers: [1, 2, 3] })).toEqual([]);
+    expect(allowedTiers({ slot: 'potion', tiers: [3, 5, 7] })).toEqual([3, 5, 7]);   // potions T3
     expect(maxEnchant({ slot: 'head' })).toBe(4);
     expect(maxEnchant({ slot: 'food' })).toBe(3);
     expect(maxEnchant({ slot: 'potion' })).toBe(3);

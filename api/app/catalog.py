@@ -184,6 +184,7 @@ def item_name(item: dict) -> str:
 # Tier + enchantement d'un choix : « T8_MAIN_SWORD@1 ». Aucun id de base ne commence par « T<n>_ ».
 _CHOICE = re.compile(r"^T([1-8])_([A-Z0-9_]+?)(?:@([1-4]))?$")
 BUILD_TIERS = (4, 5, 6, 7, 8)
+POTION_TIERS = (3, *BUILD_TIERS)   # potions T3 : résistance, gigantisme, purification…
 
 
 def parse_choice(value: str) -> tuple[str, int | None, int]:
@@ -195,7 +196,8 @@ def parse_choice(value: str) -> tuple[str, int | None, int]:
 
 
 def allowed_tiers(item: dict) -> list[int]:
-    return [t for t in BUILD_TIERS if t in item.get("tiers", [])]
+    tiers = POTION_TIERS if item.get("slot") == "potion" else BUILD_TIERS
+    return [t for t in tiers if t in item.get("tiers", [])]
 
 
 def max_enchant(item: dict) -> int:

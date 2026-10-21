@@ -225,6 +225,17 @@ def test_validate_rejects_enchant_above_max(catalog):
     assert validate_build_items({"mainhand": ["T8_MAIN_SWORD@4"]}, catalog)  # équipement : .4
 
 
+def test_validate_accepts_t3_potion_only():
+    catalog = {
+        "POTION_STONESKIN": {"id": "POTION_STONESKIN", "name": "Potion de résistance", "slot": "potion",
+                             "tiers": [3, 5, 7], "two_handed": False},
+        "MEAL_OMELETTE": {"id": "MEAL_OMELETTE", "name": "Omelette", "slot": "food", "tiers": [3, 5, 7], "two_handed": False},
+    }
+    assert validate_build_items({"potion": ["T3_POTION_STONESKIN@1"]}, catalog)
+    with pytest.raises(InvalidItems, match="T3"):
+        validate_build_items({"food": ["T3_MEAL_OMELETTE"]}, catalog)
+
+
 def test_validate_tiered_item_in_wrong_slot_or_duplicated(catalog):
     with pytest.raises(InvalidItems, match="ne se porte pas"):
         validate_build_items({"head": ["T8_MAIN_SWORD@1"]}, catalog)

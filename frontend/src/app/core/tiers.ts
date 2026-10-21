@@ -31,8 +31,11 @@ function isConsumable(item: Pick<Item, 'slot'>): boolean {
   return item.slot === 'food' || item.slot === 'potion';
 }
 
-export function allowedTiers(item: Pick<Item, 'tiers'>): number[] {
-  return BUILD_TIERS.filter((t) => item.tiers.includes(t));
+/** Potions : le T3 existe aussi (résistance, gigantisme, purification…). */
+export const POTION_TIERS = [3, ...BUILD_TIERS];
+
+export function allowedTiers(item: Pick<Item, 'tiers' | 'slot'>): number[] {
+  return (item.slot === 'potion' ? POTION_TIERS : BUILD_TIERS).filter((t) => item.tiers.includes(t));
 }
 
 export function maxEnchant(item: Pick<Item, 'slot'>): number {
