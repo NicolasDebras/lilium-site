@@ -154,16 +154,17 @@ describe('CompoForm', () => {
     const share = el.querySelector<HTMLInputElement>('.slot input.share')!;
     expect(share.value).toBe('1');
     expect(el.querySelector('.slot-head')?.textContent).toContain('Parts');
-    share.value = '1.5';
+    share.value = '1.1';   // pas de 0,01 (comme l'API) : 1,1 ou 1,25 acceptés par le navigateur
     share.dispatchEvent(new Event('input'));
     fixture.detectChanges();
+    expect(share.validity.valid).toBe(true);
 
     cmp['model'].update((m) => ({ ...m, name: 'ZvZ' }));
     cmp.setSource('pf1', 0, '12');
     const done = cmp.save();
     const req = http.expectOne('/api/guilds/111/compos');
     expect(req.request.body.custom_shares).toBe(true);
-    expect(req.request.body.pf1[0]).toMatchObject({ build_id: 12, share: 1.5 });
+    expect(req.request.body.pf1[0]).toMatchObject({ build_id: 12, share: 1.1 });
     req.flush({ name: 'ZvZ' });
     await done;
   });

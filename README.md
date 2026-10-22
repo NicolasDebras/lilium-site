@@ -202,7 +202,7 @@ Le site est en **français et en anglais**, sans librairie ni build par langue (
 Thème noir & lilas refondu (`frontend/src/styles.scss`, toutes les couleurs en variables) : halos lilas, surfaces en verre dépoli, boutons en dégradé, pastilles de filtre, sélecteur segmenté, chargements animés (shimmer), **notifications** (« Build enregistré », « Supprimé »…), icônes SVG maison (`shared/icon.ts`) et logo lys (`shared/logo.ts`, aussi en favicon). Couleur par rôle (TANK bleu, HEAL vert, DPS orange, SUPPORT violet), toujours accompagnée du nom ou de l'emoji.
 - **Barre du haut** : liens avec icônes et soulignement animé, pastille du serveur, menu du compte (changer de serveur, déconnexion), menu burger sur mobile.
 - **Builds** : cartes avec liseré de la couleur du rôle et **mini-inventaire 3×3** disposé comme en jeu ; filtres par rôle / PVP-PVE en pastilles.
-- **Compos** : **barre de composition** par rôle, lignes build + icônes par party ; aperçu en direct dans le formulaire. Case **« Parts de paie personnalisées »** : colonne « Parts » par ligne (1 par défaut, 0 à 10), enregistrée dans `role_multipliers` du template et appliquée par `/finacti` ; la liste affiche les parts ≠ 1 (« 💰 2 parts »).
+- **Compos** : **barre de composition** par rôle, lignes build + icônes par party ; aperçu en direct dans le formulaire. Case **« Parts de paie personnalisées »** : colonne « Parts » par ligne (1 par défaut, 0 à 10, au centième près : 1,1 ou 1,25), enregistrée dans `role_multipliers` du template et appliquée par `/finacti` ; la liste affiche les parts ≠ 1 (« 💰 2 parts »).
 - **Formulaire de build** : inventaire grand format à gauche, champs à droite, barre d'enregistrement collante.
 - **Page 404** avec une blague Albion tirée au hasard (« Une autre blague »).
 

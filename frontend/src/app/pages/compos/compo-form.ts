@@ -131,7 +131,7 @@ function toModel({ total: _t, custom: _c, ...compo }: Compo): CompoModel {
               </select>
               <input class="input count" type="number" [attr.aria-label]="t().compos.count" [formField]="field.count" />
               @if (model().custom_shares) {
-                <input class="input share" type="number" step="0.5" [attr.aria-label]="t().compos.sharesAria" [formField]="field.share" />
+                <input class="input share" type="number" step="0.01" [attr.aria-label]="t().compos.sharesAria" [formField]="field.share" />
               }
               <button type="button" class="btn btn-sm btn-danger" [attr.aria-label]="t().compos.removeRow"
                       (click)="removeRow(pf.key, i)">✕</button>
