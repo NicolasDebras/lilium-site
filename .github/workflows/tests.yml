@@ -30,7 +30,8 @@ jobs:
           cache-dependency-path: lilium-site/api/requirements*.txt
       - run: pip install -r requirements-dev.txt
         working-directory: lilium-site/api
-      - run: python -m pytest -q
+      # Couverture affichée dans le log (fichiers non couverts à 100 %)
+      - run: python -m pytest -q --cov=app --cov-report=term-missing:skip-covered
         working-directory: lilium-site/api
 
   frontend:

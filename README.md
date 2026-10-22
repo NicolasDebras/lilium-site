@@ -99,6 +99,7 @@ Sur Discord : `/webadmin add @toi` → recharge le site, l'onglet **Admin** appa
 # API (aucune vraie base ni Discord : tout est simulé dans tests/fakes.py)
 cd api
 .venv\Scripts\python -m pytest
+.venv\Scripts\python -m pytest --cov=app --cov-report=term-missing:skip-covered   # avec la couverture (aussi dans la CI)
 
 # Frontend (Vitest, sans navigateur)
 cd frontend

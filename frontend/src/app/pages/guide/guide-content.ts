@@ -106,8 +106,8 @@ export interface Command { name: string; usage: string; who: L10n; text: L10n; g
 export const COMMANDS: Command[] = [
   // Activités
   { group: 'activites', name: 'acti', usage: '/acti [heure]', who: { fr: 'Membre', en: 'Member' }, text: {
-    fr: 'Créer une activité de guilde (à partir d’une compo ou d’un template). Heure de départ en option (ex : 21h30 ou 18/10 21h, heure de Paris) : affichée dans le fuseau de chacun avec un compte à rebours. En BAL (partage du butin en fin d’acti) si tu es Caller, Officier ou GM ; sinon l’acti est libre. Bouton Fill : tu passes en attente et un Caller/Officier/GM te place sur un rôle libre via « ⏳ En attente » (tu reçois un MP).',
-    en: 'Create a guild activity (from a comp or a template). Optional start time (e.g. 21h30 or 18/10 21h, Paris time): shown in everyone’s time zone with a countdown. With balance (loot split at the end) if you are Caller, Officer or GM; otherwise the activity is free. Fill button: you go on the waiting list and a Caller/Officer/GM puts you on an open role via “⏳ En attente” (you get a DM).' } },
+    fr: 'Créer une activité de guilde (à partir d’une compo ou d’un template). Heure de départ en option (ex : 21h30 ou 18/10 21h, heure de Paris) : affichée dans le fuseau de chacun avec un compte à rebours. En BAL (partage du butin en fin d’acti) si tu es Caller, Officier ou GM ; sinon l’acti est libre. Bouton Fill : tu passes en attente et un Caller/Officier/GM te place sur un rôle libre via « ⏳ En attente » (tu reçois un MP). Si un inscrit se retire à moins de 30 min du départ, le créateur de l’acti est prévenu en MP.',
+    en: 'Create a guild activity (from a comp or a template). Optional start time (e.g. 21h30 or 18/10 21h, Paris time): shown in everyone’s time zone with a countdown. With balance (loot split at the end) if you are Caller, Officer or GM; otherwise the activity is free. Fill button: you go on the waiting list and a Caller/Officer/GM puts you on an open role via “⏳ En attente” (you get a DM). If someone signed up drops out less than 30 min before the start, the activity’s creator gets a DM.' } },
   { group: 'activites', name: 'templates', usage: '/templates', who: { fr: 'Membre', en: 'Member' }, text: {
     fr: 'Afficher les templates et compos disponibles.', en: 'Show the available templates and comps.' } },
   { group: 'activites', name: 'massup', usage: '/massup [message]', who: { fr: 'Créateur, Caller, Officier', en: 'Creator, Caller, Officer' }, text: {
@@ -133,9 +133,10 @@ export const COMMANDS: Command[] = [
   { group: 'bal', name: 'classement', usage: '/classement', who: { fr: 'Membre', en: 'Member' }, text: {
     fr: 'Classement BAL du serveur (top 20).', en: 'Server balance leaderboard (top 20).' } },
   { group: 'bal', name: 'addbal', usage: '/addbal @joueur montant', who: { fr: 'Officier', en: 'Officer' }, text: {
-    fr: 'Ajouter de la BAL à un joueur.', en: 'Add balance to a player.' } },
-  { group: 'bal', name: 'retirebal', usage: '/retirebal @joueur montant', who: { fr: 'Officier', en: 'Officer' }, text: {
-    fr: 'Retirer de la BAL (paiement effectué).', en: 'Withdraw balance (payment made).' } },
+    fr: 'Ajouter de la BAL à un joueur (il reçoit un MP avec le montant).', en: 'Add balance to a player (they get a DM with the amount).' } },
+  { group: 'bal', name: 'retirebal', usage: '/retirebal @joueur montant motif [raison]', who: { fr: 'Officier', en: 'Officer' }, text: {
+    fr: 'Retirer de la BAL : paiement effectué, ou amende (raison obligatoire, le joueur reçoit un MP avec la raison et la somme retirée).',
+    en: 'Withdraw balance: payment made, or fine (reason required, the player gets a DM with the reason and the amount taken).' } },
   { group: 'bal', name: 'paybal', usage: '/paybal montant', who: { fr: 'Officier', en: 'Officer' }, text: {
     fr: 'Distribuer de la BAL à tous les participants d’une activité.', en: 'Hand out balance to every participant of an activity.' } },
   { group: 'bal', name: 'baljoueur', usage: '/baljoueur @joueur', who: { fr: 'Officier', en: 'Officer' }, text: {

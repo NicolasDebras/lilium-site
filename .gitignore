@@ -22,3 +22,6 @@ __pycache__/
 .DS_Store
 Thumbs.db
 .idea/
+
+# Couverture des tests (pytest --cov)
+.coverage
