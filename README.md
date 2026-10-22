@@ -108,7 +108,15 @@ npm test -- --watch=false
 
 **CI** (`.github/workflows/tests.yml`) : à chaque push et pull request, GitHub lance les tests de l'API (avec le repo du bot cloné à côté, pour vérifier les fichiers partagés), puis les tests et le build du front. `main` est protégée : on ne fusionne que si ces jobs passent.
 
-**Fichiers partagés avec le bot** : le rendu des images (`app/shared/build_image.py`), les rôles et templates par défaut (`app/shared/roles_templates.py`) et `app/assets/` sont des **copies exactes** du bot, qui est la source. On ne les modifie jamais ici : on change le bot, on le fusionne, puis, avec les deux repos côte à côte :
+**Rendu des images (lib partagée)** : le dessin des images de build et de compo, la police et les icônes viennent de la lib **[AlbionCreateImageBuild](https://github.com/NicolasDebras/AlbionCreateImageBuild)** (`api/requirements.txt`, même tag que le bot). Pour modifier le rendu : changer la lib, publier un tag, puis monter ce tag dans `requirements.txt` du bot **et** du site. Pour tester une modif de la lib sans la publier (repos côte à côte) :
+
+```powershell
+cd api
+.venv\Scripts\pip install -e ..\..\AlbionCreateImageBuild                                  # version locale de la lib
+.venv\Scripts\pip uninstall -y albion-create-image-build; .venv\Scripts\pip install -r requirements.txt   # retour à la version publiée
+```
+
+**Fichiers partagés avec le bot** : les rôles et templates par défaut (`app/shared/roles_templates.py`) et la lecture des compos en lignes d'image (`app/shared/lilium_compo.py`) sont des **copies exactes** du bot, qui est la source. On ne les modifie jamais ici : on change le bot, on le pousse, puis, avec les deux repos côte à côte :
 
 ```powershell
 cd api
@@ -204,7 +212,7 @@ La liste des **builds** a une barre de recherche instantanée (nom, rôle, arme,
 
 **Page d'un build** (`/g/{gid}/builds/{id}`, lien à coller dans Discord — il faut être connecté et membre du serveur) : équipement en grand, précisions, compos qui l'utilisent, **image PNG** identique au MP de `/massup` (télécharger / copier), et pour le staff **Dupliquer** (crée « Nom (copie) » puis ouvre son formulaire).
 
-**Images générées par l'API** (`app/images.py`) : rendu du bot, copié tel quel dans `app/shared/build_image.py` (voir « Fichiers partagés avec le bot »), avec sa police et ses icônes (`app/assets/`, CDN Albion en secours). Rendu dans un thread, 2 à la fois au plus, 200 dernières images gardées en mémoire (clé = contenu exact).
+**Images générées par l'API** (`app/images.py`) : mêmes images que le bot, dessinées par la lib AlbionCreateImageBuild (voir « Rendu des images »), avec sa police et ses icônes embarquées (CDN Albion en secours). Rendu dans un thread, 2 à la fois au plus, 200 dernières images gardées en mémoire (clé = contenu exact).
 
 Un build choisit son équipement parmi les **vrais objets du jeu**, avec leur image, dans une disposition identique à l'inventaire in-game :
 tête, cape / arme, armure, main gauche / potion, bottes, bouffe. Le sélecteur propose une recherche (FR, EN ou famille, accents ignorés) et des filtres par famille (Épées, Bâtons sacrés, Plaque, Nourriture, Potions…).
@@ -305,7 +313,7 @@ lilium-site/
 │   │   ├── catalog.py       # catalogue d'objets Albion (génération + validation de l'équipement)
 │   │   ├── data/items.json  # catalogue généré (versionné)
 │   │   ├── constants.py     # ROLES + DEFAULT_TEMPLATES (depuis shared/) + ce que seul le site utilise
-│   │   ├── shared/          # copies exactes du bot (build_image.py, roles_templates.py) — ne pas modifier ici
+│   │   ├── shared/          # copies exactes du bot (roles_templates.py, lilium_compo.py) — ne pas modifier ici
 │   │   └── routes/          # auth, me, items, builds, compos, guild (bal, rôles, admin)
 │   ├── scripts/update_items.py  # régénère data/items.json depuis ao-bin-dumps
 │   ├── scripts/sync_from_bot.py # recopie (ou --check) les fichiers partagés avec le bot

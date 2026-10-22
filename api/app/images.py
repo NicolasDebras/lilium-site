@@ -1,27 +1,29 @@
 """
 app/images.py — Images PNG d'un build et d'une compo, IDENTIQUES à celles du bot.
 
-Le rendu vient de app/shared/build_image.py, copie exacte de botDiscord/Service/build_image.py
-(resynchronisée par `python -m scripts.sync_from_bot`, vérifiée par la CI). Ce module
-le ré-exporte et ajoute ce qui n'existe que côté API : rendu dans un thread, sémaphore, cache.
+Le rendu vient de la lib AlbionCreateImageBuild (api/requirements.txt, même tag que le bot) ;
+les lignes d'une compo viennent de app/shared/lilium_compo.py (copie du bot). Ce module ajoute
+ce qui n'existe que côté API : rendu dans un thread, sémaphore, cache des PNG.
 """
 import asyncio
 import hashlib
 import json
 from collections import OrderedDict
 
-from app.shared.build_image import *  # noqa: F401,F403 — API publique du rendu (WIDTH, local_icon…)
-from app.shared.build_image import (
-    COMPO_MAX_ROWS, compo_rows, fetch_icons, item_ids, normalize_items, render_build_image, render_compo_image,
+from albion_create_image_build import (  # noqa: F401 — WIDTH, COMPO_WIDTH, local_icon : utilisés par les tests
+    COMPO_MAX_ROWS, COMPO_WIDTH, WIDTH, IconFetcher, default_fetcher, item_ids, local_icon, normalize_items,
+    render_build_image, render_compo_image,
 )
 
-# ══════════════════════════════════════════════════════════════════════════════
-# SPÉCIFIQUE À L'API (n'existe pas côté bot) : rendu sans bloquer le serveur web
-# ══════════════════════════════════════════════════════════════════════════════
+from app.shared.lilium_compo import compo_rows
+
 RENDER_CONCURRENCY = 2      # rendus Pillow simultanés max (CPU)
 PNG_CACHE_MAX = 200         # images gardées en mémoire (~50 à 200 Ko chacune)
 _render_sem: asyncio.Semaphore | None = None
 _png_cache: "OrderedDict[str, bytes | None]" = OrderedDict()
+
+# None = IconFetcher partagé de la lib ; les tests y mettent un faux (aucun réseau).
+fetcher: IconFetcher | None = None
 
 
 def _cache_key(kind: str, payload) -> str:
@@ -45,6 +47,10 @@ async def _cached(key: str, make) -> bytes | None:
     return png
 
 
+async def _icons(ids: list[str]) -> dict[str, bytes | None]:
+    return await (fetcher or default_fetcher()).fetch(ids)
+
+
 def _build_payload(build: dict) -> dict:
     keys = ("name", "role", "type_acti", "weapon", "notes")
     return {**{k: build.get(k) or "" for k in keys}, "items": normalize_items(build.get("items"))}
@@ -55,7 +61,7 @@ async def build_png(build: dict) -> bytes:
     payload = _build_payload(build)
 
     async def make() -> bytes:
-        icons = await fetch_icons(payload["items"])
+        icons = await _icons(item_ids(payload["items"]))
         return await asyncio.to_thread(render_build_image, payload, icons)
 
     return await _cached(_cache_key("build", payload), make)
@@ -72,7 +78,7 @@ async def compo_png(name: str, template_data: dict, builds_by_id: dict[int, dict
         ids: list[str] = []
         for *_, build in rows:
             ids.extend(i for i in item_ids(build["items"]) if i not in ids)
-        icons = await fetch_icons(None, ids)
-        return await asyncio.to_thread(render_compo_image, name, rows, icons)
+        icons = await _icons(ids)
+        return await asyncio.to_thread(render_compo_image, rows, icons)
 
     return await _cached(_cache_key("compo", rows), make)

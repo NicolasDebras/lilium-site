@@ -220,3 +220,15 @@ class FakeOAuth:
 
     async def fetch_discord_user(self, access_token):
         return {"id": str(MEMBER_ID), "username": "membre", "global_name": "Membre", "avatar": None}
+
+
+class LocalIconFetcher:
+    """Remplace l'IconFetcher de la lib d'images (app.images.fetcher) : icônes embarquées
+    dans la lib, ou rien si local=False — jamais de requête vers le CDN d'Albion."""
+
+    def __init__(self, local: bool = True):
+        self.local = local
+
+    async def fetch(self, ids):
+        from app.images import local_icon
+        return {i: local_icon(i) if self.local else None for i in ids}

@@ -1,8 +1,9 @@
 """
 scripts/sync_from_bot.py — Recopie dans le site les fichiers partagés avec le bot.
 
-Le bot (repo botDiscord) est la source : le rendu des images et les rôles/templates
-par défaut y sont écrits, le site en garde une copie identique dans app/shared/.
+Le bot (repo botDiscord) est la source : les rôles/templates par défaut et la lecture
+des compos (lignes de l'image) y sont écrits, le site en garde une copie identique dans
+app/shared/. Le rendu des images, lui, vient de la lib AlbionCreateImageBuild (requirements.txt).
 
     python -m scripts.sync_from_bot            # copie depuis ../../botDiscord
     python -m scripts.sync_from_bot --check    # code 1 si une copie diffère (CI)
@@ -18,9 +19,8 @@ DEFAULT_BOT_DIR = API_DIR.parent.parent / "botDiscord"   # repos côte à côte
 
 # chemin dans le bot → chemin dans api/ (fichier ou dossier)
 SHARED: dict[str, str] = {
-    "Service/build_image.py": "app/shared/build_image.py",
     "roles_templates.py": "app/shared/roles_templates.py",
-    "assets": "app/assets",
+    "lilium_compo.py": "app/shared/lilium_compo.py",
 }
 
 

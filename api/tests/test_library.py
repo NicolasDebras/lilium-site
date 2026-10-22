@@ -4,7 +4,7 @@ import pytest
 from app import images
 from app.compos import InvalidCompo
 from app.library import plan_builds, rebuild_template, snapshot
-from tests.fakes import ADMIN_ID, GUILD, MEMBER_ID, OTHER_GUILD, STAFF_ID, STAFF_ROLE
+from tests.fakes import ADMIN_ID, GUILD, MEMBER_ID, OTHER_GUILD, STAFF_ID, STAFF_ROLE, LocalIconFetcher
 
 TANK = {"id": 1, "name": "Tank Masse", "role": "TANK", "type_acti": "PVP", "weapon": "", "notes": "", "image": "",
         "items": {"mainhand": ["MAIN_MACE"]}}
@@ -55,9 +55,7 @@ def two_guilds(fake_db, fake_discord):
 
 @pytest.fixture(autouse=True)
 def no_network(monkeypatch):
-    async def fake_fetch(items, extra_ids=None):
-        return {}
-    monkeypatch.setattr(images, "fetch_icons", fake_fetch)
+    monkeypatch.setattr(images, "fetcher", LocalIconFetcher(local=False))
 
 
 def test_copy_to_another_guild_recreates_builds(login, two_guilds):

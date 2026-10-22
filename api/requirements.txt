@@ -3,6 +3,7 @@ uvicorn[standard]>=0.30
 asyncpg>=0.29
 aiohttp>=3.9
 itsdangerous>=2.2
-Pillow>=10.1.0
+# Rendu des images de build/compo (+ Pillow), meme tag que le bot : https://github.com/NicolasDebras/AlbionCreateImageBuild
+albion-create-image-build @ https://github.com/NicolasDebras/AlbionCreateImageBuild/archive/refs/tags/v1.0.1.tar.gz
 python-dotenv>=1.0
 tzdata>=2024.1

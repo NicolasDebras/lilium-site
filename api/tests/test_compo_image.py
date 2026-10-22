@@ -5,7 +5,7 @@ import pytest
 from PIL import Image
 
 from app import images
-from tests.fakes import GUILD, MEMBER_ID, OTHER_GUILD, STAFF_ID, STRANGER_ID
+from tests.fakes import GUILD, MEMBER_ID, OTHER_GUILD, STAFF_ID, STRANGER_ID, LocalIconFetcher
 
 BUILD = {"name": "Tank Masse", "role": "TANK", "type_acti": "PVP", "weapon": "", "notes": "", "image": "",
          "items": {"mainhand": ["MAIN_MACE"]}}
@@ -14,9 +14,7 @@ URL = f"/api/guilds/{GUILD}/compos"
 
 @pytest.fixture(autouse=True)
 def no_network(monkeypatch):
-    async def fake_fetch(items, extra_ids=None):
-        return {i: images.local_icon(i) for i in images.item_ids(items) + list(extra_ids or [])}
-    monkeypatch.setattr(images, "fetch_icons", fake_fetch)
+    monkeypatch.setattr(images, "fetcher", LocalIconFetcher())
     images._png_cache.clear()
 
 

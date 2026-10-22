@@ -7,7 +7,7 @@ from PIL import Image
 
 from app import images
 from app.validation import duplicate_name
-from tests.fakes import ADMIN_ID, GUILD, MEMBER_ID, OTHER_GUILD, STAFF_ID, STRANGER_ID
+from tests.fakes import ADMIN_ID, GUILD, MEMBER_ID, OTHER_GUILD, STAFF_ID, STRANGER_ID, LocalIconFetcher
 
 BUILD = {"name": "Tank Masse", "role": "TANK", "type_acti": "PVP", "weapon": "1H Masse", "notes": "T8 mini",
          "image": "", "items": {"mainhand": ["MAIN_MACE"], "cape": ["*"]}}
@@ -15,10 +15,8 @@ BUILD = {"name": "Tank Masse", "role": "TANK", "type_acti": "PVP", "weapon": "1H
 
 @pytest.fixture(autouse=True)
 def no_network(monkeypatch):
-    """Pas de CDN dans les tests : icônes locales (copiées du bot) ou « ? »."""
-    async def fake_fetch(items, extra_ids=None):
-        return {i: images.local_icon(i) for i in images.item_ids(items) + list(extra_ids or [])}
-    monkeypatch.setattr(images, "fetch_icons", fake_fetch)
+    """Pas de CDN dans les tests : icônes embarquées dans la lib, ou « ? »."""
+    monkeypatch.setattr(images, "fetcher", LocalIconFetcher())
     images._png_cache.clear()
 
 

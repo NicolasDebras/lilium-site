@@ -18,7 +18,7 @@ jobs:
         with:
           path: lilium-site
       # Le bot à côté du site : tests/test_shared_sync.py vérifie que les copies
-      # de app/shared/ et app/assets/ sont identiques à celles du bot (branche main).
+      # de app/shared/ sont identiques à celles du bot (branche main).
       - uses: actions/checkout@v7
         with:
           repository: NicolasDebras/botDiscord
