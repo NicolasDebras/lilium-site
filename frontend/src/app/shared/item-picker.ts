@@ -60,21 +60,23 @@ export const lastPick = signal<{ tier: number | null; enchant: number }>({ tier:
                   <app-tier-badge [item]="s.item" />
                 </span>
                 <span class="sel-name">{{ name(s.item) }}</span>
-                <select class="select tier" [attr.aria-label]="t().picker.minTier(name(s.item))"
-                        (change)="setTier(s.index, $any($event.target).value)">
-                  <option value="" [selected]="s.item.tier == null">{{ t().picker.freeTier }}</option>
-                  @for (t of tiersOf(s.item); track t) {
-                    <option [value]="t" [selected]="s.item.tier === t">T{{ t }}</option>
-                  }
-                </select>
-                <select class="select ench" [attr.aria-label]="t().picker.enchant(name(s.item))" [disabled]="s.item.tier == null"
-                        (change)="setEnchant(s.index, +$any($event.target).value)">
-                  @for (e of enchantsOf(s.item); track e) {
-                    <option [value]="e" [selected]="(s.item.enchant ?? 0) === e">.{{ e }}</option>
-                  }
-                </select>
-                <button type="button" class="btn btn-sm remove" [attr.aria-label]="t().picker.remove(name(s.item))"
-                        (click)="removeAt(s.index)">✕</button>
+                <span class="sel-controls">
+                  <select class="select tier" [attr.aria-label]="t().picker.minTier(name(s.item))"
+                          (change)="setTier(s.index, $any($event.target).value)">
+                    <option value="" [selected]="s.item.tier == null">{{ t().picker.freeTier }}</option>
+                    @for (t of tiersOf(s.item); track t) {
+                      <option [value]="t" [selected]="s.item.tier === t">T{{ t }}</option>
+                    }
+                  </select>
+                  <select class="select ench" [attr.aria-label]="t().picker.enchant(name(s.item))" [disabled]="s.item.tier == null"
+                          (change)="setEnchant(s.index, +$any($event.target).value)">
+                    @for (e of enchantsOf(s.item); track e) {
+                      <option [value]="e" [selected]="(s.item.enchant ?? 0) === e">.{{ e }}</option>
+                    }
+                  </select>
+                  <button type="button" class="btn btn-sm remove" [attr.aria-label]="t().picker.remove(name(s.item))"
+                          (click)="removeAt(s.index)">✕</button>
+                </span>
               </li>
             }
           </ul>
@@ -130,8 +132,12 @@ export const lastPick = signal<{ tier: number | null; enchant: number }>({ tier:
     .slot-label { font-size: .75rem; color: var(--text-muted); text-align: center; max-width: 100px; line-height: 1.2; }
     .overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, .6); z-index: 50; }
     .panel { position: fixed; z-index: 51; top: 50%; left: 50%; transform: translate(-50%, -50%);
-             width: min(640px, calc(100vw - 2 * var(--gutter))); max-height: min(85vh, 760px);
-             display: flex; flex-direction: column; gap: 10px; }
+             width: min(640px, calc(100vw - 2 * var(--gutter)));
+             max-height: min(85vh, 760px); max-height: min(85dvh, 760px);   /* dvh : barre d'adresse mobile déduite */
+             display: flex; flex-direction: column; gap: 10px; overflow-y: auto; overscroll-behavior: contain; }
+    /* Seule la grille de résultats s'étire ; le reste garde sa taille (sinon tout se tasse et déborde) */
+    .panel > * { flex: none; }
+    .panel > .results { flex: 1 1 auto; }
     .panel-head { display: flex; justify-content: space-between; align-items: center; }
     .panel-head h3 { margin: 0; color: var(--lilac); }
     .count { font-size: .85rem; font-weight: 500; }
@@ -142,12 +148,14 @@ export const lastPick = signal<{ tier: number | null; enchant: number }>({ tier:
     .chip.on { background: var(--lilac-soft); color: var(--lilac); border-color: var(--lilac-strong); }
     /* Sélection : une ligne par objet choisi, avec son tier minimum et son enchantement */
     .selection { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
-    .selection li { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 10px;
+    .selection li { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 10px;
                     background: var(--surface-2); border: 1px solid var(--lilac-soft); }
     .sel-icon { position: relative; flex: none; width: 36px; height: 36px; }
     .sel-icon img { width: 36px; height: 36px; }
-    .sel-name { flex: 1 1 auto; min-width: 0; font-size: .85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .sel-name { flex: 1 1 140px; min-width: 0; font-size: .85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .selection .select { width: auto; flex: none; padding-block: 4px; font-size: .82rem; }
+    /* Tier, enchantement et ✕ restent groupés ; passés à la ligne (téléphone), ils s'alignent à droite */
+    .sel-controls { display: flex; align-items: center; gap: 8px; flex: none; margin-left: auto; }
     .tiers-hint { margin: -4px 0 0; font-size: .75rem; }
     .results { flex: 1 1 auto; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 6px; min-height: 120px; }
     .result { display: grid; justify-items: center; gap: 2px; padding: 6px 4px; border-radius: 8px; border: 1px solid transparent;
@@ -156,6 +164,10 @@ export const lastPick = signal<{ tier: number | null; enchant: number }>({ tier:
     .result:disabled { opacity: .4; cursor: not-allowed; }
     .result.selected { border-color: var(--lilac); background: var(--lilac-soft); }
     .done { margin-left: auto; }
+    /* Téléphone : pas de défilement imbriqué, tout le panneau défile (sélection, recherche, résultats, boutons) */
+    @media (max-width: 600px), (max-height: 640px) {
+      .panel > .results { flex: none; overflow: visible; min-height: 0; }
+    }
   `,
 })
 export class ItemPicker {
