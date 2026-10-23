@@ -1,7 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, DestroyRef, computed, inject, input, linkedSignal, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { FormField, applyEach, disabled, form, max, maxLength, min, required, requiredError, validate } from '@angular/forms/signals';
+import { FormField, applyEach, form, max, maxLength, min, required, requiredError, validate } from '@angular/forms/signals';
 import { Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
@@ -266,7 +266,6 @@ export class CompoForm {
     required(p.name);
     validate(p.name, ({ value }) => (value().trim() ? undefined : requiredError()));
     maxLength(p.name, 100);
-    disabled(p.name, () => !!this.name());   // le nom identifie la compo : pas de renommage
     maxLength(p.description, 2000);
     maxLength(p.image, 500);
     for (const party of [p.pf1, p.pf2]) {
@@ -392,7 +391,7 @@ export class CompoForm {
       const name = this.name();
       const body = this.body();
       await firstValueFrom(
-        name ? this.api.updateCompo(this.guildId(), name, { ...body, name }) : this.api.createCompo(this.guildId(), body),
+        name ? this.api.updateCompo(this.guildId(), name, body) : this.api.createCompo(this.guildId(), body),
       );
       this.toast.success(name ? this.t().compos.saved : this.t().compos.created(body.name));
       await this.router.navigate(['/g', this.guildId(), 'compos']);

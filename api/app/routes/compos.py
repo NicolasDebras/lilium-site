@@ -102,13 +102,18 @@ async def preview_compo_image(guild_id: int, body: CompoIn, request: Request, us
     return await _png_response(db, guild_id, body.name, await _entry(db, guild_id, body))
 
 
-async def check_new_compo_name(db, guild_id: int, name: str) -> None:
-    """Nouvelle compo : nom libre (casse ignorée, templates par défaut compris) et quota non atteint."""
+def _check_name_free(name: str, existing: dict, current: str | None = None) -> None:
+    """Nom libre (casse ignorée, templates par défaut compris) ; `current` = compo renommée."""
     if name.casefold() in {n.casefold() for n in DEFAULT_TEMPLATES}:
         raise HTTPException(status_code=409, detail=tr("default_template_name", name=name))
-    existing = await db.get_custom_templates(guild_id)
-    if name.casefold() in {n.casefold() for n in existing}:
+    if name.casefold() in {n.casefold() for n in existing if n != current}:
         raise HTTPException(status_code=409, detail=tr("compo_exists", name=name))
+
+
+async def check_new_compo_name(db, guild_id: int, name: str) -> None:
+    """Nouvelle compo : nom libre et quota non atteint."""
+    existing = await db.get_custom_templates(guild_id)
+    _check_name_free(name, existing)
     if len(existing) >= MAX_COMPOS:
         raise HTTPException(status_code=409, detail=tr("max_compos", max=MAX_COMPOS))
 
@@ -125,11 +130,17 @@ async def create_compo(guild_id: int, body: CompoIn, request: Request, user: dic
 async def update_compo(guild_id: int, name: str, body: CompoIn, request: Request,
                        user: dict = Depends(require_staff)):
     db = request.app.state.db
-    if name not in await db.get_custom_templates(guild_id):
+    existing = await db.get_custom_templates(guild_id)
+    if name not in existing:
         raise HTTPException(status_code=404, detail=tr("compo_not_found"))
-    # Le nom sert de clé côté bot (/acti) : on ne le renomme pas ici.
-    await db.save_custom_template(guild_id, name, await _entry(db, guild_id, body))
-    return {"name": name}
+    entry = await _entry(db, guild_id, body)
+    if body.name == name:
+        await db.save_custom_template(guild_id, name, entry)
+    else:
+        # Renommage : le nom est la clé côté bot (/acti), l'image et la description du bot suivent.
+        _check_name_free(body.name, existing, current=name)
+        await db.rename_custom_template(guild_id, name, body.name, entry)
+    return {"name": body.name}
 
 
 @router.delete("/{name}", status_code=204)

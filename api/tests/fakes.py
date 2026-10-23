@@ -112,6 +112,11 @@ class FakeDB:
     async def save_custom_template(self, guild_id, name, data):
         self.templates.setdefault(guild_id, {})[name] = data
 
+    async def rename_custom_template(self, guild_id, old, new, data):
+        templates = self.templates.setdefault(guild_id, {})
+        del templates[old]
+        templates[new] = data
+
     async def delete_custom_template(self, guild_id, name):
         return self.templates.get(guild_id, {}).pop(name, None) is not None
 

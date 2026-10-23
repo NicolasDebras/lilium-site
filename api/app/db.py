@@ -138,6 +138,18 @@ class Database:
                 ON CONFLICT (name, guild_id) DO UPDATE SET data = EXCLUDED.data
             """, name, guild_id, json.dumps(data, ensure_ascii=False))
 
+    async def rename_custom_template(self, guild_id: int, old: str, new: str, data: dict) -> None:
+        """Renomme une compo (et ses réglages /setimage, /setdesc du bot, clés « img:/desc:guild:nom »)."""
+        async with self._pool.acquire() as conn, conn.transaction():
+            await conn.execute(
+                "UPDATE custom_templates SET name = $3, data = $4::jsonb WHERE name = $1 AND guild_id = $2",
+                old, guild_id, new, json.dumps(data, ensure_ascii=False),
+            )
+            for prefix in ("img", "desc"):
+                await conn.execute("DELETE FROM settings WHERE key = $1", f"{prefix}:{guild_id}:{new}")
+                await conn.execute("UPDATE settings SET key = $2 WHERE key = $1",
+                                   f"{prefix}:{guild_id}:{old}", f"{prefix}:{guild_id}:{new}")
+
     async def delete_custom_template(self, guild_id: int, name: str) -> bool:
         async with self._pool.acquire() as conn:
             result = await conn.execute(

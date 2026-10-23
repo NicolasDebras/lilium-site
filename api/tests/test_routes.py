@@ -109,6 +109,25 @@ def test_staff_compo_crud_writes_bot_format(login, fake_db):
     assert c.delete(f"/api/guilds/{GUILD}/compos/ZvZ").status_code == 404
 
 
+def test_staff_can_rename_compo(login, fake_db):
+    c = login(STAFF_ID)
+    c.post(f"/api/guilds/{GUILD}/compos", json=COMPO)
+    r = c.put(f"/api/guilds/{GUILD}/compos/ZvZ", json={**COMPO, "name": "ZvZ Soir"})
+    assert r.status_code == 200 and r.json() == {"name": "ZvZ Soir"}
+    assert list(fake_db.templates[GUILD]) == ["ZvZ Soir"]
+    # Changer seulement la casse de son propre nom reste permis.
+    assert c.put(f"/api/guilds/{GUILD}/compos/ZvZ Soir", json={**COMPO, "name": "zvz soir"}).status_code == 200
+
+
+def test_rename_compo_refuses_taken_or_default_name(login, fake_db):
+    c = login(STAFF_ID)
+    c.post(f"/api/guilds/{GUILD}/compos", json=COMPO)
+    c.post(f"/api/guilds/{GUILD}/compos", json={**COMPO, "name": "Roam"})
+    assert c.put(f"/api/guilds/{GUILD}/compos/Roam", json={**COMPO, "name": "zvz"}).status_code == 409
+    assert c.put(f"/api/guilds/{GUILD}/compos/Roam", json={**COMPO, "name": "Donjon Groupe 5"}).status_code == 409
+    assert set(fake_db.templates[GUILD]) == {"ZvZ", "Roam"}
+
+
 def test_compo_cannot_use_default_template_name(login):
     r = login(STAFF_ID).post(f"/api/guilds/{GUILD}/compos", json={**COMPO, "name": "Donjon Groupe 5"})
     assert r.status_code == 409

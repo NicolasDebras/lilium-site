@@ -184,15 +184,17 @@ describe('CompoForm', () => {
     expect(cmp.sourceOf(cmp['model']().pf1[0])).toBe('12');
     expect(cmp.sourceOf(cmp['model']().pf1[1])).toBe('free');
     expect(el.querySelector('.free-row')).not.toBeNull();
-    expect(el.querySelector<HTMLInputElement>('#name')!.disabled).toBe(true);   // pas de renommage
+    expect(el.querySelector<HTMLInputElement>('#name')!.disabled).toBe(false);  // renommage permis
     expect(cmp['model']().pf1[0].share).toBe(1);                                 // absent de l'API → 1
     expect(cmp['model']().custom_shares).toBe(false);
 
+    cmp['model'].update((m) => ({ ...m, name: 'ZvZ Soir' }));
     const done = cmp.save();
-    const req = http.expectOne('/api/guilds/111/compos/ZvZ');
+    const req = http.expectOne('/api/guilds/111/compos/ZvZ');                  // l'ancien nom dans l'URL
     expect(req.request.method).toBe('PUT');
+    expect(req.request.body.name).toBe('ZvZ Soir');
     expect(req.request.body.total).toBeUndefined();
-    req.flush({ name: 'ZvZ' });
+    req.flush({ name: 'ZvZ Soir' });
     await done;
   });
 

@@ -146,7 +146,7 @@ Toutes sous `/api`. `{gid}` = id du serveur Discord.
 | POST | `/guilds/{gid}/compos/import` `{source_guild_id, name, new_name?}` (copie depuis un autre de mes serveurs, staff des deux côtés) · `/guilds/{gid}/compos/{nom}/publish` · `/guilds/{gid}/compos/import-public` `{public_id, new_name?}` | staff |
 | GET | `/public/compos?q=&type_acti=&page=`, `/public/compos/{id}`, `/public/compos/{id}/image.png` | — (public) |
 | DELETE | `/public/compos/{id}` | auteur, admin du serveur d'origine ou `SITE_OWNER_IDS` |
-| POST · PUT · DELETE | `/guilds/{gid}/compos[/{nom}]` | staff |
+| POST · PUT · DELETE | `/guilds/{gid}/compos[/{nom}]` (un `PUT` avec un autre `name` renomme la compo : 409 si le nom est pris, l'image et la description réglées dans le bot suivent) | staff |
 | GET | `/guilds/{gid}/bal/me`, `/guilds/{gid}/bal/me/history?period=`, `/guilds/{gid}/roles` | membre |
 | GET | `/guilds/{gid}/bal/me/operations?action=&page=` (25 par page), `/guilds/{gid}/bal/me/operations.csv?action=` | membre (ses propres lignes uniquement) |
 | GET | `/guilds/{gid}/admin/overview` | admin |
