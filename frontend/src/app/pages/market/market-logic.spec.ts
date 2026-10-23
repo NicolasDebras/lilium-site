@@ -92,6 +92,10 @@ describe('market-logic', () => {
     expect(res.revenue).toBe(400 * 0.96 * 15);
     expect(res.profit).toBe(400 * 0.96 * 15 - (184 * 10 + 46 * 20));
     expect(recipeCalc(recipe, {}, 12, 0, { mode: 'direct', tax: 4, bm: true }).cost).toBeNull();
+    // ressource jamais rendue (énergie avalonienne, drops rares) : achetée en entier
+    const avalon: Recipe = { ...recipe, r: [['T6_FOXGLOVE', 72], ['QUESTITEM_TOKEN_AVALON', 4, 0]] };
+    const lines = recipeCalc(avalon, {}, 12, 53.9, { mode: 'direct', tax: 4, bm: true }).lines;
+    expect(lines.map((l) => [l.need, l.noReturn])).toEqual([[Math.ceil(3 * 72 * 0.461), false], [12, true]]);
   });
 
   it('familles et filtre des recettes (nom, ingrédients, exclusion)', () => {

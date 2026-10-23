@@ -117,9 +117,12 @@ export interface Recipe {
   cat: 'potion' | 'meal';
   /** Unités produites par fabrication. */
   y: number;
-  /** Ressources d'une fabrication : [id, nombre]. */
-  r: [string, number][];
+  /** Ressources d'une fabrication : [id, nombre], ou [id, nombre, 0] si le jeu ne la rend jamais
+   *  (drops rares de créatures, énergie avalonienne : le retour de ressources ne s'y applique pas). */
+  r: RecipeResource[];
 }
+
+export type RecipeResource = [string, number] | [string, number, 0];
 
 export interface MarketData {
   items: MarketEntry[];
@@ -310,8 +313,10 @@ export interface RecipeLine {
   id: string;
   /** Par fabrication. */
   count: number;
-  /** À acheter pour toute la quantité, retour de ressources déduit. */
+  /** À acheter pour toute la quantité, retour de ressources déduit (sauf ressource jamais rendue). */
   need: number;
+  /** Ressource que le jeu ne rend jamais. */
+  noReturn: boolean;
   buy: Quote | null;
   cost: number | null;
 }
@@ -333,10 +338,11 @@ export function recipeCalc(recipe: Recipe, prices: PriceMap, qty: number, rrr: n
   const crafts = Math.max(1, Math.ceil(qty / recipe.y));
   const made = crafts * recipe.y;
   const keep = 1 - rrr / 100;
-  const lines = recipe.r.map(([id, count]): RecipeLine => {
-    const need = Math.ceil(crafts * count * keep - 1e-9);
+  const lines = recipe.r.map(([id, count, maxReturn]): RecipeLine => {
+    const noReturn = maxReturn === 0;
+    const need = Math.ceil(crafts * count * (noReturn ? 1 : keep) - 1e-9);
     const buy = bestBuy(prices[id]);
-    return { id, count, need, buy, cost: buy ? buy.value * need : null };
+    return { id, count, need, noReturn, buy, cost: buy ? buy.value * need : null };
   });
   const cost = lines.some((l) => l.cost == null) ? null : lines.reduce((sum, l) => sum + (l.cost ?? 0), 0);
   const sell = bestSell(prices[recipe.id], { ...o, buyCity: '', sellCity: '', maxAge: null });

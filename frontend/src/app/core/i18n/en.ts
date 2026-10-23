@@ -442,6 +442,7 @@ export const en: typeof fr = {
       formula: 'Formula:',
       lines: { res: 'Resource to buy', qty: 'Quantity', city: 'Best city', unit: 'Unit price', cost: 'Cost' },
       perCraft: (n: number) => `${n} per craft`,
+      noReturn: 'never returned by resource return',
       total: 'Total resources',
       revenue: 'Estimated sale',
       margin: 'Margin',

@@ -413,6 +413,7 @@ export const fr = {
       formula: 'Formule :',
       lines: { res: 'Ressource à acheter', qty: 'Quantité', city: 'Meilleure ville', unit: 'Prix unitaire', cost: 'Coût' },
       perCraft: (n: number) => `${n} par fabrication`,
+      noReturn: 'jamais rendu par le retour de ressources',
       total: 'Total des ressources',
       revenue: 'Revente estimée',
       margin: 'Marge',

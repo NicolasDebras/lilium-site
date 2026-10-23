@@ -28,7 +28,9 @@ def _as_list(value) -> list:
 
 
 def _requirements(req) -> dict | None:
-    """Première recette d'un objet → {y: quantité produite, r: [[id, nombre], ...]}."""
+    """Première recette d'un objet → {y: quantité produite, r: [[id, nombre], ...]}.
+    Ressource que le jeu ne rend jamais (@maxreturnamount="0" : drops rares de créatures,
+    énergie avalonienne…) → [id, nombre, 0] : le retour de ressources ne s'y applique pas."""
     first = (_as_list(req) or [None])[0]
     if not first:
         return None
@@ -40,7 +42,10 @@ def _requirements(req) -> dict | None:
         level = int(res.get("@enchantmentlevel") or 0)
         if level:
             unique = f"{unique}_LEVEL{level}@{level}" if _RAW_RESOURCE.match(unique) else f"{unique}@{level}"
-        resources.append([unique, int(res.get("@count") or 1)])
+        line = [unique, int(res.get("@count") or 1)]
+        if res.get("@maxreturnamount") == "0":
+            line.append(0)
+        resources.append(line)
     return {"y": int(first.get("@amountcrafted") or 0), "r": resources} if resources else None
 
 

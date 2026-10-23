@@ -22,7 +22,8 @@ RAW = {
             {"@amountcrafted": "10", "craftresource": {"@uniquename": "T1_SEAWEED", "@count": "8"}},
             {"@amountcrafted": "1", "craftresource": {"@uniquename": "T1_CARROT", "@count": "99"}}]},
         {"@uniquename": "T8_MEAL_STEW_AVALON", "craftingrequirements": {"craftresource": [
-            {"@uniquename": "T8_MEAT", "@count": "10"}, {"@uniquename": "QUESTITEM_TOKEN_AVALON", "@count": "1"}]}},
+            {"@uniquename": "T8_MEAT", "@count": "10"},
+            {"@uniquename": "QUESTITEM_TOKEN_AVALON", "@count": "1", "@maxreturnamount": "0"}]}},
         {"@uniquename": "T4_FISH_COMMON"},
         {"@uniquename": "T6_POTION_HEAL@1"},
     ],
@@ -63,6 +64,8 @@ def test_recipes_with_enchantments_and_yield():
     assert by_id["T1_MEAL_SEAWEEDSALAD"]["cat"] == "meal" and by_id["T1_MEAL_SEAWEEDSALAD"]["y"] == 10
     assert by_id["T1_MEAL_SEAWEEDSALAD"]["r"] == [["T1_SEAWEED", 8]]
     assert by_id["T8_MEAL_STEW_AVALON"]["y"] == 1   # aucune quantité indiquée : 1
+    # ressource jamais rendue par le jeu : marquée pour ignorer le retour de ressources
+    assert by_id["T8_MEAL_STEW_AVALON"]["r"] == [["T8_MEAT", 10], ["QUESTITEM_TOKEN_AVALON", 1, 0]]
     assert "T4_FISH_COMMON" not in by_id
 
 
@@ -90,6 +93,8 @@ def test_generated_market_file_is_coherent():
     assert len(ids) > 3000 and len(data["recipes"]) > 100
     assert "T4_MAIN_SWORD" in ids and "T6_POTION_HEAL" in {r["id"] for r in data["recipes"]}
     assert all(r["y"] >= 1 and r["r"] for r in data["recipes"])
+    no_return = {res[0] for r in data["recipes"] for res in r["r"] if res[2:] == [0]}
+    assert "QUESTITEM_TOKEN_AVALON" in no_return and "T1_ALCHEMY_EXTRACT_LEVEL1" not in no_return
 
 
 def test_market_requires_login(client):

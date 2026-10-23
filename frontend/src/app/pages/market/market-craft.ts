@@ -181,7 +181,7 @@ const SORTS: Record<Sort, (a: Row, b: Row) => number> = {
                         <tbody>
                           @for (l of r.calc.lines; track l.id; let j = $index) {
                             <tr class="fade-up" [style.animation-delay.ms]="j * 50">
-                              <td>{{ name(l.id) }}<small class="faint">{{ t().market.craft.perCraft(l.count) }}</small></td>
+                              <td>{{ name(l.id) }}<small class="faint">{{ t().market.craft.perCraft(l.count) }}@if (l.noReturn) { · <span class="no-return">{{ t().market.craft.noReturn }}</span> }</small></td>
                               <td class="r num">{{ silver(l.need) }}</td>
                               <td>{{ l.buy ? city(l.buy.city) : '–' }}</td>
                               <td class="r num">{{ silver(l.buy?.value) }}</td>
@@ -250,6 +250,7 @@ const SORTS: Record<Sort, (a: Row, b: Row) => number> = {
     .deal { background: var(--gradient); color: var(--on-lilac); }
     .detail > td { padding: 4px 10px 14px 64px; background: var(--bg-2); }
     .crafts { font-size: .85rem; margin: 8px 0; }
+    .no-return { color: var(--lilac); }
     .lines { min-width: 0; max-width: 720px; }
     .lines td { white-space: nowrap; }
     tfoot td { font-weight: 600; border-top: 1px solid var(--border); }
