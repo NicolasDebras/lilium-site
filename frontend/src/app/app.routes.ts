@@ -45,6 +45,7 @@ export const routes: Routes = [
           },
           { path: 'modeles', loadComponent: () => import('./pages/library/library').then((m) => m.LibraryPage) },
           { path: 'bal', loadComponent: () => import('./pages/bal/bal').then((m) => m.BalPage) },
+          { path: 'marche', loadComponent: () => import('./pages/market/market').then((m) => m.MarketPage) },
           {
             path: 'admin',
             canActivate: [levelGuard('admin')],

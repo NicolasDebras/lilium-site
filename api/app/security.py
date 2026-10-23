@@ -36,7 +36,8 @@ def content_security_policy(script_hashes: list[str]) -> str:
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",  # styles des composants Angular
         "font-src 'self' https://fonts.gstatic.com",
         "img-src 'self' data: https:",  # icônes Albion, avatars Discord, images des builds/compos
-        "connect-src 'self'",
+        # prix du marché : demandés par le navigateur (limite par IP répartie entre joueurs)
+        "connect-src 'self' " + " ".join(f"https://{s}.albion-online-data.com" for s in ("europe", "west", "east")),
         "object-src 'none'",
         "base-uri 'self'",
         "form-action 'self'",

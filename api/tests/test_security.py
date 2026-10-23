@@ -27,6 +27,10 @@ def test_csp_allows_only_the_inline_scripts_of_index():
     script_src = csp.split("script-src")[1].split(";")[0]
     assert "'sha256-" in script_src and "unsafe-inline" not in script_src
     assert "frame-ancestors 'none'" in csp
+    # onglet Marché : le navigateur demande les prix aux trois serveurs de l'Albion Online Data Project, rien d'autre
+    connect_src = csp.split("connect-src")[1].split(";")[0].split()
+    assert connect_src == ["'self'", "https://europe.albion-online-data.com",
+                           "https://west.albion-online-data.com", "https://east.albion-online-data.com"]
 
 
 def test_prod_serves_csp_hsts_and_hides_docs(tmp_path):

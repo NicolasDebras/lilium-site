@@ -474,6 +474,25 @@ a {
 
 .fade-up { animation: fade-up .35s var(--ease) both; }
 
+/* Panneau qui se déploie à son apparition (détail, réglages) : <div class="reveal"><div>…</div></div> */
+.reveal { display: grid; animation: reveal .4s var(--ease) both; }
+.reveal > * { min-height: 0; overflow: hidden; }
+@keyframes reveal { from { grid-template-rows: 0fr; opacity: 0; } to { grid-template-rows: 1fr; opacity: 1; } }
+
+/* Vue qui entre par glissement (bascule d'onglet interne) */
+.slide-in { animation: slide-in .35s var(--ease) both; }
+@keyframes slide-in { from { opacity: 0; transform: translateX(14px); } to { opacity: 1; transform: none; } }
+
+/* Valeur qui vient d'arriver : bref éclat lilas (ou vert pour un gain) */
+.flash { animation: flash 1.1s var(--ease) both; border-radius: 6px; }
+.flash.gain { animation-name: flash-gain; }
+@keyframes flash { from { background: var(--lilac-soft); box-shadow: 0 0 0 4px var(--lilac-soft); } to { background: transparent; box-shadow: 0 0 0 4px transparent; } }
+@keyframes flash-gain { from { background: var(--success-soft); box-shadow: 0 0 0 4px var(--success-soft); } to { background: transparent; box-shadow: 0 0 0 4px transparent; } }
+
+/* Halo qui pulse doucement (badge « meilleure affaire ») */
+.glow-pulse { animation: glow-pulse 2.4s ease-in-out infinite; }
+@keyframes glow-pulse { 0%, 100% { box-shadow: 0 0 0 0 var(--lilac-glow); } 50% { box-shadow: 0 0 14px 2px var(--lilac-glow); } }
+
 /* ── Tableaux ───────────────────────────────────────────────────────────────── */
 .table {
   width: 100%;

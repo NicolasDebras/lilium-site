@@ -1,6 +1,6 @@
 # lilium-site
 
-Site web de la guilde Lilium : **builds**, **compos** (utilisables dans `/acti`), **BAL** et **page Admin**.
+Site web de la guilde Lilium : **builds**, **compos** (utilisables dans `/acti`), **BAL**, **Marché** et **page Admin**.
 Connexion avec Discord. Thème noir & lilas. **Français et anglais** (sélecteur FR | EN).
 
 Un seul repo pour les deux morceaux :
@@ -26,7 +26,7 @@ Tout se joue **par serveur Discord** :
 
 | Niveau | Condition | Droits |
 |---|---|---|
-| **Membre** | a fait `/register` sur le serveur (profil dans `player_profiles`) **et** y est toujours | voir builds & compos, voir sa BAL |
+| **Membre** | a fait `/register` sur le serveur (profil dans `player_profiles`) **et** y est toujours | voir builds & compos, voir sa BAL, onglet Marché |
 | **Staff** | membre + rôle configuré via `/config` → 🌐 Rôle staff du site web | créer / modifier / supprimer builds et compos |
 | **Admin** | membre + nommé via **`/webadmin add @membre`** | tout le staff + **page Admin** (stats, futurs outils) |
 
@@ -138,6 +138,7 @@ Toutes sous `/api`. `{gid}` = id du serveur Discord.
 | GET | `/auth/login`, `/auth/callback` · POST `/auth/logout` | — |
 | GET | `/me` (utilisateur + serveurs avec niveau) | connecté |
 | GET | `/items` (catalogue des objets d'équipement Albion) | connecté |
+| GET | `/market` (noms FR/EN de tous les objets à tier + recettes de cuisine/potions, gzip, cache 24 h) | connecté |
 | GET | `/guilds/{gid}/builds[?role=&type_acti=]`, `/guilds/{gid}/builds/{id}` (+ `used_by` : compos qui l'utilisent), `/guilds/{gid}/builds/{id}/image.png` | membre |
 | POST | `/guilds/{gid}/builds/{id}/duplicate` (« Nom (copie) ») | staff |
 | POST · PUT · DELETE | `/guilds/{gid}/builds[/{id}]` | staff |
@@ -166,7 +167,7 @@ Toutes sous `/api`. `{gid}` = id du serveur Discord.
 - **`SESSION_SECRET`** : au moins 16 caractères et jamais une valeur d'exemple, sinon l'API refuse de démarrer (avec le dépôt public, un secret faible permettrait de forger un cookie admin).
 - **Cookie `Secure`** par défaut quand l'API sert le front (`STATIC_DIR`), sauf `COOKIE_SECURE=false` explicite.
 - **Anti-CSRF** : en plus de `SameSite=Lax`, toute requête qui modifie (POST/PUT/DELETE) est refusée si le navigateur annonce une autre origine que `FRONTEND_URL` ou le domaine du site.
-- **En-têtes** : `X-Content-Type-Options`, `X-Frame-Options: DENY`, `Referrer-Policy`, et en prod une **CSP** (scripts limités au site + empreinte du script en ligne de `index.html`, calculée au démarrage) et **HSTS**. `/docs` et `/openapi.json` ne sont pas exposés en prod.
+- **En-têtes** : `X-Content-Type-Options`, `X-Frame-Options: DENY`, `Referrer-Policy`, et en prod une **CSP** (scripts limités au site + empreinte du script en ligne de `index.html`, calculée au démarrage ; requêtes limitées au site et aux trois serveurs de prix `europe|west|east.albion-online-data.com`) et **HSTS**. `/docs` et `/openapi.json` ne sont pas exposés en prod.
 - **Limites** : corps de requête 128 Ko max (refusé avant l'authentification) ; 500 builds et 100 compos par serveur ; 20 lignes par party et 50 joueurs par ligne dans une compo ; 10 choix max par case d'équipement à la saisie (3 après nettoyage) ; noms de compo sans `/ \ ? # %` (et unicité sans tenir compte de la casse) ; images en `https://` uniquement.
 - **Quota Discord** : l'API n'interroge Discord (token du bot) que si l'utilisateur a un profil `/register` sur ce serveur — un id de serveur au hasard ne consomme rien. Caches bornés, délais d'attente de 10 s sur les appels Discord.
 
@@ -233,6 +234,16 @@ Détails :
 - Images : CDN officiel `https://render.albiononline.com/v1/item/{id}.png`. Si une image manque (objet trop récent), une icône « ? » s'affiche à la place.
 - Le champ texte « Précisions sur le stuff » reste disponible (tier minimum, monture…).
 
+### Marché (onglet de guilde)
+
+Outil imaginé par **Aria le papi**, porté dans le site (`/g/{gid}/marche`, membres) :
+
+- **Recherche marché** : tous les objets à tier du jeu, recherche FR/EN/id (`-mot` pour exclure), filtres catégorie/type, origine (normal, artefact, royal), tier, enchantement, ville d'achat/de vente, marge minimale, fraîcheur des prix, tri ; **marge nette** = meilleure revente après taxe − achat le moins cher ; clic → prix ville par ville (meilleur achat en vert, meilleure revente en lilas).
+- **Cuisine & potions** : formule de chaque recette, quantité à fabriquer, retour de ressources (0 / 15,2 / 43,5 / 53,9 %), coût des ressources, revente, marge ; clic → liste de courses.
+- **Réglages** (mémorisés dans le navigateur, comme les filtres) : serveur Europe/West/East, vente directe ou mise en vente (taxe 4 % / 6,5 % par défaut), qualité, Marché noir.
+- **Prix** : demandés **par le navigateur** à l'[Albion Online Data Project](https://www.albion-online-data.com/) (relevés de joueurs, limite par IP répartie entre les joueurs, pas par le serveur du site) ; la page affichée se charge toute seule, « Charger tous les résultats » va jusqu'à 300 objets.
+- **Noms et recettes** : `api/app/data/market.json` (~4 000 objets, ~390 recettes), généré avec le catalogue des builds (voir plus bas), servi compressé par `GET /api/market`. Logique : `api/app/market.py` (génération) et `frontend/src/app/pages/market/market-logic.ts` (classement, marges, recettes).
+
 ### Bibliothèque de compos (page « Modèles »)
 
 - **Copier vers…** (staff) : sur une compo, choisir un autre de ses serveurs où l'on est staff → la compo y est recréée **avec ses builds**.
@@ -255,8 +266,8 @@ sur Discord, avec `/acti`, le joueur choisit son rôle et le build lui est impos
 - Lancement des activités : uniquement via `/acti nametemplate:<compo>` sur Discord.
 - `/massup` envoie en MP à chaque joueur l'image du build de son rôle (voir le README du bot).
 
-**Catalogue** : `api/app/data/items.json` (~290 objets, bouffe et potions comprises), généré depuis les dumps officiels du jeu ([ao-bin-dumps](https://github.com/ao-data/ao-bin-dumps)).
-Après un patch d'Albion qui ajoute des objets :
+**Catalogue** : `api/app/data/items.json` (~290 objets, bouffe et potions comprises) et `api/app/data/market.json` (onglet Marché), générés depuis les dumps officiels du jeu ([ao-bin-dumps](https://github.com/ao-data/ao-bin-dumps)).
+Après un patch d'Albion qui ajoute des objets ou change des recettes :
 
 ```powershell
 cd api
@@ -311,11 +322,13 @@ lilium-site/
 │   │   ├── compos.py        # conversion lignes du site <-> format template du bot
 │   │   ├── bal_stats.py     # statistiques BAL de la page Admin (fonctions pures)
 │   │   ├── catalog.py       # catalogue d'objets Albion (génération + validation de l'équipement)
+│   │   ├── market.py        # données de l'onglet Marché (noms FR/EN, recettes)
 │   │   ├── data/items.json  # catalogue généré (versionné)
+│   │   ├── data/market.json # noms + recettes du Marché, générés (versionnés)
 │   │   ├── constants.py     # ROLES + DEFAULT_TEMPLATES (depuis shared/) + ce que seul le site utilise
 │   │   ├── shared/          # copies exactes du bot (roles_templates.py, lilium_compo.py) — ne pas modifier ici
-│   │   └── routes/          # auth, me, items, builds, compos, guild (bal, rôles, admin)
-│   ├── scripts/update_items.py  # régénère data/items.json depuis ao-bin-dumps
+│   │   └── routes/          # auth, me, items, market, builds, compos, guild (bal, rôles, admin)
+│   ├── scripts/update_items.py  # régénère data/items.json et data/market.json depuis ao-bin-dumps
 │   ├── scripts/sync_from_bot.py # recopie (ou --check) les fichiers partagés avec le bot
 │   └── tests/
 └── frontend/
@@ -325,7 +338,7 @@ lilium-site/
         └── app/
             ├── core/        # AuthService, ApiService, ItemsService, guards, intercepteurs (401, langue), modèles, i18n/ (fr.ts, en.ts)
             ├── shared/      # item-picker, gear (rangée / mini-inventaire), charts, icon, logo, role-bar, period-picker, toasts, pager, lang-switch
-            └── pages/       # login, guilds, shell (nav), builds, compos, bal, admin, not-found (404)
+            └── pages/       # login, guilds, shell (nav), builds, compos, bal, market, admin, not-found (404)
 ```
 
 ## Pistes pour la suite

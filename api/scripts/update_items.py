@@ -1,6 +1,7 @@
-"""Régénère app/data/items.json depuis les dumps officiels d'Albion (ao-bin-dumps).
+"""Régénère app/data/items.json (builds) et app/data/market.json (onglet Marché)
+depuis les dumps officiels d'Albion (ao-bin-dumps).
 
-À relancer après un patch du jeu qui ajoute des armes/armures :
+À relancer après un patch du jeu qui ajoute des objets ou change des recettes :
     cd api
     .venv\\Scripts\\python -m scripts.update_items
 """
@@ -9,6 +10,7 @@ import json
 
 import aiohttp
 
+from app import market
 from app.catalog import DATA_FILE, build_catalog
 
 BASE = "https://raw.githubusercontent.com/ao-data/ao-bin-dumps/master"
@@ -34,6 +36,10 @@ async def main() -> None:
     for item in catalog:
         counts[item["slot"]] = counts.get(item["slot"], 0) + 1
     print(f"{len(catalog)} objets écrits dans {DATA_FILE} : {counts}")
+
+    data = market.build_market(raw["items"], localized)
+    market.DATA_FILE.write_text(json.dumps(data, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
+    print(f"{len(data['items'])} objets et {len(data['recipes'])} recettes écrits dans {market.DATA_FILE}")
 
 
 if __name__ == "__main__":

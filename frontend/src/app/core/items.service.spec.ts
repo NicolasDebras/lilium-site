@@ -8,6 +8,7 @@ import { FALLBACK_ICON, ItemsService, filterItems, itemIconUrl, normalize, useFa
 describe('normalize / filterItems / itemIconUrl', () => {
   it('ignore accents et majuscules', () => {
     expect(normalize('  Épée LARGE ')).toBe('epee large');
+    expect(normalize("Œuf d'oie")).toBe("oeuf d'oie");
   });
 
   it('filtre par emplacement', () => {

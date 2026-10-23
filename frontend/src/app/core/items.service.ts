@@ -35,9 +35,9 @@ export function categoryLabel(category: string): string {
   return dict().categories[category] ?? category;
 }
 
-/** Minuscules sans accents, pour une recherche « epee » → « Épée ». */
+/** Minuscules sans accents ni ligatures, pour une recherche « epee » → « Épée », « oeuf » → « Œuf ». */
 export function normalize(text: string): string {
-  return text.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase().trim();
+  return text.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase().replace(/œ/g, 'oe').replace(/æ/g, 'ae').trim();
 }
 
 /** Texte de recherche normalisé de chaque objet, calculé une fois (le catalogue ne change pas). */

@@ -38,8 +38,8 @@ describe('Shell', () => {
   it('liens de navigation avec icônes ; Admin seulement pour un admin', async () => {
     const member = await render('member');
     const labels = [...member.el.querySelectorAll('.links a')].map((a) => a.textContent?.trim());
-    expect(labels).toEqual(['Builds', 'Compos', 'Modèles', 'Ma BAL']);
-    expect(member.el.querySelectorAll('.links a app-icon').length).toBe(4);
+    expect(labels).toEqual(['Builds', 'Compos', 'Modèles', 'Ma BAL', 'Marché']);
+    expect(member.el.querySelectorAll('.links a app-icon').length).toBe(5);
   });
 
   it('sélecteur de langue (menu du compte) : EN traduit la navigation et met à jour <html lang>', async () => {
@@ -49,7 +49,7 @@ describe('Shell', () => {
     const en = [...el.querySelectorAll<HTMLButtonElement>('app-lang-switch button')].find((b) => b.textContent?.trim() === 'EN')!;
     en.click();
     fixture.detectChanges();
-    expect([...el.querySelectorAll('.links a')].map((a) => a.textContent?.trim())).toEqual(['Builds', 'Comps', 'Templates', 'My balance']);
+    expect([...el.querySelectorAll('.links a')].map((a) => a.textContent?.trim())).toEqual(['Builds', 'Comps', 'Templates', 'My balance', 'Market']);
     expect(en.getAttribute('aria-pressed')).toBe('true');
     expect(document.documentElement.lang).toBe('en');
   });

@@ -12,7 +12,7 @@ import { Logo } from '../../shared/logo';
 import { Toasts } from '../../shared/toasts';
 
 interface NavLink {
-  path: 'builds' | 'compos' | 'modeles' | 'bal' | 'admin';
+  path: 'builds' | 'compos' | 'modeles' | 'bal' | 'marche' | 'admin';
   icon: IconName;
   admin?: boolean;
 }
@@ -22,6 +22,7 @@ export const NAV_LINKS: NavLink[] = [
   { path: 'compos', icon: 'users' },
   { path: 'modeles', icon: 'book' },
   { path: 'bal', icon: 'coins' },
+  { path: 'marche', icon: 'trend' },
   { path: 'admin', icon: 'shield', admin: true },
 ];
 
