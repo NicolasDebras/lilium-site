@@ -12,7 +12,7 @@ import { Logo } from '../../shared/logo';
 import { Toasts } from '../../shared/toasts';
 
 interface NavLink {
-  path: 'builds' | 'compos' | 'modeles' | 'bal' | 'marche' | 'admin';
+  path: 'builds' | 'compos' | 'modeles' | 'bal' | 'admin';
   icon: IconName;
   admin?: boolean;
 }
@@ -22,7 +22,6 @@ export const NAV_LINKS: NavLink[] = [
   { path: 'compos', icon: 'users' },
   { path: 'modeles', icon: 'book' },
   { path: 'bal', icon: 'coins' },
-  { path: 'marche', icon: 'trend' },
   { path: 'admin', icon: 'shield', admin: true },
 ];
 
@@ -87,6 +86,11 @@ export const NAV_LINKS: NavLink[] = [
                     <span><app-icon name="globe" [size]="16" /> {{ t().lang.label }}</span>
                     <app-lang-switch />
                   </div>
+                  @if (guild(); as g) {
+                    <a role="menuitem" class="market-link" [routerLink]="['/g', g.id, 'marche']" (click)="accountOpen.set(false)">
+                      <app-icon name="trend" [size]="16" /> {{ t().shell.nav.marche }}
+                    </a>
+                  }
                   <button type="button" role="menuitem" class="logout" (click)="logout()">
                     <app-icon name="logout" [size]="16" /> {{ t().shell.logout }}
                   </button>

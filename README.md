@@ -234,9 +234,9 @@ Détails :
 - Images : CDN officiel `https://render.albiononline.com/v1/item/{id}.png`. Si une image manque (objet trop récent), une icône « ? » s'affiche à la place.
 - Le champ texte « Précisions sur le stuff » reste disponible (tier minimum, monture…).
 
-### Marché (onglet de guilde)
+### Marché (page de guilde)
 
-Outil imaginé par **Aria le papi**, porté dans le site (`/g/{gid}/marche`, membres) :
+Outil imaginé par **Aria le papi**, porté dans le site (`/g/{gid}/marche`, membres ; accessible depuis le menu du compte, sous « Langue ») :
 
 - **Recherche marché** : tous les objets à tier du jeu, recherche FR/EN/id (`-mot` pour exclure), filtres catégorie/type, origine (normal, artefact, royal), tier, enchantement, ville d'achat/de vente, marge minimale, fraîcheur des prix, tri ; **marge nette** = meilleure revente après taxe − achat le moins cher ; clic → prix ville par ville (meilleur achat en vert, meilleure revente en lilas).
 - **Cuisine & potions** : formule de chaque recette, quantité à fabriquer, retour de ressources (0 / 15,2 / 43,5 / 53,9 % ; sauf ressources que le jeu ne rend jamais, `@maxreturnamount="0"` : drops rares de créatures, énergie avalonienne), coût des ressources, revente, marge ; clic → liste de courses.
