@@ -90,8 +90,11 @@ const SORTS: Record<Sort, SortSpec<Row>> = {
         </div>
         <div class="field">
           <label for="c-roi">{{ t().market.minRoi }}</label>
-          <input id="c-roi" class="input" type="number" min="0" step="1" [placeholder]="t().market.noMin" [value]="f().minRoi"
-                 (change)="patch({ minRoi: $any($event.target).value })" />
+          <div class="input-unit">
+            <input id="c-roi" class="input" type="number" min="0" step="1" inputmode="numeric" [placeholder]="t().market.noMin" [value]="f().minRoi"
+                   (change)="patch({ minRoi: $any($event.target).value })" />
+            <span class="unit">%</span>
+          </div>
         </div>
         <div class="field">
           <label for="c-sort">{{ t().market.sortBy }}</label>
@@ -119,7 +122,7 @@ const SORTS: Record<Sort, SortSpec<Row>> = {
         </div>
         <div class="field">
           <label for="c-qty">{{ t().market.craft.qty }}</label>
-          <input id="c-qty" class="input" type="number" min="1" step="1" [value]="f().qty" (change)="setQty($any($event.target).value)" />
+          <input id="c-qty" class="input" type="number" min="1" step="1" inputmode="numeric" [value]="f().qty" (change)="setQty($any($event.target).value)" />
         </div>
         <div class="field">
           <label for="c-rrr">{{ t().market.craft.rrr }}</label>
@@ -128,9 +131,11 @@ const SORTS: Record<Sort, SortSpec<Row>> = {
           </select>
         </div>
         <div class="field end">
-          <label class="check"><input type="checkbox" [checked]="f().only" (change)="patch({ only: $any($event.target).checked })" />
+          <label class="switch"><input type="checkbox" [checked]="f().only" (change)="patch({ only: $any($event.target).checked })" />
             {{ t().market.onlyPriced }}</label>
-          <button type="button" class="btn btn-ghost btn-sm" (click)="reset()">{{ t().market.reset }}</button>
+          <button type="button" class="btn btn-sm reset" (click)="reset()">
+            <app-icon name="reset" [size]="14" /> {{ t().market.reset }}
+          </button>
         </div>
       </div>
     </section>
@@ -233,9 +238,11 @@ const SORTS: Record<Sort, SortSpec<Row>> = {
     .wide { grid-column: span 2; }
     @media (max-width: 520px) { .wide { grid-column: auto; } }
     .lbl { font-weight: 600; font-size: .85rem; color: var(--text-muted); }
-    .end { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
-    .check { display: flex; align-items: center; gap: 8px; font-size: .9rem; cursor: pointer; color: var(--text) !important; font-weight: 500 !important; }
-    .check input { accent-color: var(--lilac); width: 16px; height: 16px; }
+    .end { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; min-height: 44px; }
+    .reset { color: var(--text-muted); }
+    .reset:hover { color: var(--text); }
+    .reset app-icon { transition: transform .35s var(--ease); }
+    .reset:hover app-icon { transform: rotate(-120deg); }
     .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0 0 12px; }
     .count { flex: 1 1 220px; margin: 0; font-size: .9rem; }
     .table-card { padding: 6px 4px; }

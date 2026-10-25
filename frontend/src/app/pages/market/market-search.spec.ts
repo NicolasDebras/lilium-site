@@ -90,9 +90,13 @@ describe('MarketSearch (recherche marché)', () => {
     input.dispatchEvent(new Event('input'));
     await wait(300);
     ctx.fixture.detectChanges();
-    ctx.el.querySelector<HTMLInputElement>('.check input')!.click();
+    ctx.el.querySelector<HTMLInputElement>('.switch input')!.click();
     ctx.fixture.detectChanges();
     expect(ctx.el.querySelector('.count')?.textContent).toContain('2 objets (sur 4');
+    ctx.el.querySelector<HTMLButtonElement>('button.reset')!.click();
+    ctx.fixture.detectChanges();
+    expect(ctx.el.querySelector<HTMLInputElement>('.switch input')!.checked).toBe(false);
+    expect(ctx.el.querySelector('.count')?.textContent).not.toContain('(sur');
   });
 
   it('puces tier et enchantement, catégorie puis type', async () => {

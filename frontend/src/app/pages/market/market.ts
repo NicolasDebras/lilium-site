@@ -61,8 +61,11 @@ type View = 'search' | 'craft';
               </div>
               <div class="field">
                 <label for="m-tax">{{ t().market.settings.tax }}</label>
-                <input id="m-tax" class="input" type="number" min="0" max="100" step="0.5" [value]="settings().tax"
-                       (change)="setTax($any($event.target).value)" />
+                <div class="input-unit">
+                  <input id="m-tax" class="input" type="number" min="0" max="100" step="0.5" inputmode="decimal" [value]="settings().tax"
+                         (change)="setTax($any($event.target).value)" />
+                  <span class="unit">%</span>
+                </div>
               </div>
               <div class="field">
                 <label for="m-quality">{{ t().market.settings.quality }}</label>
@@ -72,7 +75,7 @@ type View = 'search' | 'craft';
                   }
                 </select>
               </div>
-              <label class="check">
+              <label class="switch check">
                 <input type="checkbox" [checked]="settings().bm" (change)="market.update({ bm: $any($event.target).checked })" />
                 {{ t().market.settings.bm }}
               </label>
@@ -112,8 +115,7 @@ type View = 'search' | 'craft';
     .status { flex: 1 1 260px; margin: 0; text-align: right; font-size: .85rem; color: var(--text-muted); }
     .status.error-text { color: var(--danger); }
     .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr)); gap: 14px; align-items: end; padding-top: 14px; }
-    .check { display: flex; align-items: center; gap: 8px; font-size: .9rem; padding-bottom: 10px; cursor: pointer; }
-    .check input { accent-color: var(--lilac); width: 16px; height: 16px; }
+    .check { padding-bottom: 11px; }
     .hint { font-size: .8rem; margin: 12px 0 2px; }
     .progress { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; opacity: 0; transition: opacity .6s .4s; overflow: hidden; }
     .progress.active { opacity: 1; transition-delay: 0s; }
