@@ -9,11 +9,12 @@ import { Icon } from '../../shared/icon';
 import { Pager } from '../../shared/pager';
 import { cityLabel, familyLabel, percent, silver, tierText } from './market-format';
 import {
-  RRR_OPTIONS, Recipe, RecipeFilters, RecipeResult, RecipeScope, baseId, desc, familyOf, filterRecipes, recipeCalc, recipeIds,
+  RRR_OPTIONS, Recipe, RecipeFilters, RecipeResult, RecipeScope, SortSpec, baseId, familyOf, filterRecipes, recipeCalc, recipeIds,
+  sortRows,
 } from './market-logic';
 import { AUTOLOAD_MS } from './market-search';
 
-type Sort = 'profit' | 'roi' | 'cost' | 'name' | 'tier';
+type Sort = 'profit' | 'roi' | 'cost' | 'sell' | 'name' | 'tier';
 
 interface CraftPrefs extends RecipeFilters {
   qty: number;
@@ -21,10 +22,13 @@ interface CraftPrefs extends RecipeFilters {
   minRoi: string;
   only: boolean;
   sort: Sort;
+  /** Sens inverse du sens naturel de la colonne (2ᵉ clic sur l'en-tête). */
+  rev: boolean;
 }
 
 const DEFAULTS: CraftPrefs = {
-  q: '', scope: 'both', cat: '', fam: '', ing: '', tiers: [], enchs: [0], qty: 100, rrr: '15.2', minRoi: '', only: false, sort: 'profit',
+  q: '', scope: 'both', cat: '', fam: '', ing: '', tiers: [], enchs: [0], qty: 100, rrr: '15.2', minRoi: '', only: false,
+  sort: 'profit', rev: false,
 };
 const PAGE_SIZE = 20;
 
@@ -34,12 +38,13 @@ interface Row {
   name: string;
 }
 
-const SORTS: Record<Sort, (a: Row, b: Row) => number> = {
-  profit: (a, b) => desc(a.calc.profit, b.calc.profit),
-  roi: (a, b) => desc(a.calc.roi, b.calc.roi),
-  cost: (a, b) => (a.calc.cost ?? 1e15) - (b.calc.cost ?? 1e15),
-  name: (a, b) => a.name.localeCompare(b.name),
-  tier: (a, b) => a.recipe.tier - b.recipe.tier || a.recipe.ench - b.recipe.ench || a.name.localeCompare(b.name),
+const SORTS: Record<Sort, SortSpec<Row>> = {
+  profit: { value: (r) => r.calc.profit, desc: true },
+  roi: { value: (r) => r.calc.roi, desc: true },
+  cost: { value: (r) => r.calc.cost },
+  sell: { value: (r) => (r.calc.sell ? r.calc.revenue : null), desc: true },
+  name: { value: (r) => r.name },
+  tier: { value: (r) => r.recipe.tier * 10 + r.recipe.ench, then: (a, b) => a.name.localeCompare(b.name) },
 };
 
 /** Cuisine et potions : coût des ressources, revente, marge pour une quantité et un retour de ressources. */
@@ -90,7 +95,7 @@ const SORTS: Record<Sort, (a: Row, b: Row) => number> = {
         </div>
         <div class="field">
           <label for="c-sort">{{ t().market.sortBy }}</label>
-          <select id="c-sort" class="select" (change)="patch({ sort: $any($event.target).value })">
+          <select id="c-sort" class="select" (change)="patch({ sort: $any($event.target).value, rev: false })">
             @for (s of sorts; track s) { <option [value]="s" [selected]="s === f().sort">{{ t().market.craft.sorts[s] }}</option> }
           </select>
         </div>
@@ -145,9 +150,18 @@ const SORTS: Record<Sort, (a: Row, b: Row) => number> = {
         <div class="scroll">
           <table class="table">
             <thead><tr>
-              <th>{{ t().market.craft.cols.recipe }}</th><th>{{ t().market.craft.cols.formula }}</th>
-              <th class="r">{{ t().market.craft.cols.cost }}</th><th class="r">{{ t().market.craft.cols.sell }}</th>
-              <th class="r">{{ t().market.craft.cols.profit }}</th><th class="r">{{ t().market.craft.cols.roi }}</th>
+              @for (c of columns; track c.col) {
+                @if (c.sort; as s) {
+                  <th [class.r]="c.right" [attr.aria-sort]="ariaSort(s)">
+                    <button type="button" class="sort-h" [class.on]="f().sort === s" [title]="t().market.sortHint" (click)="sortBy(s)">
+                      {{ t().market.craft.cols[c.col] }}
+                      <app-icon name="chevron" [size]="12" class="dir" [class.up]="up(s)" />
+                    </button>
+                  </th>
+                } @else {
+                  <th>{{ t().market.craft.cols[c.col] }}</th>
+                }
+              }
             </tr></thead>
             <tbody>
               @for (r of pageRows(); track r.recipe.id; let i = $index) {
@@ -229,6 +243,13 @@ const SORTS: Record<Sort, (a: Row, b: Row) => number> = {
     .table { min-width: 860px; }
     .table td { vertical-align: middle; }
     .r { text-align: right !important; white-space: nowrap; }
+    .sort-h { display: inline-flex; align-items: center; gap: 4px; padding: 0; border: 0; background: none;
+              color: inherit; font: inherit; text-transform: inherit; letter-spacing: inherit; cursor: pointer; }
+    .sort-h:hover, .sort-h.on { color: var(--text); }
+    .dir { opacity: 0; transition: transform .2s var(--ease), opacity .15s; }
+    .sort-h:hover .dir { opacity: .5; }
+    .sort-h.on .dir { opacity: 1; color: var(--lilac); }
+    .dir.up { transform: rotate(180deg); }
     .item { display: flex; align-items: center; gap: 12px; background: none; border: 0; padding: 2px 0; color: inherit; font: inherit; text-align: left; cursor: pointer; }
     .ico { flex: none; width: 40px; height: 40px; border-radius: 9px; background: var(--surface-2); transition: transform .2s var(--ease), box-shadow .2s; }
     .ico img { width: 40px; height: 40px; display: block; }
@@ -267,7 +288,16 @@ export class MarketCraft {
   protected readonly tiers = [1, 2, 3, 4, 5, 6, 7, 8];
   protected readonly enchs = [0, 1, 2, 3];
   protected readonly rrrs = RRR_OPTIONS;
-  protected readonly sorts: Sort[] = ['profit', 'roi', 'cost', 'name', 'tier'];
+  protected readonly sorts: Sort[] = ['profit', 'roi', 'cost', 'sell', 'name', 'tier'];
+  /** En-têtes du tableau : un clic trie sur la colonne, un 2ᵉ inverse le sens (la formule ne se trie pas). */
+  protected readonly columns: { col: 'recipe' | 'formula' | 'cost' | 'sell' | 'profit' | 'roi'; sort: Sort | null; right: boolean }[] = [
+    { col: 'recipe', sort: 'name', right: false },
+    { col: 'formula', sort: null, right: false },
+    { col: 'cost', sort: 'cost', right: true },
+    { col: 'sell', sort: 'sell', right: true },
+    { col: 'profit', sort: 'profit', right: true },
+    { col: 'roi', sort: 'roi', right: true },
+  ];
   protected readonly pageSize = PAGE_SIZE;
   protected readonly bulk = BULK_MAX;
   protected readonly silver = silver;
@@ -301,7 +331,7 @@ export class MarketCraft {
     }));
     if (f.only) rows = rows.filter((r) => r.calc.cost != null || r.calc.sell);
     if (f.minRoi !== '') rows = rows.filter((r) => r.calc.roi != null && r.calc.roi >= +f.minRoi);
-    return rows.sort(SORTS[f.sort] ?? SORTS.profit);
+    return sortRows(rows, SORTS[f.sort] ?? SORTS.profit, f.rev);
   });
 
   protected readonly page = linkedSignal({ source: () => [this.matching(), this.f()], computation: () => 1 });
@@ -309,7 +339,7 @@ export class MarketCraft {
   protected readonly pageRows = computed(() => {
     const prices = this.market.prices();
     const start = (this.page() - 1) * PAGE_SIZE;
-    const firstPage = this.page() === 1 && this.f().sort === 'profit';
+    const firstPage = this.page() === 1 && this.f().sort === 'profit' && !this.f().rev;
     return this.rows().slice(start, start + PAGE_SIZE).map((r, i) => ({
       ...r,
       tier: tierText(r.recipe.tier, r.recipe.ench),
@@ -346,7 +376,22 @@ export class MarketCraft {
   }
 
   reset(): void {
-    this.f.set({ ...DEFAULTS, enchs: [], qty: this.f().qty, rrr: this.f().rrr, sort: this.f().sort });
+    this.f.set({ ...DEFAULTS, enchs: [], qty: this.f().qty, rrr: this.f().rrr, sort: this.f().sort, rev: this.f().rev });
+  }
+
+  /** Clic sur un en-tête : trie sur cette colonne (sens naturel), ou inverse le sens si c'est déjà elle. */
+  sortBy(sort: Sort): void {
+    this.patch(sort === this.f().sort ? { rev: !this.f().rev } : { sort, rev: false });
+  }
+
+  /** Flèche vers le haut = ordre croissant. */
+  up(sort: Sort): boolean {
+    return sort === this.f().sort && !SORTS[sort].desc !== this.f().rev;
+  }
+
+  ariaSort(sort: Sort): 'ascending' | 'descending' | null {
+    if (sort !== this.f().sort) return null;
+    return this.up(sort) ? 'ascending' : 'descending';
   }
 
   toggleOpen(id: string): void {

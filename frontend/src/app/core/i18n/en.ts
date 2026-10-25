@@ -376,6 +376,7 @@ export const en: typeof fr = {
     minRoi: 'Minimum margin (%)',
     noMin: 'none',
     sortBy: 'Sort by',
+    sortHint: 'Sort by this column (click again to reverse)',
     onlyPriced: 'Only with prices',
     missing: 'missing prices',
     bestDeal: 'Best deal',
@@ -401,7 +402,7 @@ export const en: typeof fr = {
       fresh: { '1': 'under 1 h', '6': 'under 6 h', '24': 'under 24 h' },
       sorts: {
         profit: 'Margin per item', roi: 'Margin (%)', buy: 'Buy price (ascending)',
-        sell: 'Sell price (descending)', name: 'Name', tier: 'Tier',
+        sell: 'Sell price (descending)', age: 'Freshness', name: 'Name', tier: 'Tier',
       },
       count: (n: number, total: number) =>
         `${n.toLocaleString('en-US')} ${plural(n, 'item', 'items')}${n !== total ? ` (out of ${total.toLocaleString('en-US')} matching the search)` : ''}`,
@@ -432,7 +433,7 @@ export const en: typeof fr = {
         '0': '0% (no bonus)', '15.2': '15.2% (city with bonus)',
         '43.5': '43.5% (with focus)', '53.9': '53.9% (city bonus + focus)',
       },
-      sorts: { profit: 'Total margin', roi: 'Margin (%)', cost: 'Cost (ascending)', name: 'Name', tier: 'Tier' },
+      sorts: { profit: 'Total margin', roi: 'Margin (%)', cost: 'Cost (ascending)', sell: 'Sale (descending)', name: 'Name', tier: 'Tier' },
       count: (n: number, total: number, qty: number) =>
         `${n} ${plural(n, 'recipe', 'recipes')}${n !== total ? ` (out of ${total} matching the search)` : ''} · computed for ${qty.toLocaleString('en-US')} ${plural(qty, 'unit', 'units')}`,
       cols: { recipe: 'Recipe', formula: 'Formula (per craft)', cost: 'Resource cost', sell: 'Sale (best city)', profit: 'Margin', roi: 'Margin %' },

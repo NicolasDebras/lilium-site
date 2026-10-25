@@ -347,6 +347,7 @@ export const fr = {
     minRoi: 'Marge minimale (%)',
     noMin: 'aucune',
     sortBy: 'Trier par',
+    sortHint: 'Trier sur cette colonne (cliquer à nouveau pour inverser)',
     onlyPriced: 'Seulement avec prix',
     missing: 'prix manquants',
     bestDeal: 'Meilleure affaire',
@@ -372,7 +373,7 @@ export const fr = {
       fresh: { '1': 'moins de 1 h', '6': 'moins de 6 h', '24': 'moins de 24 h' } as Record<string, string>,
       sorts: {
         profit: 'Marge par objet', roi: 'Marge (%)', buy: 'Prix d’achat (croissant)',
-        sell: 'Prix de vente (décroissant)', name: 'Nom', tier: 'Tier',
+        sell: 'Prix de vente (décroissant)', age: 'Fraîcheur', name: 'Nom', tier: 'Tier',
       } as Record<string, string>,
       count: (n: number, total: number) =>
         `${n.toLocaleString('fr-FR')} ${plural(n, 'objet', 'objets')}${n !== total ? ` (sur ${total.toLocaleString('fr-FR')} correspondant à la recherche)` : ''}`,
@@ -403,7 +404,7 @@ export const fr = {
         '0': '0 % (sans bonus)', '15.2': '15,2 % (ville avec bonus)',
         '43.5': '43,5 % (avec focus)', '53.9': '53,9 % (bonus de ville + focus)',
       } as Record<string, string>,
-      sorts: { profit: 'Marge totale', roi: 'Marge (%)', cost: 'Coût (croissant)', name: 'Nom', tier: 'Tier' } as Record<string, string>,
+      sorts: { profit: 'Marge totale', roi: 'Marge (%)', cost: 'Coût (croissant)', sell: 'Vente (décroissant)', name: 'Nom', tier: 'Tier' } as Record<string, string>,
       count: (n: number, total: number, qty: number) =>
         `${n} ${plural(n, 'recette', 'recettes')}${n !== total ? ` (sur ${total} correspondant à la recherche)` : ''} · calcul pour ${qty.toLocaleString('fr-FR')} ${plural(qty, 'unité', 'unités')}`,
       cols: { recipe: 'Recette', formula: 'Formule (par fabrication)', cost: 'Coût des ressources', sell: 'Vente (meilleure ville)', profit: 'Marge', roi: 'Marge %' },

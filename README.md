@@ -240,7 +240,8 @@ Outil imaginé par **Aria le papi**, porté dans le site (`/g/{gid}/marche`, mem
 
 - **Recherche marché** : tous les objets à tier du jeu, recherche FR/EN/id (`-mot` pour exclure), filtres catégorie/type, origine (normal, artefact, royal), tier, enchantement, ville d'achat/de vente, marge minimale, fraîcheur des prix, tri ; **marge nette** = meilleure revente après taxe − achat le moins cher ; clic → prix ville par ville (meilleur achat en vert, meilleure revente en lilas).
 - **Cuisine & potions** : formule de chaque recette, quantité à fabriquer, retour de ressources (0 / 15,2 / 43,5 / 53,9 % ; sauf ressources que le jeu ne rend jamais, `@maxreturnamount="0"` : drops rares de créatures, énergie avalonienne), coût des ressources, revente, marge ; clic → liste de courses.
-- **Réglages** (mémorisés dans le navigateur, comme les filtres) : serveur Europe/West/East, vente directe ou mise en vente (taxe 4 % / 6,5 % par défaut), qualité, Marché noir.
+- **Tri** : liste « Trier par » ou clic sur un en-tête de colonne (objet/recette, achat, vente, coût, marge, %, fraîcheur) ; un 2ᵉ clic inverse le sens, les lignes sans prix restent en bas.
+- **Réglages** (mémorisés dans le navigateur, comme les filtres et le tri) : serveur Europe/West/East, vente directe ou mise en vente (taxe 4 % / 6,5 % par défaut), qualité, Marché noir.
 - **Prix** : demandés **par le navigateur** à l'[Albion Online Data Project](https://www.albion-online-data.com/) (relevés de joueurs, limite par IP répartie entre les joueurs, pas par le serveur du site) ; la page affichée se charge toute seule, « Charger tous les résultats » va jusqu'à 300 objets.
 - **Noms et recettes** : `api/app/data/market.json` (~4 000 objets, ~390 recettes), généré avec le catalogue des builds (voir plus bas), servi compressé par `GET /api/market`. Logique : `api/app/market.py` (génération) et `frontend/src/app/pages/market/market-logic.ts` (classement, marges, recettes).
 

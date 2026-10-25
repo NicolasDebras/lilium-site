@@ -387,7 +387,22 @@ export function filterRecipes(recipes: readonly Recipe[], f: RecipeFilters, sear
   });
 }
 
-/** Tri « valeur absente en dernier » : du plus grand au plus petit. */
-export function desc(a: number | null, b: number | null): number {
-  return (b ?? -1e15) - (a ?? -1e15);
+/** Colonne triable : valeur comparée, sens naturel (`desc` = du plus grand au plus petit), départage. */
+export interface SortSpec<T> {
+  value: (row: T) => number | string | null | undefined;
+  desc?: boolean;
+  then?: (a: T, b: T) => number;
+}
+
+/** Trie selon `spec`, sens naturel inversé par `rev` ; les valeurs absentes restent toujours en bas. */
+export function sortRows<T>(rows: readonly T[], spec: SortSpec<T>, rev = false): T[] {
+  const sign = (spec.desc ? -1 : 1) * (rev ? -1 : 1);
+  return rows
+    .map((row) => ({ row, v: spec.value(row) }))
+    .sort((a, b) => {
+      if (a.v == null || b.v == null) return (a.v == null ? 1 : 0) - (b.v == null ? 1 : 0);
+      const d = typeof a.v === 'string' ? a.v.localeCompare(String(b.v)) : a.v - (b.v as number);
+      return sign * d || (spec.then?.(a.row, b.row) ?? 0);
+    })
+    .map((x) => x.row);
 }

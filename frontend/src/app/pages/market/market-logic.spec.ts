@@ -3,12 +3,22 @@ import { en } from '../../core/i18n/en';
 import { fr } from '../../core/i18n/fr';
 import {
   BLACK_MARKET, CATEGORIES, Recipe, calcTrade, classify, expandItems, familyOf, filterItems, filterRecipes, hoursSince,
-  matchTokens, mergePrices, recipeCalc,
+  matchTokens, mergePrices, recipeCalc, sortRows,
 } from './market-logic';
 
 const NOW = Date.parse('2026-10-23T12:00:00Z');
 
 describe('market-logic', () => {
+  it('sortRows : sens naturel, inversé, valeurs absentes toujours en bas, départage', () => {
+    const rows = [{ n: 'b', v: 2 }, { n: 'x', v: null }, { n: 'a', v: 5 }, { n: 'c', v: 2 }];
+    const names = (r: typeof rows) => r.map((x) => x.n).join('');
+    expect(names(sortRows(rows, { value: (r) => r.v, desc: true }))).toBe('abcx');
+    expect(names(sortRows(rows, { value: (r) => r.v, desc: true }, true))).toBe('bcax');
+    expect(names(sortRows(rows, { value: (r) => r.v, then: (a, b) => b.n.localeCompare(a.n) }))).toBe('cbax');
+    expect(names(sortRows(rows, { value: (r) => r.n }, true))).toBe('xcba');
+    expect(names(rows)).toBe('bxac');   // tableau d'origine intact
+  });
+
   it('classe les objets d’après leur id', () => {
     expect(classify('T6_2H_BOW@1')).toEqual({ tier: 6, ench: 1, cat: 'weapons', type: 'bows', orig: 'normal' });
     expect(classify('T5_2H_CROSSBOWLARGE')?.type).toBe('crossbows');

@@ -49,6 +49,25 @@ describe('MarketCraft (cuisine & potions)', () => {
     expect(el.querySelectorAll('tbody tr')[1].textContent).toContain('prix manquants');   // soupe : carottes sans prix
   });
 
+  it('tri au clic sur les en-têtes (la formule ne se trie pas)', async () => {
+    const { fixture, http, el } = await render();
+    await wait(AUTOLOAD_MS + 50);
+    http.expectOne(isPrices).flush([]);
+    await wait();
+    fixture.detectChanges();
+    const names = () => [...el.querySelectorAll('tbody .name')].map((n) => n.firstChild?.textContent?.trim());
+    const recipe = el.querySelector<HTMLButtonElement>('th .sort-h')!;
+    expect(el.querySelectorAll('th .sort-h').length).toBe(5);
+    recipe.click();
+    fixture.detectChanges();
+    const asc = names();
+    expect(asc).toEqual([...asc].sort((a, b) => a!.localeCompare(b!)));
+    expect(recipe.closest('th')?.getAttribute('aria-sort')).toBe('ascending');
+    recipe.click();
+    fixture.detectChanges();
+    expect(names()).toEqual([...asc].reverse());
+  });
+
   it('liste de courses détaillée avec totaux', async () => {
     const { fixture, http, el } = await render();
     await wait(AUTOLOAD_MS + 50);

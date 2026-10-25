@@ -10,10 +10,10 @@ import { TierBadge } from '../../shared/tier-badge';
 import { cityLabel, itemLabel, otherLabel, percent, silver, tierText } from './market-format';
 import {
   BLACK_MARKET, CATEGORIES, CATEGORY_KEYS, CITIES, Category, City, ItemFilters, MarketItem, ORIGINS, Origin, Trade,
-  TradeOptions, calcTrade, desc, filterItems, hoursSince,
+  SortSpec, TradeOptions, calcTrade, filterItems, hoursSince, sortRows,
 } from './market-logic';
 
-type Sort = 'profit' | 'roi' | 'buy' | 'sell' | 'name' | 'tier';
+type Sort = 'profit' | 'roi' | 'buy' | 'sell' | 'age' | 'name' | 'tier';
 
 interface SearchPrefs extends ItemFilters {
   buyCity: City | '';
@@ -22,10 +22,13 @@ interface SearchPrefs extends ItemFilters {
   maxAge: string;
   only: boolean;
   sort: Sort;
+  /** Sens inverse du sens naturel de la colonne (2ᵉ clic sur l'en-tête). */
+  rev: boolean;
 }
 
 const DEFAULTS: SearchPrefs = {
-  q: '', cat: '', type: '', tiers: [6], enchs: [0], orig: '', buyCity: '', sellCity: '', minRoi: '', maxAge: '', only: false, sort: 'profit',
+  q: '', cat: '', type: '', tiers: [6], enchs: [0], orig: '', buyCity: '', sellCity: '', minRoi: '', maxAge: '', only: false,
+  sort: 'profit', rev: false,
 };
 const PAGE_SIZE = 25;
 /** Délai avant de charger les prix de la page affichée (on ne charge pas pendant qu'on tape). */
@@ -36,13 +39,16 @@ interface Row {
   trade: Trade;
 }
 
-const SORTS: Record<Sort, (a: Row, b: Row) => number> = {
-  profit: (a, b) => desc(a.trade.profit, b.trade.profit),
-  roi: (a, b) => desc(a.trade.roi, b.trade.roi),
-  buy: (a, b) => (a.trade.buy?.value ?? 1e15) - (b.trade.buy?.value ?? 1e15),
-  sell: (a, b) => (b.trade.sell?.value ?? -1) - (a.trade.sell?.value ?? -1),
-  name: (a, b) => itemLabel(a.it).localeCompare(itemLabel(b.it)),
-  tier: (a, b) => a.it.tier - b.it.tier || a.it.ench - b.it.ench || itemLabel(a.it).localeCompare(itemLabel(b.it)),
+const byName = (a: Row, b: Row) => itemLabel(a.it).localeCompare(itemLabel(b.it));
+
+const SORTS: Record<Sort, SortSpec<Row>> = {
+  profit: { value: (r) => r.trade.profit, desc: true },
+  roi: { value: (r) => r.trade.roi, desc: true },
+  buy: { value: (r) => r.trade.buy?.value },
+  sell: { value: (r) => r.trade.sell?.value, desc: true },
+  age: { value: (r) => r.trade.age },
+  name: { value: (r) => itemLabel(r.it) },
+  tier: { value: (r) => r.it.tier * 10 + r.it.ench, then: byName },
 };
 
 /** Recherche d'objets : filtres, marge achat/revente par objet, prix ville par ville. */
@@ -130,7 +136,7 @@ const SORTS: Record<Sort, (a: Row, b: Row) => number> = {
         </div>
         <div class="field">
           <label for="s-sort">{{ t().market.sortBy }}</label>
-          <select id="s-sort" class="select" (change)="patch({ sort: $any($event.target).value })">
+          <select id="s-sort" class="select" (change)="patch({ sort: $any($event.target).value, rev: false })">
             @for (s of sorts; track s) { <option [value]="s" [selected]="s === f().sort">{{ t().market.search.sorts[s] }}</option> }
           </select>
         </div>
@@ -157,9 +163,14 @@ const SORTS: Record<Sort, (a: Row, b: Row) => number> = {
         <div class="scroll">
           <table class="table">
             <thead><tr>
-              <th>{{ t().market.search.cols.item }}</th><th>{{ t().market.search.cols.buy }}</th><th>{{ t().market.search.cols.sell }}</th>
-              <th class="r">{{ t().market.search.cols.profit }}</th><th class="r">{{ t().market.search.cols.roi }}</th>
-              <th class="r">{{ t().market.search.cols.age }}</th>
+              @for (c of columns; track c.sort) {
+                <th [class.r]="c.right" [attr.aria-sort]="ariaSort(c.sort)">
+                  <button type="button" class="sort-h" [class.on]="f().sort === c.sort" [title]="t().market.sortHint" (click)="sortBy(c.sort)">
+                    {{ t().market.search.cols[c.col] }}
+                    <app-icon name="chevron" [size]="12" class="dir" [class.up]="up(c.sort)" />
+                  </button>
+                </th>
+              }
             </tr></thead>
             <tbody>
               @for (r of pageRows(); track r.it.id; let i = $index) {
@@ -226,6 +237,13 @@ const SORTS: Record<Sort, (a: Row, b: Row) => number> = {
     .table { min-width: 720px; }
     .table td { vertical-align: middle; white-space: nowrap; }
     .r { text-align: right !important; }
+    .sort-h { display: inline-flex; align-items: center; gap: 4px; padding: 0; border: 0; background: none;
+              color: inherit; font: inherit; text-transform: inherit; letter-spacing: inherit; cursor: pointer; }
+    .sort-h:hover, .sort-h.on { color: var(--text); }
+    .dir { opacity: 0; transition: transform .2s var(--ease), opacity .15s; }
+    .sort-h:hover .dir { opacity: .5; }
+    .sort-h.on .dir { opacity: 1; color: var(--lilac); }
+    .dir.up { transform: rotate(180deg); }
     .item { display: flex; align-items: center; gap: 12px; background: none; border: 0; padding: 2px 0; color: inherit; font: inherit; text-align: left; cursor: pointer; }
     .ico { position: relative; flex: none; width: 40px; height: 40px; border-radius: 9px; background: var(--surface-2);
            transition: transform .2s var(--ease), box-shadow .2s; }
@@ -263,7 +281,16 @@ export class MarketSearch {
   protected readonly tiers = [1, 2, 3, 4, 5, 6, 7, 8];
   protected readonly enchs = [0, 1, 2, 3, 4];
   protected readonly ages = ['1', '6', '24'];
-  protected readonly sorts: Sort[] = ['profit', 'roi', 'buy', 'sell', 'name', 'tier'];
+  protected readonly sorts: Sort[] = ['profit', 'roi', 'buy', 'sell', 'age', 'name', 'tier'];
+  /** En-têtes du tableau : un clic trie sur la colonne, un 2ᵉ inverse le sens. */
+  protected readonly columns = [
+    { col: 'item', sort: 'name', right: false },
+    { col: 'buy', sort: 'buy', right: false },
+    { col: 'sell', sort: 'sell', right: false },
+    { col: 'profit', sort: 'profit', right: true },
+    { col: 'roi', sort: 'roi', right: true },
+    { col: 'age', sort: 'age', right: true },
+  ] as const;
   protected readonly pageSize = PAGE_SIZE;
   protected readonly bulk = BULK_MAX;
   protected readonly silver = silver;
@@ -292,7 +319,7 @@ export class MarketSearch {
     let rows: Row[] = this.matching().map((it) => ({ it, trade: calcTrade(prices[it.id], o) }));
     if (f.only) rows = rows.filter((r) => r.trade.buy || r.trade.sell);
     if (f.minRoi !== '') rows = rows.filter((r) => r.trade.roi != null && r.trade.roi >= +f.minRoi);
-    return rows.sort(SORTS[f.sort] ?? SORTS.profit);
+    return sortRows(rows, SORTS[f.sort] ?? SORTS.profit, f.rev);
   });
 
   /** Revient à la page 1 quand les filtres changent (pas quand des prix arrivent). */
@@ -301,7 +328,7 @@ export class MarketSearch {
   protected readonly pageRows = computed(() => {
     const prices = this.market.prices();
     const start = (this.page() - 1) * PAGE_SIZE;
-    const firstPage = this.page() === 1 && this.f().sort === 'profit';
+    const firstPage = this.page() === 1 && this.f().sort === 'profit' && !this.f().rev;
     return this.rows().slice(start, start + PAGE_SIZE).map((r, i) => ({
       ...r,
       name: itemLabel(r.it),
@@ -370,7 +397,22 @@ export class MarketSearch {
   }
 
   reset(): void {
-    this.f.set({ ...DEFAULTS, tiers: [], enchs: [], sort: this.f().sort });
+    this.f.set({ ...DEFAULTS, tiers: [], enchs: [], sort: this.f().sort, rev: this.f().rev });
+  }
+
+  /** Clic sur un en-tête : trie sur cette colonne (sens naturel), ou inverse le sens si c'est déjà elle. */
+  sortBy(sort: Sort): void {
+    this.patch(sort === this.f().sort ? { rev: !this.f().rev } : { sort, rev: false });
+  }
+
+  /** Flèche vers le haut = ordre croissant. */
+  up(sort: Sort): boolean {
+    return sort === this.f().sort && !SORTS[sort].desc !== this.f().rev;
+  }
+
+  ariaSort(sort: Sort): 'ascending' | 'descending' | null {
+    if (sort !== this.f().sort) return null;
+    return this.up(sort) ? 'ascending' : 'descending';
   }
 
   toggleOpen(id: string): void {

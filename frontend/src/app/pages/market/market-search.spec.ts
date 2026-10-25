@@ -55,6 +55,28 @@ describe('MarketSearch (recherche marché)', () => {
     expect(ctx.el.querySelector('tbody tr:nth-child(2) .neg')).not.toBeNull();   // épée : marge négative
   });
 
+  it('tri au clic sur les en-têtes : colonne puis sens inversé, mémorisé', async () => {
+    const ctx = await render();
+    await answerPrices(ctx);
+    const names = () => [...ctx.el.querySelectorAll('tbody .name')].map((n) => n.firstChild?.textContent?.trim());
+    const header = (label: string) => [...ctx.el.querySelectorAll<HTMLButtonElement>('th .sort-h')].find((b) => b.textContent?.trim() === label)!;
+    expect(header('Marge nette').closest('th')?.getAttribute('aria-sort')).toBe('descending');
+
+    header('Acheter à').click();
+    ctx.fixture.detectChanges();
+    const [bow, sword] = names();
+    expect(bow).toBe('Arc du maître');   // 10 000 puis l'épée à 20 000, les objets sans prix en bas
+    expect(header('Acheter à').closest('th')?.getAttribute('aria-sort')).toBe('ascending');
+    expect(ctx.el.querySelector('tr.best')).toBeNull();
+
+    header('Acheter à').click();
+    ctx.fixture.detectChanges();
+    expect(names().slice(0, 2)).toEqual([sword, bow]);
+    expect(header('Acheter à').closest('th')?.getAttribute('aria-sort')).toBe('descending');
+    expect(JSON.parse(localStorage.getItem('lilium.market.search') ?? '{}')).toMatchObject({ sort: 'buy', rev: true });
+    expect(ctx.el.querySelector<HTMLSelectElement>('#s-sort')!.value).toBe('buy');
+  });
+
   it('recherche à la frappe (FR, EN, id) et filtre « seulement avec prix »', async () => {
     const ctx = await render();
     await answerPrices(ctx);
