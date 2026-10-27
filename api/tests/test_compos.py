@@ -235,8 +235,11 @@ def test_second_row_key_uses_first_build_name():
 
 
 def test_alternative_builds_rules():
-    with pytest.raises(InvalidCompo, match="3 builds"):
-        build_template_entry({"pf1": [{"build_id": 20, "alt_build_ids": [21, 22, 23], "count": 1}]}, ALT)
+    many = {**ALT, **{i: {"id": i, "name": f"DPS {i}", "role": "DPS"} for i in range(100, 125)}}
+    ok = build_template_entry({"pf1": [{"build_id": 20, "alt_build_ids": list(range(100, 124)), "count": 1}]}, many)
+    assert len(ok["builds"]["DPS"]) == 25                     # 25 builds : la limite du menu Discord
+    with pytest.raises(InvalidCompo, match="25 builds"):
+        build_template_entry({"pf1": [{"build_id": 20, "alt_build_ids": list(range(100, 125)), "count": 1}]}, many)
     with pytest.raises(InvalidCompo, match="même rôle"):
         build_template_entry({"pf1": [{"build_id": 20, "alt_build_ids": [12], "count": 1}]}, ALT)
     with pytest.raises(InvalidCompo):                         # même build deux fois dans la party

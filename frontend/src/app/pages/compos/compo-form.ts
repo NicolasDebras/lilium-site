@@ -29,8 +29,8 @@ type CompoModel = Omit<CompoInput, 'custom_shares' | 'pf1' | 'pf2'> & { custom_s
 
 /** Parts de paie max d'une ligne (même borne que l'API). */
 export const MAX_SHARE = 10;
-/** Builds au choix en plus du principal sur une ligne (même borne que l'API : 3 au total). */
-export const MAX_ALT_BUILDS = 2;
+/** Builds au choix en plus du principal sur une ligne (même borne que l'API : 25 au total, limite d'un menu Discord). */
+export const MAX_ALT_BUILDS = 24;
 
 function emptyRow(): Row {
   return { build_id: null, alt_build_ids: [], role: '', count: 1, weapon: '', share: 1 };

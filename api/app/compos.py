@@ -70,7 +70,7 @@ def _share(value) -> float:
     return share
 
 
-MAX_ALT_BUILDS = 2   # builds « au choix » en plus du principal sur une ligne (3 au total)
+MAX_ALT_BUILDS = 24  # builds « au choix » en plus du principal : un menu Discord a 25 options au plus
 BUILDS_SEPARATOR = " / "   # hint d'une ligne à plusieurs builds : « Ardent / Aria »
 
 
