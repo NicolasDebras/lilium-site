@@ -33,7 +33,20 @@ function emptyBuild(): BuildInput {
 
 /** Build de l'API → valeurs du formulaire (sans id ni auteur, équipement normalisé). */
 function toInput({ id: _id, created_by_name: _by, ...rest }: Build): BuildInput {
-  return { ...rest, items: normalizeItems(rest.items), spells: rest.spells ?? {} };
+  return { ...rest, items: normalizeItems(rest.items), spells: withoutFixedSpells(rest.spells ?? {}) };
+}
+
+/** Emplacements de sort proposés : pas le E de l'arme (un seul sort possible, rien à choisir). */
+export const PICKABLE_SPELL_KEYS = SPELL_KEYS.filter((k) => k !== 'e');
+
+/** Retire les E enregistrés avant (ils disparaissent au prochain enregistrement). */
+export function withoutFixedSpells(spells: BuildSpells): BuildSpells {
+  const out: BuildSpells = {};
+  for (const [key, chosen] of Object.entries(spells)) {
+    const { e: _e, ...rest } = chosen;
+    if (Object.keys(rest).length) out[key] = rest;
+  }
+  return out;
 }
 
 /** Bottes « au choix » (case vide ou [*]) : on peut alors imposer seulement le sort. */
@@ -313,7 +326,7 @@ export class BuildForm {
         const spells = item.spells;
         rows.push({
           key: item.id, title: itemName(item), icon: itemIconUrl(item.icon),
-          slots: SPELL_KEYS.filter((k) => spells[k]?.length)
+          slots: PICKABLE_SPELL_KEYS.filter((k) => spells[k]?.length)
             .map((k) => ({ key: k, label: label(slot, k), options: spells[k]!.map((id) => ({ id })) })),
         });
       }

@@ -4,7 +4,7 @@ import { TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 
 import { TEST_ITEMS, TEST_SPELLS } from '../../../testing/items';
-import { BuildForm, allTwoHanded, pruneSpells } from './build-form';
+import { BuildForm, allTwoHanded, pruneSpells, withoutFixedSpells } from './build-form';
 
 /** `edited` : réponse de l'API pour le build ouvert en édition (avec `buildId`). */
 async function render(buildId?: string, edited?: object) {
@@ -39,6 +39,13 @@ describe('allTwoHanded', () => {
   });
 });
 
+describe('withoutFixedSpells', () => {
+  it('retire le E des builds enregistrés avant', () => {
+    expect(withoutFixedSpells({ MAIN_SWORD: { q: 'CLEAVE', e: 'MIGHTYBLOW' }, BOW: { e: 'X' } }))
+      .toEqual({ MAIN_SWORD: { q: 'CLEAVE' } });
+  });
+});
+
 describe('pruneSpells', () => {
   it('garde les sorts des objets encore présents (tier ignoré) et ceux des bottes au choix', () => {
     const spells = { MAIN_SWORD: { q: 'CLEAVE' }, HEAD_PLATE_SET1: { a: 'BLOCK' }, '@shoes': { a: 'DODGE' } };
@@ -55,7 +62,7 @@ describe('BuildForm — sorts & passifs', () => {
     fixture.detectChanges();
     const rows = cmp['spellRows']();
     expect(rows.map((r) => r.key)).toEqual(['MAIN_SWORD', '@shoes']);
-    expect(rows[0].slots.map((s) => s.label)).toEqual(['Q', 'W', 'E', 'Passif']);
+    expect(rows[0].slots.map((s) => s.label)).toEqual(['Q', 'W', 'Passif']);   // pas de E : un seul sort possible
     expect(rows[1].slots.map((s) => s.label)).toEqual(['F']);   // actif des bottes = touche F
     expect(el.querySelectorAll('.spell-row').length).toBe(2);
 
