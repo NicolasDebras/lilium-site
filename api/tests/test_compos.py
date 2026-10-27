@@ -210,3 +210,40 @@ def test_compo_share_falls_back_to_base_role_like_the_bot():
     compo = template_to_compo("C", data, custom=True)
     shares = {r["slot_key"]: r["share"] for r in compo["pf1"]}
     assert shares == {"SCOUT": 1.5, "TANK · Off": 2}
+
+
+# ── Builds au choix sur une ligne (« Ardent ou Aria », places partagées) ──────
+
+ALT = {**BUILDS, 21: {"id": 21, "name": "Ardent", "role": "DPS"}, 22: {"id": 22, "name": "Aria", "role": "dps"},
+       23: {"id": 23, "name": "Lame", "role": "DPS"}}
+
+
+def test_row_with_alternative_builds_shares_its_places():
+    entry = build_template_entry({"pf1": [{"build_id": 21, "alt_build_ids": [22], "count": 1}]}, ALT)
+    assert entry["pf_1"] == {"DPS": 1}                       # une seule ligne, une place
+    assert entry["builds"] == {"DPS": [21, 22]}
+    assert entry["weapon"] == {"DPS": "Ardent / Aria"}
+    compo = template_to_compo("X", entry, custom=True)
+    assert compo["pf1"][0]["build_id"] == 21 and compo["pf1"][0]["alt_build_ids"] == [22]
+    assert build_ids_of(entry) == {21, 22}
+
+
+def test_second_row_key_uses_first_build_name():
+    entry = build_template_entry({"pf1": [{"build_id": 20, "count": 2},
+                                          {"build_id": 21, "alt_build_ids": [22], "count": 1}]}, ALT)
+    assert entry["builds"] == {"DPS": 20, "DPS · Ardent": [21, 22]}
+
+
+def test_alternative_builds_rules():
+    with pytest.raises(InvalidCompo, match="3 builds"):
+        build_template_entry({"pf1": [{"build_id": 20, "alt_build_ids": [21, 22, 23], "count": 1}]}, ALT)
+    with pytest.raises(InvalidCompo, match="même rôle"):
+        build_template_entry({"pf1": [{"build_id": 20, "alt_build_ids": [12], "count": 1}]}, ALT)
+    with pytest.raises(InvalidCompo):                         # même build deux fois dans la party
+        build_template_entry({"pf1": [{"build_id": 20, "count": 1}, {"build_id": 21, "alt_build_ids": [20], "count": 1}]}, ALT)
+
+
+def test_rename_build_rewrites_multi_build_hint():
+    entry = build_template_entry({"pf1": [{"build_id": 21, "alt_build_ids": [22], "count": 1}]}, ALT)
+    renamed = rename_build(entry, 22, "Aria 2", {21: "Ardent", 22: "Aria"})
+    assert renamed["weapon"] == {"DPS": "Ardent / Aria 2"}

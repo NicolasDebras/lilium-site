@@ -85,6 +85,41 @@ describe('CompoForm', () => {
     expect(cmp['model']().pf1.map((r) => r.build_id)).toEqual([12, 13, 15, null]);
   });
 
+  it('builds au choix sur une ligne : même rôle, pas déjà pris, retirables, envoyés à l’API', async () => {
+    const { fixture, cmp, el, http } = await render();
+    cmp['model'].update((m) => ({ ...m, name: 'ZvZ' }));
+    cmp.setSource('pf1', 0, '12');
+    await fixture.whenStable();
+    expect(cmp.altOptions('pf1', 0).map((b) => b.id)).toEqual([13]);        // l'autre TANK, pas le heal
+    cmp.addAlt('pf1', 0, '13');
+    await fixture.whenStable();
+    expect(el.querySelector('.alts .alt strong')?.textContent).toBe('Tank Bouclier');
+    expect(cmp.altOptions('pf1', 0)).toEqual([]);
+    cmp.addRow('pf1');
+    expect(cmp.isBuildTaken('pf1', 13, 1)).toBe(true);                       // déjà au choix sur la 1re ligne
+    cmp.removeRow('pf1', 1);
+    const done = cmp.save();
+    const req = http.expectOne('/api/guilds/111/compos');
+    expect(req.request.body.pf1[0]).toMatchObject({ build_id: 12, alt_build_ids: [13] });
+    req.flush({ name: 'ZvZ' });
+    await done;
+  });
+
+  it('changer le build principal garde les builds au choix du même rôle ; « sans build » les retire', async () => {
+    const { cmp } = await render();
+    cmp.setSource('pf1', 0, '12');
+    cmp.addAlt('pf1', 0, '13');
+    cmp.setSource('pf1', 0, '15');                                            // HEAL : Tank Bouclier n'a plus sa place
+    expect(cmp['model']().pf1[0].alt_build_ids).toEqual([]);
+    cmp.setSource('pf1', 0, '12');
+    cmp.addAlt('pf1', 0, '13');
+    cmp.removeAlt('pf1', 0, 13);
+    expect(cmp['model']().pf1[0].alt_build_ids).toEqual([]);
+    cmp.addAlt('pf1', 0, '13');
+    cmp.setSource('pf1', 0, 'free');
+    expect(cmp['model']().pf1[0].alt_build_ids).toEqual([]);
+  });
+
   it('« sans build » affiche les champs rôle + armes', async () => {
     const { fixture, cmp, el } = await render();
     cmp.setSource('pf1', 0, 'free');
@@ -136,8 +171,8 @@ describe('CompoForm', () => {
     const req = http.expectOne('/api/guilds/111/compos');
     expect(req.request.method).toBe('POST');
     expect(req.request.body.pf1).toEqual([
-      { build_id: 12, role: 'TANK', count: 1, weapon: 'Tank Masse', share: 1 },
-      { build_id: null, role: 'CALLER', count: 1, weapon: 'Libre', share: 1 },
+      { build_id: 12, alt_build_ids: [], role: 'TANK', count: 1, weapon: 'Tank Masse', share: 1 },
+      { build_id: null, alt_build_ids: [], role: 'CALLER', count: 1, weapon: 'Libre', share: 1 },
     ]);
     expect(req.request.body.custom_shares).toBe(false);
     req.flush({ name: 'ZvZ' });
@@ -221,7 +256,7 @@ describe('CompoForm', () => {
     button.click();
     const req = http.expectOne('/api/guilds/111/compos/preview-image');
     expect(req.request.method).toBe('POST');
-    expect(req.request.body.pf1[0]).toEqual({ build_id: 12, role: 'TANK', count: 1, weapon: 'Tank Masse', share: 1 });
+    expect(req.request.body.pf1[0]).toEqual({ build_id: 12, alt_build_ids: [], role: 'TANK', count: 1, weapon: 'Tank Masse', share: 1 });
     expect(req.request.body.pf1[0].free).toBeUndefined();
     req.flush(new Blob(['png'], { type: 'image/png' }));
     await new Promise((resolve) => setTimeout(resolve));

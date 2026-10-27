@@ -29,9 +29,11 @@ type CompoModel = Omit<CompoInput, 'custom_shares' | 'pf1' | 'pf2'> & { custom_s
 
 /** Parts de paie max d'une ligne (même borne que l'API). */
 export const MAX_SHARE = 10;
+/** Builds au choix en plus du principal sur une ligne (même borne que l'API : 3 au total). */
+export const MAX_ALT_BUILDS = 2;
 
 function emptyRow(): Row {
-  return { build_id: null, role: '', count: 1, weapon: '', share: 1 };
+  return { build_id: null, alt_build_ids: [], role: '', count: 1, weapon: '', share: 1 };
 }
 
 function emptyCompo(): CompoModel {
@@ -41,7 +43,7 @@ function emptyCompo(): CompoModel {
 /** Compo de l'API → valeurs du formulaire (une ligne sans build est une ligne « sans build » choisie). */
 function toModel({ total: _t, custom: _c, ...compo }: Compo): CompoModel {
   const withMode = (rows: SlotRow[]): Row[] =>
-    rows.map(({ slot_key: _k, ...r }) => ({ ...r, share: r.share ?? 1, free: r.build_id == null }));
+    rows.map(({ slot_key: _k, ...r }) => ({ ...r, alt_build_ids: r.alt_build_ids ?? [], share: r.share ?? 1, free: r.build_id == null }));
   return { ...compo, custom_shares: !!compo.custom_shares, pf1: withMode(compo.pf1), pf2: withMode(compo.pf2) };
 }
 
@@ -141,6 +143,26 @@ function toModel({ total: _t, custom: _c, ...compo }: Compo): CompoModel {
                   <span class="badge">{{ emojiMap()[b.role] }} {{ b.role }}</span>
                   <app-gear [items]="b.items" [spells]="b.spells" size="small" />
                 </div>
+                <div class="detail alts">
+                  @for (alt of altsOf(row); track alt.id) {
+                    <span class="alt">
+                      <span class="muted">{{ t().compos.or }}</span> <strong>{{ alt.name }}</strong>
+                      <app-gear [items]="alt.items" [spells]="alt.spells" size="small" />
+                      <button type="button" class="btn btn-sm btn-ghost" [attr.aria-label]="t().compos.removeAlt(alt.name)"
+                              (click)="removeAlt(pf.key, i, alt.id)">✕</button>
+                    </span>
+                  }
+                  @if ((row.alt_build_ids?.length ?? 0) < maxAlt) {
+                    @let options = altOptions(pf.key, i);
+                    @if (options.length) {
+                      <select class="select alt-add" [attr.aria-label]="t().compos.addAlt" (change)="addAlt(pf.key, i, $any($event.target).value)">
+                        <option value="" selected>{{ t().compos.addAlt }}</option>
+                        @for (o of options; track o.id) { <option [value]="'' + o.id">{{ o.name }}</option> }
+                      </select>
+                    }
+                  }
+                  @if (row.alt_build_ids?.length) { <p class="faint alt-hint">{{ t().compos.altHint }}</p> }
+                </div>
               } @else if (row.free) {
                 <div class="detail free-row">
                   <select class="select" [attr.aria-label]="t().compos.role" [formField]="field.role" (change)="sortRows(pf.key)">
@@ -223,6 +245,10 @@ function toModel({ total: _t, custom: _c, ...compo }: Compo): CompoModel {
     .check input:checked::after { transform: translateX(18px); background: var(--on-lilac); }
     .check input:focus-visible { outline: 2px solid var(--lilac); outline-offset: 2px; }
     .detail { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+    .alts { padding-left: 10px; border-left: 2px solid var(--lilac-soft); }
+    .alt { display: inline-flex; align-items: center; gap: 6px; font-size: .85rem; }
+    .alt-add { width: auto; padding-block: 4px; font-size: .82rem; }
+    .alt-hint { flex-basis: 100%; margin: 0; font-size: .75rem; }
     .free-row .select { width: auto; min-width: 150px; }
     .free-row .input { flex: 1 1 200px; }
     .add { justify-self: start; }
@@ -318,9 +344,11 @@ export class CompoForm {
   /** Choix dans le sélecteur : un build (id), ou « sans build ». */
   setSource(party: Party, index: number, value: string): void {
     this.updateRow(party, index, (row) => {
-      if (value === FREE) return { ...row, build_id: null, free: true, role: '', weapon: '' };
+      if (value === FREE) return { ...row, build_id: null, alt_build_ids: [], free: true, role: '', weapon: '' };
       const build = this.buildsById().get(Number(value));
-      return build ? { ...row, build_id: build.id, free: false, role: build.role, weapon: build.name } : row;
+      // Builds au choix gardés s'ils ont le même rôle que le nouveau build principal
+      const alts = (row.alt_build_ids ?? []).filter((id) => id !== build?.id && this.buildsById().get(id)?.role === build?.role);
+      return build ? { ...row, build_id: build.id, alt_build_ids: alts, free: false, role: build.role, weapon: build.name } : row;
     });
     this.sortRows(party);
   }
@@ -328,7 +356,33 @@ export class CompoForm {
   /** Un même build ne peut être qu'une fois par party (même règle que l'API) : sinon on augmente le nombre.
    *  Plusieurs lignes du même rôle avec des builds différents sont permises (ex. 2 tanks). */
   isBuildTaken(party: Party, buildId: number, exceptIndex: number): boolean {
-    return this.model()[party].some((r, i) => i !== exceptIndex && r.build_id === buildId);
+    return this.model()[party].some((r, i) =>
+      (i !== exceptIndex && r.build_id === buildId) || (r.alt_build_ids ?? []).includes(buildId));
+  }
+
+  protected readonly maxAlt = MAX_ALT_BUILDS;
+
+  /** Builds au choix d'une ligne (« Ardent ou Aria »). */
+  altsOf(row: Row): Build[] {
+    return (row.alt_build_ids ?? []).map((id) => this.buildsById().get(id)).filter((b): b is Build => !!b);
+  }
+
+  /** Builds qu'on peut ajouter « au choix » : même rôle, pas déjà dans la party. */
+  altOptions(party: Party, index: number): Build[] {
+    const row = this.model()[party][index];
+    const primary = this.buildOf(row);
+    if (!primary) return [];
+    return this.builds().filter((b) => b.role === primary.role && b.id !== primary.id && !this.isBuildTaken(party, b.id, index));
+  }
+
+  addAlt(party: Party, index: number, value: string): void {
+    const id = Number(value);
+    if (!id) return;
+    this.updateRow(party, index, (row) => ({ ...row, alt_build_ids: [...(row.alt_build_ids ?? []), id].slice(0, MAX_ALT_BUILDS) }));
+  }
+
+  removeAlt(party: Party, index: number, id: number): void {
+    this.updateRow(party, index, (row) => ({ ...row, alt_build_ids: (row.alt_build_ids ?? []).filter((a) => a !== id) }));
   }
 
   /** Range les lignes par rôle (TANK, HEAL, DPS, SUPPORT, puis le reste), ordre de saisie gardé
@@ -358,7 +412,8 @@ export class CompoForm {
     const { pf1, pf2, ...rest } = this.model();
     // Champs explicites : ni « free » ni l'identifiant interne que les signal forms posent sur chaque ligne.
     const clean = (rows: Row[]): SlotRow[] =>
-      rows.map(({ build_id, role, count, weapon, share }) => ({ build_id, role, count, weapon, share: share ?? 1 }));
+      rows.map(({ build_id, alt_build_ids, role, count, weapon, share }) =>
+        ({ build_id, alt_build_ids: build_id == null ? [] : alt_build_ids ?? [], role, count, weapon, share: share ?? 1 }));
     return { ...rest, pf1: clean(pf1), pf2: clean(pf2) };
   }
 

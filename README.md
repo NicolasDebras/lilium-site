@@ -220,6 +220,8 @@ Thème noir & lilas refondu (`frontend/src/styles.scss`, toutes les couleurs en 
 
 La liste des **builds** a une barre de recherche instantanée (nom, rôle, précisions, auteur, objets de l'équipement ; accents et majuscules ignorés, tous les mots doivent correspondre) et un **pager** (12 builds par page, retour à la page 1 quand la recherche ou les filtres changent ; composant réutilisable `shared/pager.ts`).
 
+**Builds au choix sur une ligne de compo** : sous le build d'une ligne, « + ou un autre build… » ajoute jusqu'à 2 builds du **même rôle** (pas déjà dans la party). Ils partagent les places de la ligne : sur Discord, le joueur choisit le sien à l'inscription, et une place prise ne l'est plus pour les autres builds. Stockage : `alt_build_ids` dans le formulaire et l'API, puis `builds[clé] = [principal, autres…]` et hint « Ardent / Aria » dans le template (`compos._party`). L'image de compo affiche tous les builds à la suite.
+
 ### Builds et équipement
 
 **Page d'un build** (`/g/{gid}/builds/{id}`, lien à coller dans Discord — il faut être connecté et membre du serveur) : équipement en grand, précisions, compos qui l'utilisent, **image PNG** identique au MP de `/massup` (télécharger / copier), et pour le staff **Dupliquer** (crée « Nom (copie) » puis ouvre son formulaire).

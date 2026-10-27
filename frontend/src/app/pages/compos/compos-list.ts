@@ -114,6 +114,11 @@ export function shareLabel(share: number): string {
                     @if (buildOf(r); as b) {
                       <span class="build-name">{{ b.name }}</span>
                       <app-gear [items]="b.items" [spells]="b.spells" size="small" />
+                      @for (alt of altsOf(r); track alt.id) {
+                        <span class="alt-or muted">{{ t().compos.or }}</span>
+                        <span class="build-name">{{ alt.name }}</span>
+                        <app-gear [items]="alt.items" [spells]="alt.spells" size="small" />
+                      }
                     } @else {
                       <span class="muted build-name">{{ r.weapon || t().compos.freeRole }}</span>
                     }
@@ -172,6 +177,7 @@ export function shareLabel(share: number): string {
     .times { color: var(--text-muted); font-weight: 600; font-size: .85rem; white-space: nowrap; }
     .share { color: var(--lilac); }
     .build-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .9rem; }
+    .alt-or { font-size: .8rem; font-style: italic; }
     .foot { padding-top: 12px; border-top: 1px solid var(--border-soft); flex-wrap: wrap; }
     .copy { width: auto; }
   `,
@@ -211,6 +217,11 @@ export class ComposList {
 
   buildOf(row: SlotRow): Build | undefined {
     return row.build_id != null ? this.buildsById().get(row.build_id) : undefined;
+  }
+
+  /** Builds au choix de la ligne (« Ardent ou Aria », places partagées). */
+  altsOf(row: SlotRow): Build[] {
+    return (row.alt_build_ids ?? []).map((id) => this.buildsById().get(id)).filter((b): b is Build => !!b);
   }
 
   color(role: string): string {

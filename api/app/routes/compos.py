@@ -20,6 +20,8 @@ MAX_COMPOS = 100       # compos par serveur (la base est partagée avec le bot)
 class SlotRow(BaseModel):
     # build_id renseigné → rôle et arme viennent du build ; sinon ligne libre (rôle + arme en texte).
     build_id: int | None = None
+    # Autres builds au choix de la ligne (même rôle, places partagées) : le joueur choisit le sien
+    alt_build_ids: list[int] = Field(default=[], max_length=10)
     role: str = Field(default="", max_length=50)
     count: int | Annotated[str, Field(max_length=6)] | None = None
     weapon: str = Field(default="", max_length=200)

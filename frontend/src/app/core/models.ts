@@ -101,6 +101,8 @@ export interface BuildDetail extends Build {
 export interface SlotRow {
   /** Ligne liée à un build : le rôle et l'arme viennent du build. null = ligne libre. */
   build_id: number | null;
+  /** Autres builds au choix de la ligne (même rôle) : ils partagent ses places, le joueur choisit le sien. */
+  alt_build_ids?: number[];
   /** Clé réelle de la ligne côté bot (« TANK · Main tank » quand un rôle a plusieurs lignes). Lecture seule. */
   slot_key?: string;
   role: string;
