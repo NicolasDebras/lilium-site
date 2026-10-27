@@ -5,6 +5,7 @@ from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, Request
 from fastapi.responses import Response
+from pydantic import BaseModel, Field
 
 from app.bal_stats import (
     BAL_ACTIONS, bal_operation, bal_operations_csv, compute_bal_stats, fetch_since, guild_operations_csv,
@@ -13,6 +14,10 @@ from app.bal_stats import (
 from app.activity_stats import compute_activity_stats
 from app.constants import ROLES
 from app.i18n import tr
+from app.payouts import (
+    GLOBAL_MODES, MAX_AMOUNT, WEEKS_BACK, adjustment_deltas, dm_text, effective_amounts, payout_view, plan_adjustment,
+    week_bounds,
+)
 from app.permissions import require_admin, require_member
 
 router = APIRouter(prefix="/guilds/{guild_id}", tags=["guild"])
@@ -167,3 +172,77 @@ async def admin_error(guild_id: int, error_id: int, request: Request, user: dict
     if not row:
         raise HTTPException(404, tr("error_not_found"))
     return _error_row(row)
+
+
+# ── Admin → payouts de la semaine (correction, MP aux joueurs) ────────────────
+
+class PayoutChange(BaseModel):
+    uid: str = Field(pattern=PLAYER_ID)
+    amount: int = Field(ge=0, le=MAX_AMOUNT)     # nouveau montant effectif (0 = joueur retiré)
+
+
+class PayoutGlobal(BaseModel):
+    mode: Literal[GLOBAL_MODES]
+    amount: int = Field(ge=0, le=MAX_AMOUNT)
+
+
+class PayoutAdjustIn(BaseModel):
+    changes: list[PayoutChange] = Field(default=[], max_length=100)
+    global_change: PayoutGlobal | None = None
+
+
+def _member_name(member: dict, uid: str) -> str:
+    user = member.get("user") or {}
+    return member.get("nick") or user.get("global_name") or user.get("username") or uid
+
+
+@router.get("/admin/payouts")
+async def admin_payouts(guild_id: int, request: Request, week: int = Query(0, ge=-WEEKS_BACK, le=0),
+                        user: dict = Depends(require_admin)):
+    """Payouts (finacti / paybal) de la semaine en cours ou de la précédente, ajustements fusionnés."""
+    since, until = week_bounds(datetime.now(UTC), week)
+    rows = await request.app.state.db.get_payouts(guild_id, since, until)
+    return {"week": week, "start": since.isoformat(), "payouts": [payout_view(r, r["adjustments"]) for r in rows]}
+
+
+@router.post("/admin/payouts/{log_id}/adjust")
+async def admin_adjust_payout(guild_id: int, log_id: int, body: PayoutAdjustIn, request: Request,
+                              user: dict = Depends(require_admin)):
+    """Corrige un payout : ligne « ajustbal » liée, soldes mis à jour, MP à chaque joueur concerné."""
+    db, discord = request.app.state.db, request.app.state.discord
+    now = datetime.now(UTC)
+    since, until = week_bounds(now, -WEEKS_BACK)[0], week_bounds(now, 0)[1]
+    rows = await db.get_payouts(guild_id, since, until, log_id)
+    if not rows:
+        raise HTTPException(404, tr("payout_not_found"))
+    row = rows[0]
+    players = effective_amounts(row["entries"], row["adjustments"])
+    current = {uid: p["amount"] for uid, p in players.items()}
+    glob = (body.global_change.mode, body.global_change.amount) if body.global_change else None
+    deltas = adjustment_deltas(current, plan_adjustment(current, {c.uid: c.amount for c in body.changes}, glob))
+    if not deltas:
+        raise HTTPException(422, tr("payout_no_change"))
+
+    names = {uid: p["name"] for uid, p in players.items()}
+    for uid in deltas:
+        if uid not in names:     # joueur ajouté : doit être sur le serveur
+            member = await discord.get_member(guild_id, int(uid))
+            if not member:
+                raise HTTPException(422, tr("payout_not_member", uid=uid))
+            names[uid] = _member_name(member, uid)
+
+    applied = await db.apply_payout_adjustment(
+        guild_id, log_id, row["template"], user["username"], [(uid, names[uid], d) for uid, d in deltas.items()]
+    )
+    sent, failed = 0, []
+    for e in applied:            # en série : le token est partagé avec le bot (rate limit)
+        if not e["delta"]:
+            continue
+        before = current.get(e["uid"], 0)
+        text = dm_text(row["template"], row["ts"], user["username"], before, before + e["delta"], e["total"])
+        if await discord.send_dm(e["uid"], text):
+            sent += 1
+        else:
+            failed.append(e["name"])
+    updated = (await db.get_payouts(guild_id, since, until, log_id))[0]
+    return {"payout": payout_view(updated, updated["adjustments"]), "dm_sent": sent, "dm_failed": failed}

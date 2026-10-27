@@ -4,17 +4,18 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import Response
 from pydantic import BaseModel, Field, field_validator
 
-from app.catalog import InvalidItems, normalize_items, validate_build_items
+from app.catalog import InvalidItems, normalize_items, normalize_spells, validate_build_items, validate_build_spells
 from app.compos import compos_using_build, rename_build
 from app.i18n import tr
 from app.images import build_png
 from app.permissions import require_member, require_staff
-from app.validation import duplicate_name, https_url_or_empty
+from app.validation import duplicate_name
 
 router = APIRouter(prefix="/guilds/{guild_id}/builds", tags=["builds"])
 
 MAX_BUILDS = 500  # builds par serveur (la base est partagée avec le bot)
 ItemId = Annotated[str, Field(max_length=80)]
+SpellKey = Annotated[str, Field(max_length=4)]
 
 
 class BuildIn(BaseModel):
@@ -22,12 +23,13 @@ class BuildIn(BaseModel):
     role: str = Field(min_length=1, max_length=50)
     type_acti: Literal["PVP", "PVE"] = "PVP"
     weapon: str = Field(default="", max_length=200)
-    notes: str = Field(default="", max_length=4000)
-    image: str = Field(default="", max_length=500)
     # Équipement : {slot: [1 à 3 ids de /api/items]} ou {slot: ["*"]} = au choix du joueur.
     # Une chaîne seule (ancien format) est aussi acceptée.
     # Bornes avant tout traitement : un corps géant ne doit pas geler l'API (dédoublonnage).
     items: dict[Annotated[str, Field(max_length=20)], ItemId | list[ItemId]] = Field(default={}, max_length=12)
+    # Sorts : {id d'objet sans tier: {"q"|"w"|"e"|"a"|"p"|"p2": id de sort}}, plus "@shoes" = sort de
+    # bottes imposé, bottes au choix (voir catalog.validate_build_spells).
+    spells: dict[ItemId, dict[SpellKey, ItemId]] = Field(default={}, max_length=13)
 
     @field_validator("items")
     @classmethod
@@ -36,15 +38,10 @@ class BuildIn(BaseModel):
             raise ValueError(tr("too_many_choices"))
         return v
 
-    @field_validator("name", "weapon", "notes")
+    @field_validator("name", "weapon")
     @classmethod
     def _strip(cls, v: str) -> str:
         return v.strip()
-
-    @field_validator("image")
-    @classmethod
-    def _https_image(cls, v: str) -> str:
-        return https_url_or_empty(v)
 
     @field_validator("role")
     @classmethod
@@ -56,6 +53,7 @@ def _data(body: BuildIn) -> dict:
     data = body.model_dump()
     try:
         data["items"] = validate_build_items(body.items)
+        data["spells"] = validate_build_spells(body.spells, data["items"])
     except InvalidItems as e:
         raise HTTPException(status_code=422, detail=str(e)) from e
     return data
@@ -68,9 +66,8 @@ def _out(build: dict) -> dict:
         "role":            build["role"],
         "type_acti":       build["type_acti"],
         "weapon":          build["weapon"],
-        "notes":           build["notes"],
-        "image":           build["image"],
         "items":           normalize_items(build.get("items")),
+        "spells":          normalize_spells(build.get("spells")),
         "created_by_name": build["created_by_name"],
     }
 
@@ -120,9 +117,10 @@ async def duplicate_build(guild_id: int, build_id: int, request: Request, user: 
     """Copie « Nom (copie) » du build, que le staff ajuste ensuite."""
     db = request.app.state.db
     source = await _build_or_404(db, guild_id, build_id)
-    data = {k: source.get(k) or "" for k in ("role", "type_acti", "weapon", "notes", "image")}
+    data = {k: source.get(k) or "" for k in ("role", "type_acti", "weapon")}
     data["name"] = duplicate_name(source["name"], {b["name"] for b in await db.get_builds(guild_id)})
     data["items"] = normalize_items(source.get("items"))
+    data["spells"] = normalize_spells(source.get("spells"))
     return {"id": await _create(db, guild_id, data, user)}
 
 

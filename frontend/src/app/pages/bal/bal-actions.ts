@@ -10,6 +10,7 @@ export const BAL_ACTIONS: Record<BalAction, IconName> = {
   addbal: 'plus',
   retirebal: 'coins',
   transferbal: 'swap',
+  ajustbal: 'edit',
 };
 
 export function balAction(name: string): { label: string; icon: IconName } {

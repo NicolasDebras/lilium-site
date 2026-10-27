@@ -7,12 +7,15 @@ import { firstValueFrom } from 'rxjs';
 import { ApiService, errorMessage } from '../../core/api.service';
 import { I18nService } from '../../core/i18n/i18n';
 import { ToastService } from '../../core/toast.service';
-import { ItemsService } from '../../core/items.service';
-import { Build, BuildInput, FREE_CHOICE, Item, SWAPS_MAX, Slot } from '../../core/models';
+import { ItemsService, itemIconUrl, itemName, useFallbackIcon } from '../../core/items.service';
+import {
+  Build, BuildInput, BuildItems, BuildSpells, FREE_CHOICE, Item, SHOES_ANY, SPELL_KEYS, SPELL_SLOTS, SWAPS_MAX, Slot, SpellKey,
+} from '../../core/models';
 import { parseChoice } from '../../core/tiers';
 import { PAPER_DOLL } from '../../shared/gear';
 import { Icon } from '../../shared/icon';
 import { ItemPicker } from '../../shared/item-picker';
+import { SpellOption, SpellPicker } from '../../shared/spell-picker';
 
 /** Tolère l'ancien format {slot: "ID"} renvoyé par une vieille API. */
 function normalizeItems(items: unknown): BuildInput['items'] {
@@ -25,12 +28,35 @@ function normalizeItems(items: unknown): BuildInput['items'] {
 }
 
 function emptyBuild(): BuildInput {
-  return { name: '', role: '', type_acti: 'PVP', weapon: '', notes: '', image: '', items: {} };
+  return { name: '', role: '', type_acti: 'PVP', weapon: '', items: {}, spells: {} };
 }
 
 /** Build de l'API → valeurs du formulaire (sans id ni auteur, équipement normalisé). */
 function toInput({ id: _id, created_by_name: _by, ...rest }: Build): BuildInput {
-  return { ...rest, items: normalizeItems(rest.items) };
+  return { ...rest, items: normalizeItems(rest.items), spells: rest.spells ?? {} };
+}
+
+/** Bottes « au choix » (case vide ou [*]) : on peut alors imposer seulement le sort. */
+export function shoesAreFree(items: BuildItems): boolean {
+  return !(items.shoes ?? []).some((c) => c !== FREE_CHOICE);
+}
+
+/** Garde seulement les sorts des objets encore dans le build (et le sort de bottes si elles sont au choix). */
+export function pruneSpells(items: BuildItems, spells: BuildSpells): BuildSpells {
+  const bases = new Set(
+    SPELL_SLOTS.flatMap((slot) => (items[slot] ?? []).filter((c) => c !== FREE_CHOICE).map((c) => parseChoice(c).base)),
+  );
+  return Object.fromEntries(
+    Object.entries(spells).filter(([key]) => (key === SHOES_ANY ? shoesAreFree(items) : bases.has(key))),
+  );
+}
+
+/** Une ligne de la carte « Sorts & passifs » : un objet du build (ou les bottes au choix) et ses emplacements. */
+export interface SpellRow {
+  key: string;
+  title: string;
+  icon: string | null;
+  slots: { key: SpellKey; label: string; options: readonly SpellOption[] }[];
 }
 
 export function allTwoHanded(mainhand: string[], get: (id: string) => Item | undefined): boolean {
@@ -40,7 +66,7 @@ export function allTwoHanded(mainhand: string[], get: (id: string) => Item | und
 
 @Component({
   selector: 'app-build-form',
-  imports: [FormField, RouterLink, ItemPicker, Icon],
+  imports: [FormField, RouterLink, ItemPicker, SpellPicker, Icon],
   template: `
     <div class="page-head">
       <div>
@@ -111,17 +137,36 @@ export function allTwoHanded(mainhand: string[], get: (id: string) => Item | und
             <input id="weapon" class="input" [placeholder]="t().builds.weaponPlaceholder" [formField]="form.weapon" />
           </div>
 
-          <div class="field">
-            <label for="notes">{{ t().builds.notes }}</label>
-            <textarea id="notes" class="textarea" [placeholder]="t().builds.notesPlaceholder" [formField]="form.notes"></textarea>
-          </div>
-
-          <div class="field">
-            <label for="image">{{ t().builds.image }}</label>
-            <input id="image" class="input" type="url" [formField]="form.image" />
-          </div>
         </div>
       </div>
+
+      <fieldset class="spells card">
+        <legend><app-icon name="sparkles" [size]="16" /> {{ t().builds.spellsTitle }}</legend>
+        <p class="muted hint">{{ t().builds.spellsHint }}</p>
+        @for (row of spellRows(); track row.key) {
+          <div class="spell-row">
+            <div class="spell-item">
+              @if (row.icon) {
+                <img [src]="row.icon" alt="" width="44" height="44" (error)="fallback($event)" />
+              }
+              <span>
+                <strong>{{ row.title }}</strong>
+                @if (!row.icon) {
+                  <small class="muted">{{ t().builds.shoesAnyHint }}</small>
+                }
+              </span>
+            </div>
+            <div class="spell-slots">
+              @for (s of row.slots; track s.key) {
+                <app-spell-picker [label]="s.label" [title]="row.title" [options]="s.options"
+                                  [value]="spellOf(row.key, s.key)" (valueChange)="setSpell(row.key, s.key, $event)" />
+              }
+            </div>
+          </div>
+        } @empty {
+          <p class="muted">{{ t().builds.spellsEmpty }}</p>
+        }
+      </fieldset>
 
       <div class="save-bar glass">
         <a class="btn btn-ghost" [routerLink]="['/g', guildId(), 'builds']">{{ t().common.cancel }}</a>
@@ -148,6 +193,14 @@ export function allTwoHanded(mainhand: string[], get: (id: string) => Item | und
     .swaps-title { grid-column: 1 / -1; font-size: .75rem; font-weight: 700; text-transform: uppercase;
                    letter-spacing: .08em; color: var(--lilac); }
     .doll-gap { display: grid; place-items: center; color: var(--lilac); opacity: .25; }
+    .spells { margin: 0; padding: 18px; display: grid; gap: 10px; }
+    .spells .hint { margin: 0; font-size: .85rem; }
+    .spell-row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 18px; padding: 10px 12px;
+                 border-radius: 12px; background: var(--surface-2); border: 1px solid var(--lilac-soft); }
+    .spell-item { display: flex; align-items: center; gap: 10px; flex: 1 1 200px; min-width: 0; }
+    .spell-item span { display: grid; gap: 2px; min-width: 0; }
+    .spell-item small { font-size: .75rem; }
+    .spell-slots { display: flex; flex-wrap: wrap; gap: 10px; }
     .save-bar { position: sticky; bottom: 12px; z-index: 5; display: flex; justify-content: flex-end; gap: 10px;
                 padding: 10px; border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-lg); }
     @media (max-width: 820px) {
@@ -193,8 +246,6 @@ export class BuildForm {
     maxLength(p.name, 100);
     required(p.role);
     maxLength(p.weapon, 200);
-    maxLength(p.notes, 4000);
-    maxLength(p.image, 500);
   });
 
   protected readonly saving = signal(false);
@@ -245,12 +296,61 @@ export class BuildForm {
       if (choices.length) items[slot] = choices;
       else delete items[slot];
       if (slot === 'mainhand' && allTwoHanded(choices, (id) => this.items.get(id))) delete items.offhand;
-      return { ...m, items };
+      return { ...m, items, spells: pruneSpells(items, m.spells ?? {}) };
     });
+  }
+
+  /** Arme, casque, armure, bottes choisis (un objet par ligne), puis les bottes au choix. */
+  protected readonly spellRows = computed<SpellRow[]>(() => {
+    const { items } = this.model();
+    const t = this.t().builds;
+    const label = (slot: Slot, key: SpellKey) => (key === 'a' ? t.activeKeys[slot] : t.spellKeys[key]) ?? key;
+    const rows: SpellRow[] = [];
+    for (const slot of SPELL_SLOTS) {
+      for (const choice of items[slot] ?? []) {
+        const item = choice === FREE_CHOICE ? undefined : this.items.get(choice);
+        if (!item?.spells || rows.some((r) => r.key === item.id)) continue;
+        const spells = item.spells;
+        rows.push({
+          key: item.id, title: itemName(item), icon: itemIconUrl(item.icon),
+          slots: SPELL_KEYS.filter((k) => spells[k]?.length)
+            .map((k) => ({ key: k, label: label(slot, k), options: spells[k]!.map((id) => ({ id })) })),
+        });
+      }
+    }
+    const shoes = this.items.spells()?.shoes;
+    if (shoes && shoesAreFree(items)) {
+      const keys = (['a', 'p'] as SpellKey[]).filter((k) => shoes[k]?.length);
+      rows.push({ key: SHOES_ANY, title: t.shoesAny, icon: null,
+                  slots: keys.map((k) => ({ key: k, label: label('shoes', k), options: shoes[k]! })) });
+    }
+    return rows;
+  });
+
+  spellOf(rowKey: string, key: SpellKey): string {
+    return this.model().spells?.[rowKey]?.[key] ?? '';
+  }
+
+  /** Pose ou retire ('' = au choix) le sort d'un emplacement ; un objet sans sort disparaît de `spells`. */
+  setSpell(rowKey: string, key: SpellKey, spell: string): void {
+    this.model.update((m) => {
+      const spells = { ...(m.spells ?? {}) };
+      const chosen = { ...(spells[rowKey] ?? {}) };
+      if (spell) chosen[key] = spell;
+      else delete chosen[key];
+      if (Object.keys(chosen).length) spells[rowKey] = chosen;
+      else delete spells[rowKey];
+      return { ...m, spells };
+    });
+  }
+
+  protected fallback(event: Event): void {
+    useFallbackIcon(event);
   }
 
   constructor() {
     this.items.load().catch(() => this.itemsError.set(this.t().builds.catalogFailed));
+    this.items.loadSpells().catch(() => this.itemsError.set(this.t().builds.catalogFailed));
   }
 
   async save(): Promise<void> {

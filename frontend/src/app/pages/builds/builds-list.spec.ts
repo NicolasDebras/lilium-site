@@ -9,11 +9,11 @@ import { Build, Level } from '../../core/models';
 import { BuildsList } from './builds-list';
 
 const BUILDS: Build[] = [
-  { id: 1, name: 'Tank Masse', role: 'TANK', type_acti: 'PVP', weapon: '1H Masse', notes: '', image: '',
+  { id: 1, name: 'Tank Masse', role: 'TANK', type_acti: 'PVP', weapon: '1H Masse', spells: {},
     items: { mainhand: ['T8_MAIN_SWORD@1'], offhand: ['OFF_SHIELD'], head: ['HEAD_PLATE_SET1', 'HEAD_CLOTH_SET2'], cape: ['*'],
              swaps: ['MEAL_STEW'] },
     created_by_name: 'Lily' },
-  { id: 2, name: 'Heal Sancti', role: 'HEAL', type_acti: 'PVE', weapon: '', notes: 'Note', image: '',
+  { id: 2, name: 'Heal Sancti', role: 'HEAL', type_acti: 'PVE', weapon: '', spells: {},
     items: {}, created_by_name: 'Lily' },
 ];
 

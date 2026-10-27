@@ -16,6 +16,7 @@ def _jloads(value):
 def _build_row(row) -> dict:
     build = dict(row)
     build["items"] = _jloads(build.get("items")) or {}
+    build["spells"] = _jloads(build.get("spells")) or {}
     return build
 
 
@@ -79,6 +80,55 @@ class Database:
             )
         return row["amount"] if row else 0
 
+    # ── Payouts de la semaine (panel Admin) ──────────────────────────────────
+    async def get_payouts(self, guild_id: int, since, until, log_id: int | None = None) -> list[dict]:
+        """Lignes finacti/paybal du bal_log sur [since, until[ (ou la seule `log_id`), plus récentes
+        d'abord, chacune avec ses ajustements : row["adjustments"] = [entries, ...]."""
+        async with self._pool.acquire() as conn:
+            rows = await conn.fetch("""
+                SELECT id, ts, action, by_user, entries, COALESCE(template, '') AS template
+                FROM bal_log
+                WHERE guild_id = $1 AND action IN ('finacti', 'paybal') AND ts >= $2 AND ts < $3
+                  AND ($4::int IS NULL OR id = $4)
+                ORDER BY ts DESC, id DESC
+            """, guild_id, since, until, log_id)
+            adjustments = await conn.fetch("""
+                SELECT ref_id, entries FROM bal_log
+                WHERE guild_id = $1 AND action = 'ajustbal' AND ref_id = ANY($2::int[])
+                ORDER BY id
+            """, guild_id, [r["id"] for r in rows])
+        by_ref: dict[int, list] = {}
+        for a in adjustments:
+            by_ref.setdefault(a["ref_id"], []).append(_jloads(a["entries"]) or [])
+        return [{**dict(r), "entries": _jloads(r["entries"]) or [], "adjustments": by_ref.get(r["id"], [])}
+                for r in rows]
+
+    async def apply_payout_adjustment(self, guild_id: int, ref_id: int, template: str, by_user: str,
+                                      changes: list[tuple[str, str, int]]) -> list[dict]:
+        """Applique [(uid, nom, delta)] aux soldes (jamais sous 0) et écrit la ligne `ajustbal` liée au
+        payout, le tout dans une transaction. Renvoie les entrées réellement appliquées
+        [{uid, name, delta, total, before}] (`before` = solde avant, pour le MP)."""
+        applied: list[dict] = []
+        async with self._pool.acquire() as conn:
+            async with conn.transaction():
+                for uid, name, delta in changes:
+                    before = await conn.fetchval(
+                        "SELECT amount FROM bal WHERE user_id = $1 AND guild_id = $2 FOR UPDATE", uid, guild_id
+                    ) or 0
+                    after = max(0, int(before) + delta)
+                    await conn.execute("""
+                        INSERT INTO bal (user_id, guild_id, amount) VALUES ($1, $2, $3)
+                        ON CONFLICT (user_id, guild_id) DO UPDATE SET amount = EXCLUDED.amount
+                    """, uid, guild_id, after)
+                    applied.append({"uid": uid, "name": name, "delta": after - int(before), "total": after,
+                                    "before": int(before)})
+                entries = [{k: e[k] for k in ("uid", "name", "delta", "total")} for e in applied]
+                await conn.execute("""
+                    INSERT INTO bal_log (ts, action, by_user, entries, template, guild_id, ref_id)
+                    VALUES (NOW(), 'ajustbal', $1, $2::jsonb, $3, $4, $5)
+                """, by_user, json.dumps(entries), template, guild_id, ref_id)
+        return applied
+
     # ── Builds ───────────────────────────────────────────────────────────────
     async def get_builds(self, guild_id: int, role: str | None = None, type_acti: str | None = None) -> list[dict]:
         query, params = "SELECT * FROM builds WHERE guild_id = $1", [guild_id]
@@ -101,21 +151,21 @@ class Database:
     async def add_build(self, guild_id: int, data: dict, created_by: str, created_by_name: str) -> int:
         async with self._pool.acquire() as conn:
             row = await conn.fetchrow("""
-                INSERT INTO builds (guild_id, name, role, type_acti, weapon, notes, image, items, created_by, created_by_name)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9, $10)
+                INSERT INTO builds (guild_id, name, role, type_acti, weapon, items, spells, created_by, created_by_name)
+                VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7::jsonb, $8, $9)
                 RETURNING id
-            """, guild_id, data["name"], data["role"], data["type_acti"], data["weapon"], data["notes"],
-                data["image"], json.dumps(data["items"]), created_by, created_by_name)
+            """, guild_id, data["name"], data["role"], data["type_acti"], data["weapon"],
+                json.dumps(data["items"]), json.dumps(data.get("spells") or {}), created_by, created_by_name)
         return row["id"]
 
     async def update_build(self, guild_id: int, build_id: int, data: dict) -> bool:
         async with self._pool.acquire() as conn:
             result = await conn.execute("""
-                UPDATE builds SET name = $3, role = $4, type_acti = $5, weapon = $6, notes = $7, image = $8,
-                                  items = $9::jsonb
+                UPDATE builds SET name = $3, role = $4, type_acti = $5, weapon = $6, notes = '', image = '',
+                                  items = $7::jsonb, spells = $8::jsonb
                 WHERE id = $1 AND guild_id = $2
             """, build_id, guild_id, data["name"], data["role"], data["type_acti"], data["weapon"],
-                data["notes"], data["image"], json.dumps(data["items"]))
+                json.dumps(data["items"]), json.dumps(data.get("spells") or {}))
         return result != "UPDATE 0"
 
     async def delete_build(self, guild_id: int, build_id: int) -> bool:

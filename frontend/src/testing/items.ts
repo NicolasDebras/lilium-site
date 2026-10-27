@@ -1,15 +1,16 @@
-import { Item } from '../app/core/models';
+import { Item, SpellCatalog } from '../app/core/models';
 
 /** Petit catalogue d'objets pour les tests (même forme que /api/items). */
 export const TEST_ITEMS: Item[] = [
   { id: 'MAIN_SWORD', slot: 'mainhand', name: 'Épée large', name_en: 'Broadsword', icon: 'T8_MAIN_SWORD',
-    tiers: [4, 5, 6, 7, 8], two_handed: false, category: 'Épées' },
+    tiers: [4, 5, 6, 7, 8], two_handed: false, category: 'Épées',
+    spells: { q: ['HEROICSTRIKE2', 'CLEAVE'], w: ['SWORD_SPIN'], e: ['MIGHTYBLOW'], p: ['PASSIVE_BLEEDCHANCE'] } },
   { id: '2H_HOLYSTAFF', slot: 'mainhand', name: 'Grand bâton béni', name_en: 'Great Holy Staff', icon: 'T8_2H_HOLYSTAFF',
     tiers: [4, 5, 6, 7, 8], two_handed: true, category: 'Bâtons sacrés' },
   { id: 'OFF_SHIELD', slot: 'offhand', name: 'Bouclier', name_en: 'Shield', icon: 'T8_OFF_SHIELD',
     tiers: [4, 5, 6, 7, 8], two_handed: false, category: 'Boucliers' },
   { id: 'HEAD_PLATE_SET1', slot: 'head', name: 'Casque de soldat', name_en: 'Soldier Helmet', icon: 'T8_HEAD_PLATE_SET1',
-    tiers: [4, 5, 6, 7, 8], two_handed: false, category: 'Plaque' },
+    tiers: [4, 5, 6, 7, 8], two_handed: false, category: 'Plaque', spells: { a: ['BLOCK'], p: ['PASSIVE_MR_AR'] } },
   { id: 'HEAD_CLOTH_SET2', slot: 'head', name: "Capuchon d'ecclésiastique", name_en: 'Cleric Cowl', icon: 'T8_HEAD_CLOTH_SET2',
     tiers: [4, 5, 6, 7, 8], two_handed: false, category: 'Tissu' },
   { id: '2H_HOLYSTAFF_HELL', slot: 'mainhand', name: 'Bâton de rédemption', name_en: 'Redemption Staff',
@@ -21,3 +22,21 @@ export const TEST_ITEMS: Item[] = [
   { id: 'POTION_HEAL', slot: 'potion', name: 'Potion de soin', name_en: 'Healing Potion', icon: 'T6_POTION_HEAL',
     tiers: [2, 4, 6], two_handed: false, category: 'Potions' },
 ];
+
+/** Faux /api/spells : noms + sorts de bottes (« bottes au choix »). */
+export const TEST_SPELLS: SpellCatalog = {
+  names: {
+    HEROICSTRIKE2: { name: 'Frappe héroïque', name_en: 'Heroic Strike' },
+    CLEAVE: { name: 'Fendoir', name_en: 'Cleave' },
+    SWORD_SPIN: { name: 'Tourbillon', name_en: 'Sword Spin' },
+    MIGHTYBLOW: { name: 'Coup puissant', name_en: 'Mighty Blow' },
+    PASSIVE_BLEEDCHANCE: { name: 'Saignement', name_en: 'Bleed' },
+    BLOCK: { name: 'Défense', name_en: 'Block' },
+    PASSIVE_MR_AR: { name: 'Robustesse', name_en: 'Toughness' },
+    SPRINT_CD_REDUCTION: { name: 'Sprint rafraîchissant', name_en: 'Refreshing Sprint' },
+    DODGE: { name: 'Esquive', name_en: 'Dash' },
+  },
+  shoes: {
+    a: [{ id: 'DODGE', category: 'Plaque' }, { id: 'SPRINT_CD_REDUCTION', category: 'Cuir' }],
+  },
+};

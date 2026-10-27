@@ -116,7 +116,7 @@ export const COMMANDS: Command[] = [
   { group: 'activites', name: 'kickacti', usage: '/kickacti @joueur', who: { fr: 'Organisateur, Officier, Caller', en: 'Organizer, Officer, Caller' }, text: {
     fr: 'Retirer un joueur d’une activité.', en: 'Remove a player from an activity.' } },
   { group: 'activites', name: 'addacti', usage: '/addacti @joueur rôle', who: { fr: 'Officier, Caller', en: 'Officer, Caller' }, text: {
-    fr: 'Ajouter ou déplacer un joueur dans une activité.', en: 'Add or move a player in an activity.' } },
+    fr: 'Ajouter ou déplacer un joueur dans une activité ; activité ou rôle plein : confirmation pour forcer l’ajout.', en: 'Add or move a player in an activity; full activity or role: confirm to force it.' } },
   { group: 'activites', name: 'addtemplate', usage: '/addtemplate', who: { fr: 'Officier', en: 'Officer' }, text: {
     fr: 'Ajouter un template au format JSON (les compos du site sont plus simples).', en: 'Add a template in JSON format (the website’s comps are simpler).' } },
   { group: 'activites', name: 'deltemplate', usage: '/deltemplate nom', who: { fr: 'Officier', en: 'Officer' }, text: {

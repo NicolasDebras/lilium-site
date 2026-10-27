@@ -3,8 +3,8 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 
-import { TEST_ITEMS } from '../../../testing/items';
-import { BuildForm, allTwoHanded } from './build-form';
+import { TEST_ITEMS, TEST_SPELLS } from '../../../testing/items';
+import { BuildForm, allTwoHanded, pruneSpells } from './build-form';
 
 /** `edited` : réponse de l'API pour le build ouvert en édition (avec `buildId`). */
 async function render(buildId?: string, edited?: object) {
@@ -19,6 +19,7 @@ async function render(buildId?: string, edited?: object) {
   const http = TestBed.inject(HttpTestingController);
   http.expectOne('/api/guilds/111/roles').flush([{ name: 'HEAL', emoji: '💚' }]);
   http.expectOne('/api/items').flush(TEST_ITEMS);
+  http.expectOne('/api/spells').flush(TEST_SPELLS);
   if (buildId) http.expectOne(`/api/guilds/111/builds/${buildId}`).flush(edited ?? {});
   const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
   await fixture.whenStable();
@@ -35,6 +36,51 @@ describe('allTwoHanded', () => {
     expect(allTwoHanded(['2H_HOLYSTAFF', 'MAIN_HOLYSTAFF'], get)).toBe(false);
     expect(allTwoHanded(['*'], get)).toBe(false);
     expect(allTwoHanded([], get)).toBe(false);
+  });
+});
+
+describe('pruneSpells', () => {
+  it('garde les sorts des objets encore présents (tier ignoré) et ceux des bottes au choix', () => {
+    const spells = { MAIN_SWORD: { q: 'CLEAVE' }, HEAD_PLATE_SET1: { a: 'BLOCK' }, '@shoes': { a: 'DODGE' } };
+    expect(pruneSpells({ mainhand: ['T8_MAIN_SWORD@1'], shoes: ['*'] }, spells))
+      .toEqual({ MAIN_SWORD: { q: 'CLEAVE' }, '@shoes': { a: 'DODGE' } });
+    expect(pruneSpells({ shoes: ['SHOES_PLATE_SET1'] }, spells)).toEqual({});
+  });
+});
+
+describe('BuildForm — sorts & passifs', () => {
+  it('une ligne par objet avec sorts + les bottes au choix ; choix, retrait et nettoyage', async () => {
+    const { fixture, cmp, el } = await render();
+    cmp.setItem('mainhand', ['T8_MAIN_SWORD@1']);
+    fixture.detectChanges();
+    const rows = cmp['spellRows']();
+    expect(rows.map((r) => r.key)).toEqual(['MAIN_SWORD', '@shoes']);
+    expect(rows[0].slots.map((s) => s.label)).toEqual(['Q', 'W', 'E', 'Passif']);
+    expect(rows[1].slots.map((s) => s.label)).toEqual(['F']);   // actif des bottes = touche F
+    expect(el.querySelectorAll('.spell-row').length).toBe(2);
+
+    cmp.setSpell('MAIN_SWORD', 'q', 'CLEAVE');
+    cmp.setSpell('@shoes', 'a', 'SPRINT_CD_REDUCTION');
+    expect(cmp['model']().spells).toEqual({ MAIN_SWORD: { q: 'CLEAVE' }, '@shoes': { a: 'SPRINT_CD_REDUCTION' } });
+    cmp.setSpell('MAIN_SWORD', 'q', '');                 // « au choix » : l'objet sort de `spells`
+    expect(cmp['model']().spells).toEqual({ '@shoes': { a: 'SPRINT_CD_REDUCTION' } });
+
+    cmp.setItem('shoes', ['SHOES_PLATE_SET1']);           // bottes précises : plus de sort « au choix »
+    expect(cmp['model']().spells).toEqual({});
+    expect(cmp['spellRows']().map((r) => r.key)).toEqual(['MAIN_SWORD']);
+  });
+
+  it('enregistre les sorts avec le build', async () => {
+    const { fixture, cmp, el, http } = await render();
+    cmp['model'].update((m) => ({ ...m, name: 'Tank', role: 'HEAL' }));
+    cmp.setItem('head', ['HEAD_PLATE_SET1']);
+    cmp.setSpell('HEAD_PLATE_SET1', 'a', 'BLOCK');
+    fixture.detectChanges();
+    el.querySelector<HTMLButtonElement>('button[type=submit]')!.click();
+    const req = http.expectOne('/api/guilds/111/builds');
+    expect(req.request.body.spells).toEqual({ HEAD_PLATE_SET1: { a: 'BLOCK' } });
+    expect(req.request.body.notes).toBeUndefined();
+    req.flush({ id: 1 });
   });
 });
 
@@ -136,7 +182,8 @@ describe('BuildForm — équipement', () => {
     const submit = el.querySelector<HTMLButtonElement>('button[type=submit]')!;
     expect(name.required).toBe(true);
     expect(name.maxLength).toBe(100);
-    expect(el.querySelector<HTMLTextAreaElement>('#notes')!.maxLength).toBe(4000);
+    expect(el.querySelector('#notes')).toBeNull();   // champs Notes et Image retirés
+    expect(el.querySelector('#image')).toBeNull();
     expect(submit.disabled).toBe(true);
 
     name.value = '   ';
@@ -156,7 +203,7 @@ describe('BuildForm — équipement', () => {
 
   it('en édition : relit l’équipement (et l’ancien format « chaîne »)', async () => {
     const { cmp } = await render('7', {
-      id: 7, name: 'Tank', role: 'HEAL', type_acti: 'PVP', weapon: '', notes: '', image: '',
+      id: 7, name: 'Tank', role: 'HEAL', type_acti: 'PVP', weapon: '', spells: {},
       items: { mainhand: 'MAIN_SWORD', head: ['HEAD_PLATE_SET1', 'HEAD_CLOTH_SET2'] }, created_by_name: 'Lily',
     });
     expect(cmp['model']().items).toEqual({ mainhand: ['MAIN_SWORD'], head: ['HEAD_PLATE_SET1', 'HEAD_CLOTH_SET2'] });

@@ -4,7 +4,7 @@ import { Observable } from 'rxjs';
 
 import {
   ActivityStats, AdminOverview, Bal, BalAction, BalOperationsPage, BalPeriod, BalPlayer, BalStats, BotErrorDetail, BotErrorsPage, Build, BuildDetail, BuildInput,
-  Compo, CompoInput, CompoList, MyBalHistory, PublicComposPage, RoleInfo,
+  Compo, CompoInput, CompoList, MyBalHistory, PayoutAdjustBody, PayoutAdjustResult, PayoutsWeek, PublicComposPage, RoleInfo,
 } from './models';
 import { dict } from './i18n/i18n';
 
@@ -181,6 +181,15 @@ export class ApiService {
 
   guildBalCsvUrl(guildId: string, period: BalPeriod): string {
     return `${this.g(guildId)}/admin/bal/operations.csv?period=${period}`;
+  }
+
+  // ── Admin : payouts de la semaine ─────────────────────────────────────────
+  payouts(guildId: string, week: number): Observable<PayoutsWeek> {
+    return this.http.get<PayoutsWeek>(`${this.g(guildId)}/admin/payouts`, { params: { week } });
+  }
+
+  adjustPayout(guildId: string, id: number, body: PayoutAdjustBody): Observable<PayoutAdjustResult> {
+    return this.http.post<PayoutAdjustResult>(`${this.g(guildId)}/admin/payouts/${id}/adjust`, body);
   }
 
   // ── Admin : erreurs du bot ────────────────────────────────────────────────

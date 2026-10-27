@@ -12,7 +12,7 @@ from collections import OrderedDict
 
 from albion_create_image_build import (  # noqa: F401 — WIDTH, COMPO_WIDTH, local_icon : utilisés par les tests
     COMPO_MAX_ROWS, COMPO_WIDTH, WIDTH, IconFetcher, default_fetcher, item_ids, local_icon, normalize_items,
-    render_build_image, render_compo_image,
+    normalize_spells, render_build_image, render_compo_image, spell_ids,
 )
 
 from app.shared.lilium_compo import compo_rows
@@ -52,8 +52,9 @@ async def _icons(ids: list[str]) -> dict[str, bytes | None]:
 
 
 def _build_payload(build: dict) -> dict:
-    keys = ("name", "role", "type_acti", "weapon", "notes")
-    return {**{k: build.get(k) or "" for k in keys}, "items": normalize_items(build.get("items"))}
+    keys = ("name", "role", "type_acti", "weapon")
+    return {**{k: build.get(k) or "" for k in keys}, "items": normalize_items(build.get("items")),
+            "spells": normalize_spells(build.get("spells"))}
 
 
 async def build_png(build: dict) -> bytes:
@@ -61,7 +62,7 @@ async def build_png(build: dict) -> bytes:
     payload = _build_payload(build)
 
     async def make() -> bytes:
-        icons = await _icons(item_ids(payload["items"]))
+        icons = await _icons(item_ids(payload["items"]) + spell_ids(payload["items"], payload["spells"]))
         return await asyncio.to_thread(render_build_image, payload, icons)
 
     return await _cached(_cache_key("build", payload), make)

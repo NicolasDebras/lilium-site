@@ -15,12 +15,13 @@ PARIS = ZoneInfo("Europe/Paris")
 CREDIT_ACTIONS = {"finacti", "paybal", "addbal"}     # silver gagné par les joueurs
 WITHDRAW_ACTIONS = {"retirebal"}                       # BAL payée (sortie)
 ACTIVITY_ACTIONS = {"finacti", "paybal"}               # fins d'activités (par compo)
+ADJUST_ACTION = "ajustbal"                             # correction d'un payout (panel Admin), signée
 TOP_PLAYERS = 10
 TOP_TEMPLATES = 8
 TOP_CALLERS = 8
 RECENT_OPS = 15
 NO_TEMPLATE = "Sans compo"
-BAL_ACTIONS = ("finacti", "paybal", "addbal", "retirebal", "transferbal")
+BAL_ACTIONS = ("finacti", "paybal", "addbal", "retirebal", "transferbal", "ajustbal")
 
 # Périodes proposées : « week » = semaine en cours (depuis lundi, comme le récap du bot).
 PERIODS = ("week", "7d", "30d", "90d", "180d")
@@ -61,6 +62,15 @@ def fetch_since(period: str, now: datetime, with_previous: bool = True) -> datet
     return datetime.combine(first - timedelta(days=1), time.min, tzinfo=PARIS)
 
 
+def _credited(e: dict) -> int:
+    """Silver crédité par un mouvement : gains positifs, et ajustements de payout avec leur signe
+    (un payout corrigé à la baisse réduit le crédité)."""
+    delta = int(e["delta"] or 0)
+    if e["action"] == ADJUST_ACTION:
+        return delta
+    return delta if e["action"] in CREDIT_ACTIONS and delta > 0 else 0
+
+
 def _flow(events: list[dict], first: date, today: date, bucket: str) -> list[dict]:
     """Crédité / retiré par jour ou par semaine, toutes les périodes même vides."""
     flow: dict[date, dict] = {}
@@ -73,9 +83,8 @@ def _flow(events: list[dict], first: date, today: date, bucket: str) -> list[dic
         delta = int(e["delta"] or 0)
         if not slot:
             continue
-        if e["action"] in CREDIT_ACTIONS and delta > 0:
-            slot["credited"] += delta
-        elif e["action"] in WITHDRAW_ACTIONS and delta < 0:
+        slot["credited"] += _credited(e)
+        if e["action"] in WITHDRAW_ACTIONS and delta < 0:
             slot["withdrawn"] += -delta
     return list(flow.values())
 
@@ -100,9 +109,8 @@ def _totals(events: list[dict]) -> dict:
     activities: set[int] = set()
     for e in events:
         delta = int(e["delta"] or 0)
-        if e["action"] in CREDIT_ACTIONS and delta > 0:
-            credited += delta
-        elif e["action"] in WITHDRAW_ACTIONS and delta < 0:
+        credited += _credited(e)
+        if e["action"] in WITHDRAW_ACTIONS and delta < 0:
             withdrawn += -delta
         if e["action"] in ACTIVITY_ACTIONS and delta > 0:
             activities.add(e["id"])
@@ -143,10 +151,9 @@ def compute_bal_stats(events: list[dict], balances: list[dict], period: str, now
 
     earners: dict[str, dict] = {}
     for e in current:
-        delta = int(e["delta"] or 0)
-        if e["action"] in CREDIT_ACTIONS and delta > 0:
+        if credited := _credited(e):
             p = earners.setdefault(e["uid"], {"name": e.get("name") or e["uid"], "amount": 0})
-            p["amount"] += delta
+            p["amount"] += credited
             p["name"] = e.get("name") or p["name"]   # événements triés par date : dernier nom connu
 
     heatmap = [[len(heat_ids.get((d, h), ())) for h in range(24)] for d in range(7)]

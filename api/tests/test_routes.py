@@ -400,3 +400,35 @@ def test_admin_error_detail_and_other_guild_is_404(login, fake_db):
     r = c.get(f"/api/guilds/{GUILD}/admin/errors/{mine['id']}")
     assert r.status_code == 200 and r.json()["traceback"] == mine["traceback"]
     assert c.get(f"/api/guilds/{GUILD}/admin/errors/{other['id']}").status_code == 404
+
+
+# ── Sorts et passifs ─────────────────────────────────────────────────────────
+
+def test_spells_endpoint(client, login):
+    assert client.get("/api/spells").status_code == 401
+    data = login(MEMBER_ID).get("/api/spells").json()
+    assert data["names"]["SPRINT_CD_REDUCTION"]["name"] == "Sprint rafraîchissant"
+    assert any(s["id"] == "SPRINT_CD_REDUCTION" and s["category"] == "Cuir" for s in data["shoes"]["a"])
+
+
+def test_build_with_spells_roundtrip_and_duplicate(login):
+    c = login(STAFF_ID)
+    items = {"mainhand": ["T8_2H_LONGBOW@1"], "shoes": ["*"]}
+    spells = {"2H_LONGBOW": {"q": "MULTISHOT2", "e": "ARROWRAIN", "p": "PASSIVE_SLOWPOISON", "w": ""},
+              "@shoes": {"a": "SPRINT_CD_REDUCTION"}}
+    r = c.post(f"/api/guilds/{GUILD}/builds", json={**BUILD, "items": items, "spells": spells})
+    assert r.status_code == 201, r.text
+    got = c.get(f"/api/guilds/{GUILD}/builds/{r.json()['id']}").json()["spells"]
+    assert got == {"2H_LONGBOW": {"q": "MULTISHOT2", "e": "ARROWRAIN", "p": "PASSIVE_SLOWPOISON"},
+                   "@shoes": {"a": "SPRINT_CD_REDUCTION"}}
+    copy_id = c.post(f"/api/guilds/{GUILD}/builds/{r.json()['id']}/duplicate").json()["id"]
+    assert c.get(f"/api/guilds/{GUILD}/builds/{copy_id}").json()["spells"] == got
+
+
+def test_build_rejects_foreign_spell(login):
+    c = login(STAFF_ID)
+    items = {"mainhand": ["2H_LONGBOW"]}
+    bad = c.post(f"/api/guilds/{GUILD}/builds", json={**BUILD, "items": items, "spells": {"2H_LONGBOW": {"q": "SPRINTHOT"}}})
+    assert bad.status_code == 422
+    missing = c.post(f"/api/guilds/{GUILD}/builds", json={**BUILD, "items": items, "spells": {"MAIN_SWORD": {"q": "X"}}})
+    assert missing.status_code == 422

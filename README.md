@@ -137,7 +137,7 @@ Toutes sous `/api`. `{gid}` = id du serveur Discord.
 | GET | `/health`, `/public/info` (lien d'invitation du bot, permissions minimales, jamais administrateur) | — |
 | GET | `/auth/login`, `/auth/callback` · POST `/auth/logout` | — |
 | GET | `/me` (utilisateur + serveurs avec niveau) | connecté |
-| GET | `/items` (catalogue des objets d'équipement Albion) | connecté |
+| GET | `/items` (catalogue des objets d'équipement Albion, avec leurs sorts possibles) · `/spells` (noms des sorts + sorts de toutes les bottes) | connecté |
 | GET | `/market` (noms FR/EN de tous les objets à tier + recettes de cuisine/potions, gzip, cache 24 h) | connecté |
 | GET | `/guilds/{gid}/builds[?role=&type_acti=]`, `/guilds/{gid}/builds/{id}` (+ `used_by` : compos qui l'utilisent), `/guilds/{gid}/builds/{id}/image.png` | membre |
 | POST | `/guilds/{gid}/builds/{id}/duplicate` (« Nom (copie) ») | staff |
@@ -154,10 +154,19 @@ Toutes sous `/api`. `{gid}` = id du serveur Discord.
 | GET | `/guilds/{gid}/admin/bal?period=week\|7d\|30d\|90d\|180d` | admin |
 | GET | `/guilds/{gid}/admin/bal/players?q=` (50 max, soldes à 0 compris), `/guilds/{gid}/admin/bal/players/{uid}/operations[.csv]?action=&page=`, `/guilds/{gid}/admin/bal/operations.csv?period=` (toute la guilde) | admin |
 | GET | `/guilds/{gid}/admin/errors?command=&page=` (sans traceback), `/guilds/{gid}/admin/errors/{id}` (avec traceback, 404 si autre serveur) | admin |
+| GET · POST | `/guilds/{gid}/admin/payouts?week=0\|-1` · `/guilds/{gid}/admin/payouts/{id}/adjust` `{changes: [{uid, amount}], global_change?: {mode: total\|per_player, amount}}` | admin |
 
 **Page « Ma BAL » → Historique complet** : toutes les opérations du joueur (6 mois gardés par le bot), filtre par type (`/finacti`, `/paybal`, `/addbal`, `/retirebal`, `/transferbal`), pagination et **export CSV** (séparateur `;`, ouvrable dans Excel ; les cellules commençant par `= + - @` sont neutralisées contre l'injection de formules).
 
 **Page Admin → BAL par joueur** : recherche par pseudo ou id Discord (accents et majuscules ignorés), liste des joueurs avec leur solde, clic → historique complet du joueur (même vue que « Ma BAL », filtre et export CSV), et **export CSV de toute la BAL de la guilde** sur la période choisie (colonnes date, opération, compo, joueur, uid, montant, par).
+
+**Page Admin → Payouts de la semaine** : payouts (`finacti` / `paybal` du bal_log) de la semaine en cours ou de la précédente (lundi 00:00, heure de Paris). On peut corriger un payout de plusieurs façons :
+- ajouter un joueur (recherche dans la BAL ou ID Discord, vérifié sur le serveur) ;
+- retirer un joueur (montant 0) ;
+- changer le montant d'un joueur ;
+- changer tout le payout : nouveau total réparti au prorata (plus forts restes, somme exacte) ou même montant pour tous, les montants modifiés à la main l'emportant.
+
+L'original n'est jamais réécrit : la correction est une ligne `ajustbal` liée par `ref_id` (colonne créée par le bot). Les soldes `bal` sont mis à jour dans la même transaction, sans jamais passer sous 0. Chaque joueur dont le montant change reçoit un **MP** (ancien → nouveau montant, nouveau solde), envoyé en série avec le token du bot (`discord_rest.send_dm`, un seul nouvel essai après un 429). Les MP impossibles sont signalés à l'admin. `ajustbal` compte avec son signe dans le crédité (pas comme activité ni comme caller). Le calcul est dans `api/app/payouts.py`, le front dans `pages/admin/payouts-editor.ts`.
 
 **Page Admin → Erreurs du bot** : équivalent web de `/errors` (table `error_log` du bot, 30 jours), filtre par commande, traceback chargé au clic et affiché en texte brut.
 
@@ -207,7 +216,7 @@ Thème noir & lilas refondu (`frontend/src/styles.scss`, toutes les couleurs en 
 - **Formulaire de build** : inventaire grand format à gauche, champs à droite, barre d'enregistrement collante.
 - **Page 404** avec une blague Albion tirée au hasard (« Une autre blague »).
 
-La liste des **builds** a une barre de recherche instantanée (nom, rôle, arme, notes, auteur, objets de l'équipement ; accents et majuscules ignorés, tous les mots doivent correspondre) et un **pager** (12 builds par page, retour à la page 1 quand la recherche ou les filtres changent ; composant réutilisable `shared/pager.ts`).
+La liste des **builds** a une barre de recherche instantanée (nom, rôle, précisions, auteur, objets de l'équipement ; accents et majuscules ignorés, tous les mots doivent correspondre) et un **pager** (12 builds par page, retour à la page 1 quand la recherche ou les filtres changent ; composant réutilisable `shared/pager.ts`).
 
 ### Builds et équipement
 
@@ -219,6 +228,14 @@ Un build choisit son équipement parmi les **vrais objets du jeu**, avec leur im
 tête, cape / arme, armure, main gauche / potion, bottes, bouffe. Le sélecteur propose une recherche (FR, EN ou famille, accents ignorés) et des filtres par famille (Épées, Bâtons sacrés, Plaque, Nourriture, Potions…).
 
 **Tier et enchantement par objet** : chaque choix est stocké au format du jeu — `T8_MAIN_SWORD@1` = 8.1, `T7_MAIN_SWORD` = 7.0, l'id nu `MAIN_SWORD` = tier libre (ancien format, toujours valide, aucune migration). Tiers T4 à T8 (T3 à T8 pour les potions) parmi ceux qui existent pour l'objet (listés du plus haut au plus bas), enchantement .0 à .4 (.3 pour bouffe et potions) ; un objet une seule fois par case. Réglés dans la liste « Sélection » du sélecteur (le dernier réglage s'applique aux objets cliqués ensuite, T8.0 au départ). Le tier est un **minimum** : survol « 8.1 minimum ou équivalent (7.2, 6.3, 5.4) » (niveau = tier + enchantement ; pas d'équivalence pour bouffe/potions). Affichage : icône du tier (CDN Albion) + pastille « 8.1 » bordée de la couleur de l'enchantement (`--ench-0…4`), sur le site comme sur les images (bot et API) ; le MP de `/massup` rappelle l'équivalence. Validation : `catalog.py` (`parse_choice`, `_check_choice`) ; front : `core/tiers.ts`, `shared/tier-badge.ts`.
+
+**Sorts et passifs** (colonne `builds.spells`, créée par le bot) : pour chaque arme, casque, armure et bottes choisis, la carte « Sorts & passifs » du formulaire propose ses sorts réels. Les emplacements sont Q, W, E et passif pour l'arme ; actif (touche D, R ou F) et passif pour l'armure ; 2ᵉ passif pour les plastrons en plaque. « ? » laisse le choix au joueur.
+- Format : `{id d'objet sans tier: {q|w|e|a|p|p2: id de sort}}`, donc un changement de tier garde les sorts. Les sorts d'un objet retiré du build sont supprimés.
+- **Bottes au choix** (case vide ou « au choix ») : la clé `@shoes` impose seulement le sort (ex. Sprint rafraîchissant, des bottes en cuir), choisi parmi les sorts de toutes les bottes groupés par Plaque, Cuir et Tissu.
+- Les sorts sont affichés sur la page du build et dessinés sur l'image (section « Sorts » sous la grille, sort de bottes dans la case Bottes).
+- Données : `scripts/update_items.py` lit aussi `spells.json` et `localization.json` d'ao-bin-dumps. `catalog.py` résout les `craftingspelllist` (références en chaîne, `removespell`) et range les sorts par emplacement (`slots` 1/2/3 = Q/W/E, `passivespell` = passif) dans `items.json`, et écrit les noms FR/EN dans `app/data/spells.json`.
+- Validation : `validate_build_spells` (sort étranger à l'objet ou objet absent du build → 422).
+- Les champs **Notes** et **Image (URL)** ont été retirés : les colonnes restent en base, le site ne les lit plus et les vide à l'enregistrement.
 
 **Swaps** : jusqu'à 6 objets de rechange, tous emplacements (clé `swaps` de `builds.items`), saisis dans une **rangée de 6 cases sous l'équipement** (un objet par case) et affichés en rangée d'icônes sous l'inventaire sur le site ; sur les images (MP de `/massup`, image de compo), ils restent à droite de l'équipement.
 

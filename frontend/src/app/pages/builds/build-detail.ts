@@ -7,8 +7,8 @@ import { errorText } from '../../core/resource';
 import { ApiService, errorMessage } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
 import { I18nService } from '../../core/i18n/i18n';
-import { ItemsService } from '../../core/items.service';
-import { hasLevel } from '../../core/models';
+import { ItemsService, itemName, spellIconUrl, spellName, useFallbackIcon } from '../../core/items.service';
+import { SHOES_ANY, SPELL_KEYS, Slot, hasLevel } from '../../core/models';
 import { ToastService } from '../../core/toast.service';
 import { Gear, choiceName, describeGear, describeSwaps } from '../../shared/gear';
 import { Icon } from '../../shared/icon';
@@ -55,8 +55,23 @@ import { roleColor } from '../../shared/roles';
           @if (b.weapon) {
             <p class="weapon"><app-icon name="info" [size]="14" /> {{ b.weapon }}</p>
           }
-          @if (b.notes) {
-            <p class="notes">{{ b.notes }}</p>
+          @if (spellLines().length) {
+            <div class="spells">
+              <h3>{{ t().builds.spellsTitle }}</h3>
+              @for (line of spellLines(); track line.key) {
+                <div class="spell-line">
+                  <span class="spell-item">{{ line.title }}</span>
+                  <ul>
+                    @for (s of line.spells; track s.key) {
+                      <li [title]="s.name">
+                        <img [src]="s.icon" alt="" width="32" height="32" (error)="fallback($event)" />
+                        <span><small>{{ s.label }}</small> {{ s.name }}</span>
+                      </li>
+                    }
+                  </ul>
+                </div>
+              }
+            </div>
           }
           <div class="used">
             <h3>{{ t().builds.usedIn }}</h3>
@@ -94,8 +109,14 @@ import { roleColor } from '../../shared/roles';
     .names { margin: 0; font-size: .85rem; }
     .tiers-hint { margin: -6px 0 0; font-size: .78rem; }
     .weapon { margin: 0; display: flex; align-items: center; gap: 6px; }
-    .notes { margin: 0; white-space: pre-wrap; color: var(--text-muted); }
-    .used h3, .image-card h3 { margin: 0 0 8px; font-size: 1rem; }
+    .spells { display: grid; gap: 8px; width: 100%; }
+    .spell-line { display: grid; gap: 4px; }
+    .spell-item { font-size: .85rem; font-weight: 600; }
+    .spell-line ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 12px; }
+    .spell-line li { display: flex; align-items: center; gap: 6px; font-size: .82rem; }
+    .spell-line img { border-radius: 50%; }
+    .spell-line small { font-weight: 700; color: var(--lilac); }
+    .used h3, .spells h3, .image-card h3 { margin: 0 0 8px; font-size: 1rem; }
     .image-card h3 .muted { font-weight: 400; font-size: .85rem; }
     .used ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
     .used p { margin: 0; }
@@ -145,8 +166,37 @@ export class BuildDetailPage {
       .some((i) => i.tier != null && i.slot !== 'food' && i.slot !== 'potion');
   });
 
+  /** Sorts imposés : une ligne par objet (dans l'ordre du build), les bottes au choix en dernier. */
+  protected readonly spellLines = computed(() => {
+    const b = this.build();
+    if (!b?.spells) return [];
+    const t = this.t().builds;
+    const names = this.items.spells()?.names;
+    return Object.entries(b.spells)
+      .sort(([a], [z]) => Number(a === SHOES_ANY) - Number(z === SHOES_ANY))
+      .map(([key, chosen]) => {
+        const item = key === SHOES_ANY ? undefined : this.items.get(key);
+        const slot: Slot = item?.slot ?? 'shoes';
+        return {
+          key,
+          title: key === SHOES_ANY ? t.shoesAny : item ? itemName(item) : key,
+          spells: SPELL_KEYS.filter((k) => chosen[k]).map((k) => ({
+            key: k,
+            label: (k === 'a' ? t.activeKeys[slot] : t.spellKeys[k]) ?? k,
+            name: spellName(chosen[k]!, names),
+            icon: spellIconUrl(chosen[k]!),
+          })),
+        };
+      });
+  });
+
   constructor() {
     this.items.load().catch(() => {});
+    this.items.loadSpells().catch(() => {});
+  }
+
+  protected fallback(event: Event): void {
+    useFallbackIcon(event);
   }
 
   color(role: string): string {

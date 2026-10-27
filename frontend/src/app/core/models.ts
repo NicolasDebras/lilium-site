@@ -49,6 +49,30 @@ export interface Item {
   /** Dans un build seulement : tier minimum imposé (absent = libre) et enchantement (cf. core/tiers.ts). */
   tier?: number;
   enchant?: number;
+  /** Arme, casque, armure, bottes : sorts possibles par emplacement (ids de /api/spells). */
+  spells?: Partial<Record<SpellKey, string[]>>;
+}
+
+/** Emplacements de sort : Q/W/E de l'arme, actif d'armure, passif, 2ᵉ passif (plastrons en plaque). */
+export type SpellKey = 'q' | 'w' | 'e' | 'a' | 'p' | 'p2';
+export const SPELL_KEYS: readonly SpellKey[] = ['q', 'w', 'e', 'a', 'p', 'p2'];
+/** Emplacements d'équipement qui ont des sorts à choisir. */
+export const SPELL_SLOTS: readonly Slot[] = ['mainhand', 'head', 'armor', 'shoes'];
+/** Clé de `Build.spells` : sort de bottes imposé, bottes au choix (case Bottes vide ou « au choix »). */
+export const SHOES_ANY = '@shoes';
+
+/** Sorts choisis : {id d'objet sans tier (ou SHOES_ANY): {emplacement: id de sort}}. */
+export type BuildSpells = Record<string, Partial<Record<SpellKey, string>>>;
+
+export interface SpellName {
+  name: string;
+  name_en: string;
+}
+
+/** GET /api/spells — noms des sorts + sorts de toutes les bottes (famille Plaque / Cuir / Tissu). */
+export interface SpellCatalog {
+  names: Record<string, SpellName>;
+  shoes: Partial<Record<SpellKey, { id: string; category: string }[]>>;
 }
 
 /** Par case : 1 à 3 ids d'objets au choix, ou [FREE_CHOICE]. Case absente = rien de précisé. */
@@ -62,9 +86,8 @@ export interface Build {
   role: string;
   type_acti: TypeActi;
   weapon: string;
-  notes: string;
-  image: string;
   items: BuildItems;
+  spells: BuildSpells;
   created_by_name: string;
 }
 
@@ -174,7 +197,45 @@ export interface MyBalHistory {
 }
 
 /** Types d'opération du bal_log (commandes du bot). */
-export type BalAction = 'finacti' | 'paybal' | 'addbal' | 'retirebal' | 'transferbal';
+export type BalAction = 'finacti' | 'paybal' | 'addbal' | 'retirebal' | 'transferbal' | 'ajustbal';
+
+/** Admin → payouts de la semaine (lignes finacti / paybal, ajustements fusionnés). */
+export interface PayoutPlayer {
+  uid: string;
+  name: string;
+  amount: number;
+}
+
+export interface Payout {
+  id: number;
+  ts: string;
+  action: 'finacti' | 'paybal';
+  template: string;
+  by_user: string;
+  total: number;
+  adjusted: boolean;
+  players: PayoutPlayer[];
+}
+
+export interface PayoutsWeek {
+  week: number;
+  start: string;
+  payouts: Payout[];
+}
+
+export type PayoutGlobalMode = 'total' | 'per_player';
+
+export interface PayoutAdjustBody {
+  /** Nouveau montant effectif de chaque joueur modifié (0 = retiré). */
+  changes: { uid: string; amount: number }[];
+  global_change?: { mode: PayoutGlobalMode; amount: number } | null;
+}
+
+export interface PayoutAdjustResult {
+  payout: Payout;
+  dm_sent: number;
+  dm_failed: string[];
+}
 
 export interface BalOperation {
   ts: string;

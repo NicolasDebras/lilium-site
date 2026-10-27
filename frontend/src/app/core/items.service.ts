@@ -3,12 +3,24 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
 import { dict, lang } from './i18n/i18n';
-import { Item, Slot } from './models';
+import { Item, Slot, SpellCatalog, SpellName } from './models';
 import { parseChoice } from './tiers';
 
 /** Image officielle d'un objet (CDN Albion Online). */
 export function itemIconUrl(icon: string, size = 64): string {
   return `https://render.albiononline.com/v1/item/${icon}.png?size=${size}`;
+}
+
+/** Icône officielle d'un sort (CDN Albion Online). */
+export function spellIconUrl(spell: string, size = 64): string {
+  return `https://render.albiononline.com/v1/spell/${spell}.png?size=${size}`;
+}
+
+/** Nom d'un sort dans la langue du site ; l'id si le sort est inconnu du catalogue. */
+export function spellName(spell: string, names: Record<string, SpellName> | undefined): string {
+  const n = names?.[spell];
+  if (!n) return spell;
+  return lang() === 'en' ? n.name_en || n.name : n.name;
 }
 
 /** Icône de secours (« ? » lilas) quand le CDN n'a pas l'image d'un objet
@@ -73,6 +85,23 @@ export class ItemsService {
 
   readonly items = this.state.asReadonly();
   readonly byId = computed(() => new Map(this.state().map((i) => [i.id, i])));
+
+  private readonly spellState = signal<SpellCatalog | null>(null);
+  private spellsPending: Promise<SpellCatalog> | null = null;
+  /** Noms des sorts + sorts de toutes les bottes (null tant que pas chargé). */
+  readonly spells = this.spellState.asReadonly();
+
+  loadSpells(): Promise<SpellCatalog> {
+    const loaded = this.spellState();
+    if (loaded) return Promise.resolve(loaded);
+    this.spellsPending ??= firstValueFrom(this.http.get<SpellCatalog>('/api/spells'))
+      .then((catalog) => {
+        this.spellState.set(catalog);
+        return catalog;
+      })
+      .finally(() => (this.spellsPending = null));
+    return this.spellsPending;
+  }
 
   load(): Promise<readonly Item[]> {
     if (this.state().length) return Promise.resolve(this.state());

@@ -9,11 +9,11 @@ import { Build } from '../../core/models';
 import { CompoForm } from './compo-form';
 
 const BUILDS: Build[] = [
-  { id: 12, name: 'Tank Masse', role: 'TANK', type_acti: 'PVP', weapon: '', notes: '', image: '',
+  { id: 12, name: 'Tank Masse', role: 'TANK', type_acti: 'PVP', weapon: '', spells: {},
     items: { mainhand: ['MAIN_SWORD'] }, created_by_name: 'Lily' },
-  { id: 13, name: 'Tank Bouclier', role: 'TANK', type_acti: 'PVP', weapon: '', notes: '', image: '',
+  { id: 13, name: 'Tank Bouclier', role: 'TANK', type_acti: 'PVP', weapon: '', spells: {},
     items: {}, created_by_name: 'Lily' },
-  { id: 15, name: 'Heal Sacré', role: 'HEAL', type_acti: 'PVP', weapon: '', notes: '', image: '',
+  { id: 15, name: 'Heal Sacré', role: 'HEAL', type_acti: 'PVP', weapon: '', spells: {},
     items: { mainhand: ['2H_HOLYSTAFF'] }, created_by_name: 'Lily' },
 ];
 

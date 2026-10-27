@@ -76,6 +76,29 @@ class FakeDB:
     async def get_bal(self, guild_id, user_id):
         return self.bal.get((guild_id, user_id), 0)
 
+    # ── Payouts (lignes bal_log finacti/paybal + ajustbal) ───────────────────
+    payout_rows: list  # posé par les tests : [{id, guild_id, ts, action, by_user, entries, template}]
+    adjust_rows: list  # écrites par apply_payout_adjustment : [{guild_id, ref_id, entries, by_user}]
+
+    async def get_payouts(self, guild_id, since, until, log_id=None):
+        rows = [r for r in getattr(self, "payout_rows", []) if r["guild_id"] == guild_id
+                and since <= r["ts"] < until and (log_id is None or r["id"] == log_id)]
+        adj = getattr(self, "adjust_rows", [])
+        return [{**r, "adjustments": [a["entries"] for a in adj if a["guild_id"] == guild_id and a["ref_id"] == r["id"]]}
+                for r in sorted(rows, key=lambda r: r["ts"], reverse=True)]
+
+    async def apply_payout_adjustment(self, guild_id, ref_id, template, by_user, changes):
+        applied = []
+        for uid, name, delta in changes:
+            before = self.bal.get((guild_id, int(uid)), 0)
+            after = max(0, before + delta)
+            self.bal[(guild_id, int(uid))] = after
+            applied.append({"uid": uid, "name": name, "delta": after - before, "total": after, "before": before})
+        self.adjust_rows = getattr(self, "adjust_rows", []) + [{
+            "guild_id": guild_id, "ref_id": ref_id, "template": template, "by_user": by_user,
+            "entries": [{k: e[k] for k in ("uid", "name", "delta", "total")} for e in applied]}]
+        return applied
+
     async def get_builds(self, guild_id, role=None, type_acti=None):
         return [
             b for b in self.builds.values()
@@ -217,6 +240,10 @@ class FakeDiscord:
 
     async def get_guild(self, guild_id):
         return {"id": str(guild_id), "name": "Lilium", "icon": None}
+
+    async def send_dm(self, user_id, content):
+        self.dms = getattr(self, "dms", []) + [(str(user_id), content)]
+        return str(user_id) not in getattr(self, "closed_dms", set())
 
 
 class FakeOAuth:

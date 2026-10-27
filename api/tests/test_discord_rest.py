@@ -58,3 +58,47 @@ async def test_rate_limit_is_unavailable_not_forbidden():
     rest, _, _ = make({"/guilds/1": (429, None)})
     with pytest.raises(DiscordUnavailable):
         await rest.get_guild(1)
+
+
+def poster_for(script):
+    """Faux POST : (path → réponses successives) ; enregistre les appels."""
+    calls = []
+
+    async def poster(path, payload):
+        calls.append((path, payload))
+        return script[path].pop(0)
+
+    return poster, calls
+
+
+async def test_send_dm_opens_channel_then_posts_without_mentions():
+    rest = DiscordRest("tok")
+    poster, calls = poster_for({"/users/@me/channels": [(200, {"id": "77"})],
+                                "/channels/77/messages": [(200, {})]})
+    assert await rest.send_dm(5, "salut @everyone", poster=poster) is True
+    assert calls[0] == ("/users/@me/channels", {"recipient_id": "5"})
+    assert calls[1][1] == {"content": "salut @everyone", "allowed_mentions": {"parse": []}}
+
+
+async def test_send_dm_retries_once_after_rate_limit(monkeypatch):
+    import app.discord_rest as mod
+    waits = []
+
+    async def no_sleep(s):
+        waits.append(s)
+    monkeypatch.setattr(mod.asyncio, "sleep", no_sleep)
+    rest = DiscordRest("tok")
+    poster, _ = poster_for({"/users/@me/channels": [(429, {"retry_after": 0.4}), (200, {"id": "1"})],
+                            "/channels/1/messages": [(429, {"retry_after": 30}), (429, {})]})
+    assert await rest.send_dm(5, "x", poster=poster) is False     # 2ᵉ 429 : abandon
+    assert waits == [0.4, 5.0]                                     # attente bornée à 5 s
+
+
+async def test_send_dm_closed_dms_or_discord_down():
+    rest = DiscordRest("tok")
+    poster, _ = poster_for({"/users/@me/channels": [(403, {"code": 50007})]})
+    assert await rest.send_dm(5, "x", poster=poster) is False
+
+    async def down(path, payload):
+        raise DiscordUnavailable("réseau")
+    assert await rest.send_dm(5, "x", poster=down) is False

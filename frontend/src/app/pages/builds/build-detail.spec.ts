@@ -5,7 +5,7 @@ import { Router, provideRouter } from '@angular/router';
 
 import { AuthService } from '../../core/auth.service';
 import { BuildDetail, Level } from '../../core/models';
-import { TEST_ITEMS } from '../../../testing/items';
+import { TEST_ITEMS, TEST_SPELLS } from '../../../testing/items';
 import { BuildDetailPage } from './build-detail';
 
 async function settle(fixture: { whenStable(): Promise<unknown>; detectChanges(): void }) {
@@ -15,7 +15,7 @@ async function settle(fixture: { whenStable(): Promise<unknown>; detectChanges()
 }
 
 const BUILD: BuildDetail = {
-  id: 7, name: 'Tank Masse', role: 'TANK', type_acti: 'PVP', weapon: '1H Masse', notes: 'T8 mini', image: '',
+  id: 7, name: 'Tank Masse', role: 'TANK', type_acti: 'PVP', weapon: '1H Masse', spells: {},
   items: { mainhand: ['MAIN_MACE'] }, created_by_name: 'Coskko', used_by: ['ZvZ', 'Statik'],
 };
 
@@ -34,6 +34,7 @@ describe('BuildDetailPage (build partageable)', () => {
     fixture.detectChanges();
     const http = TestBed.inject(HttpTestingController);
     http.match('/api/items').forEach((r) => r.flush(TEST_ITEMS));
+    http.match('/api/spells').forEach((r) => r.flush(TEST_SPELLS));
     http.expectOne('/api/guilds/111/builds/7').flush(build);
     await settle(fixture);
     return { fixture, http, el: fixture.nativeElement as HTMLElement };
@@ -54,6 +55,23 @@ describe('BuildDetailPage (build partageable)', () => {
     TestBed.resetTestingModule();
     const plain = await render('member', { ...BUILD, items: { mainhand: ['MAIN_SWORD'], food: ['T8_MEAL_STEW@1'] } });
     expect(plain.el.querySelector('.tiers-hint')).toBeNull();   // bouffe seule : pas d'équivalence
+  });
+
+  it('liste les sorts imposés par objet, bottes au choix en dernier', async () => {
+    const { el } = await render('member', {
+      ...BUILD, items: { mainhand: ['MAIN_SWORD'], head: ['HEAD_PLATE_SET1'] },
+      spells: { '@shoes': { a: 'SPRINT_CD_REDUCTION' }, MAIN_SWORD: { q: 'CLEAVE', p: 'PASSIVE_BLEEDCHANCE' },
+                HEAD_PLATE_SET1: { a: 'BLOCK' } },
+    });
+    const text = (e: Element) => e.textContent!.replace(/\s+/g, ' ').trim();
+    const lines = [...el.querySelectorAll('.spell-line')]
+      .map((l) => [text(l.querySelector('.spell-item')!), ...[...l.querySelectorAll('li')].map(text)].join(' | '));
+    expect(lines).toEqual([
+      'Épée large | Q Fendoir | Passif Saignement',
+      'Casque de soldat | D Défense',
+      'Bottes au choix | F Sprint rafraîchissant',
+    ]);
+    expect(el.querySelector('.notes')).toBeNull();
   });
 
   it('un membre ne voit ni Dupliquer ni Modifier', async () => {

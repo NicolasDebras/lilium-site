@@ -276,3 +276,111 @@ def test_swaps_any_slot_deduplicated_and_bounded():
     for bad in ({"swaps": ["*"]}, {"swaps": ["INCONNU"]}, {"swaps": ids[: SWAPS_MAX + 1]}):
         with pytest.raises(InvalidItems):
             validate_build_items(bad)
+
+
+# ── Sorts et passifs ────────────────────────────────────────────────────────
+from app.catalog import (SHOES_ANY, build_spell_names, shoe_spells, spell_resolver, spell_slots,  # noqa: E402
+                         validate_build_spells)
+
+SPELL_RAW = {
+    "weapon": [
+        {"@uniquename": "T4_2H_BOW", "craftingspelllist": {"craftspell": [
+            {"@uniquename": "MULTISHOT2", "@slots": "1"}, {"@uniquename": "GROUNDARROW", "@slots": "2"},
+            {"@uniquename": "SPEEDARCHER_KITE", "@slots": "3"}, {"@uniquename": "PASSIVE_SLOWPOISON"}]}},
+        {"@uniquename": "T4_2H_LONGBOW", "craftingspelllist": {
+            "@reference": "T4_2H_BOW", "removespell": {"@uniquename": "SPEEDARCHER_KITE"},
+            "craftspell": {"@uniquename": "ARROWRAIN", "@slots": "3"}}},
+        {"@uniquename": "T8_2H_LONGBOW", "craftingspelllist": {"@reference": "T4_2H_LONGBOW"}},
+    ],
+    "equipmentitem": [
+        {"@uniquename": "T8_ARMOR_PLATE_SET1", "craftingspelllist": {"craftspell": [
+            {"@uniquename": "TAUNT"}, {"@uniquename": "PASSIVE_MR_AR", "@slots": "1"},
+            {"@uniquename": "PASSIVE_THREAT", "@slots": "2"}]}},
+    ],
+}
+PASSIVES = {"PASSIVE_SLOWPOISON", "PASSIVE_MR_AR", "PASSIVE_THREAT"}
+
+
+def test_spell_resolver_follows_references_and_removals():
+    resolve = spell_resolver(SPELL_RAW)
+    assert [s for s, _ in resolve("T8_2H_LONGBOW")] == ["MULTISHOT2", "GROUNDARROW", "PASSIVE_SLOWPOISON", "ARROWRAIN"]
+    assert resolve("INCONNU") == []
+
+
+def test_spell_slots_weapon_and_armor():
+    resolve = spell_resolver(SPELL_RAW)
+    assert spell_slots("mainhand", resolve("T8_2H_LONGBOW"), PASSIVES) == {
+        "q": ["MULTISHOT2"], "w": ["GROUNDARROW"], "e": ["ARROWRAIN"], "p": ["PASSIVE_SLOWPOISON"]}
+    assert spell_slots("armor", resolve("T8_ARMOR_PLATE_SET1"), PASSIVES) == {
+        "a": ["TAUNT"], "p": ["PASSIVE_MR_AR"], "p2": ["PASSIVE_THREAT"]}
+
+
+def test_build_spell_names_from_localization():
+    raw_spells = {"activespell": [{"@uniquename": "SPRINTHOT"}, {"@uniquename": "X", "@namelocatag": "@SPELLS_Y"}],
+                  "passivespell": {"@uniquename": "PASSIVE_MR_AR"}}
+    loc = {"tmx": {"body": {"tu": [
+        {"@tuid": "@SPELLS_SPRINTHOT", "tuv": [{"@xml:lang": "EN-US", "seg": "Rejuvenating Sprint"},
+                                              {"@xml:lang": "FR-FR", "seg": "Sprint rafraîchissant"}]},
+        {"@tuid": "@SPELLS_Y", "tuv": {"@xml:lang": "EN-US", "seg": "Why"}},
+    ]}}}
+    names = build_spell_names({"SPRINTHOT", "X", "PASSIVE_MR_AR"}, raw_spells, loc)
+    assert names["SPRINTHOT"] == {"name": "Sprint rafraîchissant", "name_en": "Rejuvenating Sprint"}
+    assert names["X"] == {"name": "Why", "name_en": "Why"}                 # pas de FR : anglais
+    assert names["PASSIVE_MR_AR"]["name"] == "PASSIVE_MR_AR"               # pas traduit : id
+
+
+def test_build_catalog_adds_spells_only_when_passives_given():
+    raw = {"weapon": [dict(RAW["weapon"][1], craftingspelllist={"craftspell": [
+        {"@uniquename": "HEROIC", "@slots": "1"}, {"@uniquename": "PASSIVE_BLEED"}]})]}
+    loc_ = [loc("T8_MAIN_SWORD", "Épée large du sage", "Elder's Broadsword")]
+    assert "spells" not in build_catalog(raw, loc_)[0]
+    assert build_catalog(raw, loc_, {"PASSIVE_BLEED"})[0]["spells"] == {"q": ["HEROIC"], "p": ["PASSIVE_BLEED"]}
+
+
+SPELL_CATALOG = {
+    "2H_LONGBOW": {"id": "2H_LONGBOW", "slot": "mainhand", "name": "Arc long", "category": "Arcs", "tiers": [8],
+                   "two_handed": True, "spells": {"q": ["MULTISHOT2"], "e": ["ARROWRAIN"], "p": ["PASSIVE_SLOWPOISON"]}},
+    "SHOES_LEATHER_SET1": {"id": "SHOES_LEATHER_SET1", "slot": "shoes", "name": "Bottes de mercenaire",
+                           "category": "Cuir", "tiers": [8], "two_handed": False,
+                           "spells": {"a": ["SPRINT_CD_REDUCTION", "DODGE"], "p": ["PASSIVE_BALANCE"]}},
+    "SHOES_PLATE_SET1": {"id": "SHOES_PLATE_SET1", "slot": "shoes", "name": "Bottes de soldat",
+                         "category": "Plaque", "tiers": [8], "two_handed": False,
+                         "spells": {"a": ["DODGE", "SPRINTHOT"]}},
+}
+
+
+def test_shoe_spells_union_keeps_first_family():
+    assert shoe_spells(SPELL_CATALOG) == {
+        "a": [{"id": "SPRINT_CD_REDUCTION", "category": "Cuir"}, {"id": "DODGE", "category": "Cuir"},
+              {"id": "SPRINTHOT", "category": "Plaque"}],
+        "p": [{"id": "PASSIVE_BALANCE", "category": "Cuir"}]}
+
+
+def test_validate_build_spells_per_item():
+    items = {"mainhand": ["T8_2H_LONGBOW@1"]}
+    spells = {"2H_LONGBOW": {"p": "PASSIVE_SLOWPOISON", "q": "MULTISHOT2", "e": ""}, "SHOES_PLATE_SET1": {}}
+    assert validate_build_spells(spells, items, SPELL_CATALOG) == {"2H_LONGBOW": {"q": "MULTISHOT2", "p": "PASSIVE_SLOWPOISON"}}
+    with pytest.raises(InvalidItems):
+        validate_build_spells({"2H_LONGBOW": {"w": "MULTISHOT2"}}, items, SPELL_CATALOG)       # mauvais emplacement
+    with pytest.raises(InvalidItems):
+        validate_build_spells({"2H_LONGBOW": {"q": "ARROWRAIN"}}, items, SPELL_CATALOG)       # sort d'un autre emplacement
+    with pytest.raises(InvalidItems):
+        validate_build_spells({"SHOES_PLATE_SET1": {"a": "DODGE"}}, items, SPELL_CATALOG)     # objet absent du build
+
+
+def test_validate_build_spells_shoes_any():
+    ok = {SHOES_ANY: {"a": "SPRINTHOT"}}
+    assert validate_build_spells(ok, {}, SPELL_CATALOG) == ok
+    assert validate_build_spells(ok, {"shoes": ["*"]}, SPELL_CATALOG) == ok
+    with pytest.raises(InvalidItems):
+        validate_build_spells(ok, {"shoes": ["T8_SHOES_PLATE_SET1"]}, SPELL_CATALOG)          # bottes précises
+    with pytest.raises(InvalidItems):
+        validate_build_spells({SHOES_ANY: {"a": "MULTISHOT2"}}, {}, SPELL_CATALOG)            # pas un sort de bottes
+
+
+def test_generated_spell_names_cover_catalog():
+    from app.catalog import load_spell_names
+    names = load_spell_names()
+    used = {s for i in load_catalog() for ids in i.get("spells", {}).values() for s in ids}
+    assert used and used <= set(names)
+    assert names["SPRINT_CD_REDUCTION"]["name"] == "Sprint rafraîchissant"

@@ -80,9 +80,6 @@ interface BuildEntry {
         @for (e of pageBuilds(); track e.build.id; let i = $index) {
           @let b = e.build;
           <article class="card card-hover build fade-up" [style.--role-color]="color(b.role)" [style.animation-delay.ms]="i * 40">
-            @if (b.image) {
-              <img [src]="b.image" alt="" class="thumb" />
-            }
             <div class="row tags">
               <span class="role-tag">{{ emojis().get(b.role) }} {{ b.role }}</span>
               <span class="badge badge-outline">{{ b.type_acti }}</span>
@@ -97,9 +94,6 @@ interface BuildEntry {
             <app-gear-swaps class="swaps" [items]="b.items" size="small" />
             @if (b.weapon) {
               <p class="weapon"><app-icon name="info" [size]="14" /> {{ b.weapon }}</p>
-            }
-            @if (b.notes) {
-              <p class="muted notes">{{ b.notes }}</p>
             }
             <div class="foot">
               <span class="faint by">{{ t().builds.by(b.created_by_name) }}</span>
@@ -141,13 +135,11 @@ interface BuildEntry {
                      background: linear-gradient(90deg, var(--role-color), transparent); }
     .build h2 { margin: 0; font-size: 1.15rem; }
     .tags { gap: 6px; }
-    .thumb { width: calc(100% + 40px); margin: -22px -20px 4px; max-height: 150px; object-fit: cover; }
     .body { display: flex; gap: 14px; align-items: flex-start; }
     .gear-names { margin: 0; font-size: .8rem; line-height: 1.55; }
     .swaps { padding-top: 8px; border-top: 1px solid var(--lilac-soft); }
     .weapon { margin: 0; display: flex; gap: 6px; align-items: baseline; font-size: .88rem; }
     .weapon app-icon { color: var(--lilac); }
-    .notes { margin: 0; white-space: pre-line; font-size: .88rem; }
     .foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px;
             margin-top: 4px; padding-top: 12px; border-top: 1px solid var(--border-soft); }
     .by { font-size: .78rem; }
@@ -197,13 +189,13 @@ export class BuildsList {
         .join(' · ');
       const swapNames = describeSwaps(build.items, get).map((i) => `${i.name} ${i.name_en}`).join(' ');
       const haystack = normalize(
-        [build.name, build.role, build.type_acti, build.weapon, build.notes, build.created_by_name, gearNames, swapNames].join(' '),
+        [build.name, build.role, build.type_acti, build.weapon, build.created_by_name, gearNames, swapNames].join(' '),
       );
       return { build, gearNames, haystack };
     });
   });
 
-  /** Recherche instantanée (sans accents) : nom, rôle, arme, notes, auteur et objets de l'équipement. */
+  /** Recherche instantanée (sans accents) : nom, rôle, précisions, auteur et objets de l'équipement. */
   protected readonly visible = computed(() => {
     const words = normalize(this.query()).split(/\s+/).filter(Boolean);
     return words.length ? this.entries().filter((e) => words.every((w) => e.haystack.includes(w))) : this.entries();

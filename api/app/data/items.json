@@ -14,7 +14,29 @@
    8
   ],
   "two_handed": true,
-  "category": "Arbalètes"
+  "category": "Arbalètes",
+  "spells": {
+   "q": [
+    "AUTOFIRE2",
+    "BOLTSHOT"
+   ],
+   "w": [
+    "ACID_BOMB",
+    "SUNDERSHOT",
+    "CALTROPS",
+    "KNOCKBACKSHOT2",
+    "SILENCINGBOLT"
+   ],
+   "e": [
+    "SNIPESHOT_CROSSBOW"
+   ],
+   "p": [
+    "PASSIVE_KNOCKBACKCHANCE",
+    "PASSIVE_CD_RESET_Q",
+    "PASSIVE_ENERGYCHANCE_CROSSBOW",
+    "PASSIVE_SPELLPOWER_CASTER_CROSSBOW"
+   ]
+  }
  },
  {
   "id": "2H_CROSSBOWLARGE",
@@ -30,7 +52,29 @@
    8
   ],
   "two_handed": true,
-  "category": "Arbalètes"
+  "category": "Arbalètes",
+  "spells": {
+   "q": [
+    "AUTOFIRE2",
+    "BOLTSHOT"
+   ],
+   "w": [
+    "ACID_BOMB",
+    "SUNDERSHOT",
+    "CALTROPS",
+    "KNOCKBACKSHOT2",
+    "SILENCINGBOLT"
+   ],
+   "e": [
+    "CROSSBOW_ARMORPIERCER"
+   ],
+   "p": [
+    "PASSIVE_KNOCKBACKCHANCE",
+    "PASSIVE_CD_RESET_Q",
+    "PASSIVE_ENERGYCHANCE_CROSSBOW",
+    "PASSIVE_SPELLPOWER_CASTER_CROSSBOW"
+   ]
+  }
  },
  {
   "id": "MAIN_1HCROSSBOW",
@@ -46,7 +90,29 @@
    8
   ],
   "two_handed": false,
-  "category": "Arbalètes"
+  "category": "Arbalètes",
+  "spells": {
+   "q": [
+    "AUTOFIRE2",
+    "BOLTSHOT"
+   ],
+   "w": [
+    "ACID_BOMB",
+    "SUNDERSHOT",
+    "CALTROPS",
+    "KNOCKBACKSHOT2",
+    "SILENCINGBOLT"
+   ],
+   "e": [
+    "EXPLODING_SHOT"
+   ],
+   "p": [
+    "PASSIVE_KNOCKBACKCHANCE",
+    "PASSIVE_CD_RESET_Q",
+    "PASSIVE_ENERGYCHANCE_CROSSBOW",
+    "PASSIVE_SPELLPOWER_CASTER_CROSSBOW"
+   ]
+  }
  },
  {
   "id": "2H_REPEATINGCROSSBOW_UNDEAD",
@@ -62,7 +128,29 @@
    8
   ],
   "two_handed": true,
-  "category": "Arbalètes"
+  "category": "Arbalètes",
+  "spells": {
+   "q": [
+    "AUTOFIRE2",
+    "BOLTSHOT"
+   ],
+   "w": [
+    "ACID_BOMB",
+    "SUNDERSHOT",
+    "CALTROPS",
+    "KNOCKBACKSHOT2",
+    "SILENCINGBOLT"
+   ],
+   "e": [
+    "GROUNDMINE"
+   ],
+   "p": [
+    "PASSIVE_KNOCKBACKCHANCE",
+    "PASSIVE_CD_RESET_Q",
+    "PASSIVE_ENERGYCHANCE_CROSSBOW",
+    "PASSIVE_SPELLPOWER_CASTER_CROSSBOW"
+   ]
+  }
  },
  {
   "id": "2H_CROSSBOWLARGE_MORGANA",
@@ -78,7 +166,29 @@
    8
   ],
   "two_handed": true,
-  "category": "Arbalètes"
+  "category": "Arbalètes",
+  "spells": {
+   "q": [
+    "AUTOFIRE2",
+    "BOLTSHOT"
+   ],
+   "w": [
+    "ACID_BOMB",
+    "SUNDERSHOT",
+    "CALTROPS",
+    "KNOCKBACKSHOT2",
+    "SILENCINGBOLT"
+   ],
+   "e": [
+    "CROSSBOW_CONE_ULTIMATE"
+   ],
+   "p": [
+    "PASSIVE_KNOCKBACKCHANCE",
+    "PASSIVE_CD_RESET_Q",
+    "PASSIVE_ENERGYCHANCE_CROSSBOW",
+    "PASSIVE_SPELLPOWER_CASTER_CROSSBOW"
+   ]
+  }
  },
  {
   "id": "2H_DUALCROSSBOW_CRYSTAL",
@@ -94,7 +204,29 @@
    8
   ],
   "two_handed": true,
-  "category": "Arbalètes"
+  "category": "Arbalètes",
+  "spells": {
+   "q": [
+    "AUTOFIRE2",
+    "BOLTSHOT"
+   ],
+   "w": [
+    "ACID_BOMB",
+    "SUNDERSHOT",
+    "CALTROPS",
+    "KNOCKBACKSHOT2",
+    "SILENCINGBOLT"
+   ],
+   "e": [
+    "CRYSTALXBOW"
+   ],
+   "p": [
+    "PASSIVE_KNOCKBACKCHANCE",
+    "PASSIVE_CD_RESET_Q",
+    "PASSIVE_ENERGYCHANCE_CROSSBOW",
+    "PASSIVE_SPELLPOWER_CASTER_CROSSBOW"
+   ]
+  }
  },
  {
   "id": "2H_DUALCROSSBOW_HELL",
@@ -110,7 +242,29 @@
    8
   ],
   "two_handed": true,
-  "category": "Arbalètes"
+  "category": "Arbalètes",
+  "spells": {
+   "q": [
+    "AUTOFIRE2",
+    "BOLTSHOT"
+   ],
+   "w": [
+    "ACID_BOMB",
+    "SUNDERSHOT",
+    "CALTROPS",
+    "KNOCKBACKSHOT2",
+    "SILENCINGBOLT"
+   ],
+   "e": [
+    "DUAL_RAPIDFIRE"
+   ],
+   "p": [
+    "PASSIVE_KNOCKBACKCHANCE",
+    "PASSIVE_CD_RESET_Q",
+    "PASSIVE_ENERGYCHANCE_CROSSBOW",
+    "PASSIVE_SPELLPOWER_CASTER_CROSSBOW"
+   ]
+  }
  },
  {
   "id": "2H_CROSSBOW_CANNON_AVALON",
@@ -126,7 +280,29 @@
    8
   ],
   "two_handed": true,
-  "category": "Arbalètes"
+  "category": "Arbalètes",
+  "spells": {
+   "q": [
+    "AUTOFIRE2",
+    "BOLTSHOT"
+   ],
+   "w": [
+    "ACID_BOMB",
+    "SUNDERSHOT",
+    "CALTROPS",
+    "KNOCKBACKSHOT2",
+    "SILENCINGBOLT"
+   ],
+   "e": [
+    "CROSSBOW_DIVINE_SHOT"
+   ],
+   "p": [
+    "PASSIVE_KNOCKBACKCHANCE",
+    "PASSIVE_CD_RESET_Q",
+    "PASSIVE_ENERGYCHANCE_CROSSBOW",
+    "PASSIVE_SPELLPOWER_CASTER_CROSSBOW"
+   ]
+  }
  },
  {
   "id": "2H_BOW",
@@ -144,7 +320,29 @@
    8
   ],
   "two_handed": true,
-  "category": "Arcs"
+  "category": "Arcs",
+  "spells": {
+   "q": [
+    "MULTISHOT2",
+    "DEADLYSHOT",
+    "POISONARROW"
+   ],
+   "w": [
+    "GROUNDARROW",
+    "JUMPSHOT2",
+    "SPEEDSHOT2",
+    "BURNINGARROWS"
+   ],
+   "e": [
+    "SPEEDARCHER_KITE"
+   ],
+   "p": [
+    "PASSIVE_SLOWPOISON",
+    "PASSIVE_ENERGYCHANCE_BOW",
+    "PASSIVE_ARMOR_PIERCE_STACK",
+    "PASSIVE_AASPEEDCHANCE_BOW"
+   ]
+  }
  },
  {
   "id": "2H_BOW_CRYSTAL",
@@ -160,7 +358,29 @@
    8
   ],
   "two_handed": true,
-  "category": "Arcs"
+  "category": "Arcs",
+  "spells": {
+   "q": [
+    "MULTISHOT2",
+    "DEADLYSHOT",
+    "POISONARROW"
+   ],
+   "w": [
+    "GROUNDARROW",
+    "JUMPSHOT2",
+    "SPEEDSHOT2",
+    "BURNINGARROWS"
+   ],
+   "e": [
+    "AIR_RAID"
+   ],
+   "p": [
+    "PASSIVE_SLOWPOISON",
+    "PASSIVE_ENERGYCHANCE_BOW",
+    "PASSIVE_ARMOR_PIERCE_STACK",
+    "PASSIVE_AASPEEDCHANCE_BOW"
+   ]
+  }
  },
  {
   "id": "2H_BOW_KEEPER",
@@ -176,7 +396,29 @@
    8
   ],
   "two_handed": true,
-  "category": "Arcs"
+  "category": "Arcs",
+  "spells": {
+   "q": [
+    "MULTISHOT2",
+    "DEADLYSHOT",
+    "POISONARROW"
+   ],
+   "w": [
+    "GROUNDARROW",
+    "JUMPSHOT2",
+    "SPEEDSHOT2",
+    "BURNINGARROWS"
+   ],
+   "e": [
+    "LIGHTNING_ARROW"
+   ],
+   "p": [
+    "PASSIVE_SLOWPOISON",
+    "PASSIVE_ENERGYCHANCE_BOW",
+    "PASSIVE_ARMOR_PIERCE_STACK",
+    "PASSIVE_AASPEEDCHANCE_BOW"
+   ]
+  }
  },
  {
   "id": "2H_WARBOW",
@@ -192,7 +434,29 @@
    8
   ],
   "two_handed": true,
-  "category": "Arcs"
+  "category": "Arcs",
+  "spells": {
+   "q": [
+    "MULTISHOT2",
+    "DEADLYSHOT",
+    "POISONARROW"
+   ],
+   "w": [
+    "GROUNDARROW",
+    "JUMPSHOT2",
+    "SPEEDSHOT2",
+    "BURNINGARROWS"
+   ],
+   "e": [
+    "SKILLSHOT_STUN"
+   ],
+   "p": [
+    "PASSIVE_SLOWPOISON",
+    "PASSIVE_ENERGYCHANCE_BOW",
+    "PASSIVE_ARMOR_PIERCE_STACK",
+    "PASSIVE_AASPEEDCHANCE_BOW"
+   ]
+  }
  },
  {
   "id": "2H_BOW_HELL",
@@ -208,7 +472,29 @@
    8
   ],
   "two_handed": true,
-  "category": "Arcs"
+  "category": "Arcs",
+  "spells": {
+   "q": [
+    "MULTISHOT2",
+    "DEADLYSHOT",
+    "POISONARROW"
+   ],
+   "w": [
+    "GROUNDARROW",
+    "JUMPSHOT2",
+    "SPEEDSHOT2",
+    "BURNINGARROWS"
+   ],
+   "e": [
+    "HELL_ARROW"
+   ],
+   "p": [
+    "PASSIVE_SLOWPOISON",
+    "PASSIVE_ENERGYCHANCE_BOW",
+    "PASSIVE_ARMOR_PIERCE_STACK",
+    "PASSIVE_AASPEEDCHANCE_BOW"
+   ]
+  }
  },
  {
   "id": "2H_LONGBOW",
@@ -224,7 +510,29 @@
    8
   ],
   "two_handed": true,
-  "category": "Arcs"
+  "category": "Arcs",
+  "spells": {
+   "q": [
+    "MULTISHOT2",
+    "DEADLYSHOT",
+    "POISONARROW"
+   ],
+   "w": [
+    "GROUNDARROW",
+    "JUMPSHOT2",
+    "SPEEDSHOT2",
+    "BURNINGARROWS"
+   ],
+   "e": [
+    "ARROWRAIN"
+   ],
+   "p": [
+    "PASSIVE_SLOWPOISON",
+    "PASSIVE_ENERGYCHANCE_BOW",
+    "PASSIVE_ARMOR_PIERCE_STACK",
+    "PASSIVE_AASPEEDCHANCE_BOW"
+   ]
+  }
  },
  {
   "id": "2H_LONGBOW_UNDEAD",
@@ -240,7 +548,29 @@
    8
   ],
   "two_handed": true,
-  "category": "Arcs"
+  "category": "Arcs",
+  "spells": {
+   "q": [
+    "MULTISHOT2",
+    "DEADLYSHOT",
+    "POISONARROW"
+   ],
+   "w": [
+    "GROUNDARROW",
+    "JUMPSHOT2",
+    "SPEEDSHOT2",
+    "BURNINGARROWS"
+   ],
+   "e": [
+    "UNDEADARROWS"
+   ],
+   "p": [
+    "PASSIVE_SLOWPOISON",
+    "PASSIVE_ENERGYCHANCE_BOW",
+    "PASSIVE_ARMOR_PIERCE_STACK",
+    "PASSIVE_AASPEEDCHANCE_BOW"
+   ]
+  }
  },
  {
   "id": "2H_BOW_AVALON",
@@ -256,7 +586,29 @@
    8
   ],
   "two_handed": true,
-  "category": "Arcs"
+  "category": "Arcs",
+  "spells": {
+   "q": [
+    "MULTISHOT2",
+    "DEADLYSHOT",
+    "POISONARROW"
+   ],
+   "w": [
+    "GROUNDARROW",
+    "JUMPSHOT2",
+    "SPEEDSHOT2",
+    "BURNINGARROWS"
+   ],
+   "e": [
+    "HAWK_SHOT_MULTI1"
+   ],
+   "p": [
+    "PASSIVE_SLOWPOISON",
+    "PASSIVE_ENERGYCHANCE_BOW",
+    "PASSIVE_ARMOR_PIERCE_STACK",
+    "PASSIVE_AASPEEDCHANCE_BOW"
+   ]
+  }
  },
  {
   "id": "2H_ARCANESTAFF_CRYSTAL",
@@ -272,7 +624,30 @@
    8
   ],
   "two_handed": true,
-  "category": "Bâtons arcaniques"
+  "category": "Bâtons arcaniques",
+  "spells": {
+   "q": [
+    "ARCANE_CHAIN_MISSILE",
+    "SHIELDFRIENDLY",
+    "MAGICSHOCK"
+   ],
+   "w": [
+    "ENIGMA_BLADE",
+    "CLEANSESPEED2",
+    "FRAZZLE2",
+    "EMPOWERBEAM",
+    "MIMIC"
+   ],
+   "e": [
+    "STARFALL_DOT"
+   ],
+   "p": [
+    "PASSIVE_ATTACKBUFF_ARCANESTAFF",
+    "PASSIVE_ENERGYCHANCE_ARCANESTAFF",
+    "PASSIVE_ARMOR_CASTER_ARCANESTAFF",
+    "PASSIVE_SILENCECHANCE"
+   ]
+  }
  },
  {
   "id": "MAIN_ARCANESTAFF_UNDEAD",
@@ -288,7 +663,30 @@
    8
   ],
   "two_handed": false,
-  "category": "Bâtons arcaniques"
+  "category": "Bâtons arcaniques",
+  "spells": {
+   "q": [
+    "ARCANE_CHAIN_MISSILE",
+    "SHIELDFRIENDLY",
+    "MAGICSHOCK"
+   ],
+   "w": [
+    "ENIGMA_BLADE",
+    "CLEANSESPEED2",
+    "FRAZZLE2",
+    "EMPOWERBEAM",
+    "MIMIC"
+   ],
+   "e": [
+    "BLACKHOLE"
+   ],
+   "p": [
+    "PASSIVE_ATTACKBUFF_ARCANESTAFF",
+    "PASSIVE_ENERGYCHANCE_ARCANESTAFF",
+    "PASSIVE_ARMOR_CASTER_ARCANESTAFF",
+    "PASSIVE_SILENCECHANCE"
+   ]
+  }
  },
  {
   "id": "2H_ARCANESTAFF_HELL",
@@ -304,7 +702,30 @@
    8
   ],
   "two_handed": true,
-  "category": "Bâtons arcaniques"
+  "category": "Bâtons arcaniques",
+  "spells": {
+   "q": [
+    "ARCANE_CHAIN_MISSILE",
+    "SHIELDFRIENDLY",
+    "MAGICSHOCK"
+   ],
+   "w": [
+    "ENIGMA_BLADE",
+    "CLEANSESPEED2",
+    "FRAZZLE2",
+    "EMPOWERBEAM",
+    "MIMIC"
+   ],
+   "e": [
+    "ARCANECORRIDOR"
+   ],
+   "p": [
+    "PASSIVE_ATTACKBUFF_ARCANESTAFF",
+    "PASSIVE_ENERGYCHANCE_ARCANESTAFF",
+    "PASSIVE_ARMOR_CASTER_ARCANESTAFF",
+    "PASSIVE_SILENCECHANCE"
+   ]
+  }
  },
  {
   "id": "2H_ENIGMATICSTAFF",
@@ -320,7 +741,30 @@
    8
   ],
   "two_handed": true,
-  "category": "Bâtons arcaniques"
+  "category": "Bâtons arcaniques",
+  "spells": {
+   "q": [
+    "ARCANE_CHAIN_MISSILE",
+    "SHIELDFRIENDLY",
+    "MAGICSHOCK"
+   ],
+   "w": [
+    "ENIGMA_BLADE",
+    "CLEANSESPEED2",
+    "FRAZZLE2",
+    "EMPOWERBEAM",
+    "MIMIC"
+   ],
+   "e": [
+    "INVULNERABILITY"
+   ],
+   "p": [
+    "PASSIVE_ATTACKBUFF_ARCANESTAFF",
+    "PASSIVE_ENERGYCHANCE_ARCANESTAFF",
+    "PASSIVE_ARMOR_CASTER_ARCANESTAFF",
+    "PASSIVE_SILENCECHANCE"
+   ]
+  }
  },
  {
   "id": "MAIN_ARCANESTAFF",
@@ -337,7 +781,30 @@
    8
   ],
   "two_handed": false,
-  "category": "Bâtons arcaniques"
+  "category": "Bâtons arcaniques",
+  "spells": {
+   "q": [
+    "ARCANE_CHAIN_MISSILE",
+    "SHIELDFRIENDLY",
+    "MAGICSHOCK"
+   ],
+   "w": [
+    "ENIGMA_BLADE",
+    "CLEANSESPEED2",
+    "FRAZZLE2",
+    "EMPOWERBEAM",
+    "MIMIC"
+   ],
+   "e": [
+    "ARCANEORB2"
+   ],
+   "p": [
+    "PASSIVE_ATTACKBUFF_ARCANESTAFF",
+    "PASSIVE_ENERGYCHANCE_ARCANESTAFF",
+    "PASSIVE_ARMOR_CASTER_ARCANESTAFF",
+    "PASSIVE_SILENCECHANCE"
+   ]
+  }
  },
  {
   "id": "2H_ARCANE_RINGPAIR_AVALON",
@@ -353,7 +820,30 @@
    8
   ],
   "two_handed": true,
-  "category": "Bâtons arcaniques"
+  "category": "Bâtons arcaniques",
+  "spells": {
+   "q": [
+    "ARCANE_CHAIN_MISSILE",
+    "SHIELDFRIENDLY",
+    "MAGICSHOCK"
+   ],
+   "w": [
+    "ENIGMA_BLADE",
+    "CLEANSESPEED2",
+    "FRAZZLE2",
+    "EMPOWERBEAM",
+    "MIMIC"
+   ],
+   "e": [
+    "ARCANE_METEOR"
+   ],
+   "p": [
+    "PASSIVE_ATTACKBUFF_ARCANESTAFF",
+    "PASSIVE_ENERGYCHANCE_ARCANESTAFF",
+    "PASSIVE_ARMOR_CASTER_ARCANESTAFF",
+    "PASSIVE_SILENCECHANCE"
+   ]
+  }
  },
  {
   "id": "2H_ARCANESTAFF",
@@ -369,7 +859,30 @@
    8
   ],
   "two_handed": true,
-  "category": "Bâtons arcaniques"
+  "category": "Bâtons arcaniques",
+  "spells": {
+   "q": [
+    "ARCANE_CHAIN_MISSILE",
+    "SHIELDFRIENDLY",
+    "MAGICSHOCK"
+   ],
+   "w": [
+    "ENIGMA_BLADE",
+    "CLEANSESPEED2",
+    "FRAZZLE2",
+    "EMPOWERBEAM",
+    "MIMIC"
+   ],
+   "e": [
+    "TIME_FREEZE"
+   ],
+   "p": [
+    "PASSIVE_ATTACKBUFF_ARCANESTAFF",
+    "PASSIVE_ENERGYCHANCE_ARCANESTAFF",
+    "PASSIVE_ARMOR_CASTER_ARCANESTAFF",
+    "PASSIVE_SILENCECHANCE"
+   ]
+  }
  },
  {
   "id": "2H_ENIGMATICORB_MORGANA",
@@ -385,7 +898,30 @@
    8
   ],
   "two_handed": true,
-  "category": "Bâtons arcaniques"
+  "category": "Bâtons arcaniques",
+  "spells": {
+   "q": [
+    "ARCANE_CHAIN_MISSILE",
+    "SHIELDFRIENDLY",
+    "MAGICSHOCK"
+   ],
+   "w": [
+    "ENIGMA_BLADE",
+    "CLEANSESPEED2",
+    "FRAZZLE2",
+    "EMPOWERBEAM",
+    "MIMIC"
+   ],
+   "e": [
+    "VOID"
+   ],
+   "p": [
+    "PASSIVE_ATTACKBUFF_ARCANESTAFF",
+    "PASSIVE_ENERGYCHANCE_ARCANESTAFF",
+    "PASSIVE_ARMOR_CASTER_ARCANESTAFF",
+    "PASSIVE_SILENCECHANCE"
+   ]
+  }
  },
  {
   "id": "2H_ROCKSTAFF_KEEPER",
@@ -401,7 +937,30 @@
    8
   ],
   "two_handed": true,
-  "category": "Bâtons de combat"
+  "category": "Bâtons de combat",
+  "spells": {
+   "q": [
+    "CONCUSSIVEBLOW_MULTI_1",
+    "WHIRLING_STAFF",
+    "CARTWHEEL"
+   ],
+   "w": [
+    "QSTAFF_COMBO",
+    "STUNRUN",
+    "QS_WHIRLWIND2",
+    "LAUNCHER",
+    "SEPARATING_SLAM"
+   ],
+   "e": [
+    "QS_SLOWROPE"
+   ],
+   "p": [
+    "PASSIVE_STUNCHANCE_QUARTERSTAFF",
+    "PASSIVE_ENERGYCHANCE_QUARTERSTAFF",
+    "PASSIVE_HEALTHCHANCE_QUARTERSTAFF",
+    "PASSIVE_CCDURATION_CHANCE_QUARTERSTAFF"
+   ]
+  }
  },
  {
   "id": "2H_COMBATSTAFF_MORGANA",
@@ -417,7 +976,30 @@
    8
   ],
   "two_handed": true,
-  "category": "Bâtons de combat"
+  "category": "Bâtons de combat",
+  "spells": {
+   "q": [
+    "CONCUSSIVEBLOW_MULTI_1",
+    "WHIRLING_STAFF",
+    "CARTWHEEL"
+   ],
+   "w": [
+    "QSTAFF_COMBO",
+    "STUNRUN",
+    "QS_WHIRLWIND2",
+    "LAUNCHER",
+    "SEPARATING_SLAM"
+   ],
+   "e": [
+    "COMBATSTAFF_SLASH"
+   ],
+   "p": [
+    "PASSIVE_STUNCHANCE_QUARTERSTAFF",
+    "PASSIVE_ENERGYCHANCE_QUARTERSTAFF",
+    "PASSIVE_HEALTHCHANCE_QUARTERSTAFF",
+    "PASSIVE_CCDURATION_CHANCE_QUARTERSTAFF"
+   ]
+  }
  },
  {
   "id": "2H_IRONCLADEDSTAFF",
@@ -433,7 +1015,30 @@
    8
   ],
   "two_handed": true,
-  "category": "Bâtons de combat"
+  "category": "Bâtons de combat",
+  "spells": {
+   "q": [
+    "CONCUSSIVEBLOW_MULTI_1",
+    "WHIRLING_STAFF",
+    "CARTWHEEL"
+   ],
+   "w": [
+    "QSTAFF_COMBO",
+    "STUNRUN",
+    "QS_WHIRLWIND2",
+    "LAUNCHER",
+    "SEPARATING_SLAM"
+   ],
+   "e": [
+    "QSWHIRLWIND"
+   ],
+   "p": [
+    "PASSIVE_STUNCHANCE_QUARTERSTAFF",
+    "PASSIVE_ENERGYCHANCE_QUARTERSTAFF",
+    "PASSIVE_HEALTHCHANCE_QUARTERSTAFF",
+    "PASSIVE_CCDURATION_CHANCE_QUARTERSTAFF"
+   ]
+  }
  },
  {
   "id": "2H_DOUBLEBLADEDSTAFF",
@@ -449,7 +1054,30 @@
    8
   ],
   "two_handed": true,
-  "category": "Bâtons de combat"
+  "category": "Bâtons de combat",
+  "spells": {
+   "q": [
+    "CONCUSSIVEBLOW_MULTI_1",
+    "WHIRLING_STAFF",
+    "CARTWHEEL"
+   ],
+   "w": [
+    "QSTAFF_COMBO",
+    "STUNRUN",
+    "QS_WHIRLWIND2",
+    "LAUNCHER",
+    "SEPARATING_SLAM"
+   ],
+   "e": [
+    "DASH_KNOCKBACK"
+   ],
+   "p": [
+    "PASSIVE_STUNCHANCE_QUARTERSTAFF",
+    "PASSIVE_ENERGYCHANCE_QUARTERSTAFF",
+    "PASSIVE_HEALTHCHANCE_QUARTERSTAFF",
+    "PASSIVE_CCDURATION_CHANCE_QUARTERSTAFF"
+   ]
+  }
  },
  {
   "id": "2H_QUARTERSTAFF_AVALON",
@@ -465,7 +1093,30 @@
    8
   ],
   "two_handed": true,
-  "category": "Bâtons de combat"
+  "category": "Bâtons de combat",
+  "spells": {
+   "q": [
+    "CONCUSSIVEBLOW_MULTI_1",
+    "WHIRLING_STAFF",
+    "CARTWHEEL"
+   ],
+   "w": [
+    "QSTAFF_COMBO",
+    "STUNRUN",
+    "QS_WHIRLWIND2",
+    "LAUNCHER",
+    "SEPARATING_SLAM"
+   ],
+   "e": [
+    "SOULSHAKER"
+   ],
+   "p": [
+    "PASSIVE_STUNCHANCE_QUARTERSTAFF",
+    "PASSIVE_ENERGYCHANCE_QUARTERSTAFF",
+    "PASSIVE_HEALTHCHANCE_QUARTERSTAFF",
+    "PASSIVE_CCDURATION_CHANCE_QUARTERSTAFF"
+   ]
+  }
  },
  {
   "id": "2H_TWINSCYTHE_HELL",
@@ -481,7 +1132,30 @@
    8
   ],
   "two_handed": true,
-  "category": "Bâtons de combat"
+  "category": "Bâtons de combat",
+  "spells": {
+   "q": [
+    "CONCUSSIVEBLOW_MULTI_1",
+    "WHIRLING_STAFF",
+    "CARTWHEEL"
+   ],
+   "w": [
+    "QSTAFF_COMBO",
+    "STUNRUN",
+    "QS_WHIRLWIND2",
+    "LAUNCHER",
+    "SEPARATING_SLAM"
+   ],
+   "e": [
+    "TORNADO"
+   ],
+   "p": [
+    "PASSIVE_STUNCHANCE_QUARTERSTAFF",
+    "PASSIVE_ENERGYCHANCE_QUARTERSTAFF",
+    "PASSIVE_HEALTHCHANCE_QUARTERSTAFF",
+    "PASSIVE_CCDURATION_CHANCE_QUARTERSTAFF"
+   ]
+  }
  },
  {
   "id": "2H_DOUBLEBLADEDSTAFF_CRYSTAL",
@@ -497,7 +1171,30 @@
    8
   ],
   "two_handed": true,
-  "category": "Bâtons de combat"
+  "category": "Bâtons de combat",
+  "spells": {
+   "q": [
+    "CONCUSSIVEBLOW_MULTI_1",
+    "WHIRLING_STAFF",
+    "CARTWHEEL"
+   ],
+   "w": [
+    "QSTAFF_COMBO",
+    "STUNRUN",
+    "QS_WHIRLWIND2",
+    "LAUNCHER",
+    "SEPARATING_SLAM"
+   ],
+   "e": [
+    "QS_CRYSTAL_COMBO"
+   ],
+   "p": [
+    "PASSIVE_STUNCHANCE_QUARTERSTAFF",
+    "PASSIVE_ENERGYCHANCE_QUARTERSTAFF",
+    "PASSIVE_HEALTHCHANCE_QUARTERSTAFF",
+    "PASSIVE_CCDURATION_CHANCE_QUARTERSTAFF"
+   ]
+  }
  },
  {
   "id": "2H_QUARTERSTAFF",
@@ -514,23 +1211,30 @@
    8
   ],
   "two_handed": true,
-  "category": "Bâtons de combat"
- },
- {
-  "id": "2H_FIRESTAFF",
-  "slot": "mainhand",
-  "name": "Grand bâton de feu",
-  "name_en": "Great Fire Staff",
-  "icon": "T8_2H_FIRESTAFF",
-  "tiers": [
-   4,
-   5,
-   6,
-   7,
-   8
-  ],
-  "two_handed": true,
-  "category": "Bâtons de feu"
+  "category": "Bâtons de combat",
+  "spells": {
+   "q": [
+    "CONCUSSIVEBLOW_MULTI_1",
+    "WHIRLING_STAFF",
+    "CARTWHEEL"
+   ],
+   "w": [
+    "QSTAFF_COMBO",
+    "STUNRUN",
+    "QS_WHIRLWIND2",
+    "LAUNCHER",
+    "SEPARATING_SLAM"
+   ],
+   "e": [
+    "VAULT_ATTACK"
+   ],
+   "p": [
+    "PASSIVE_STUNCHANCE_QUARTERSTAFF",
+    "PASSIVE_ENERGYCHANCE_QUARTERSTAFF",
+    "PASSIVE_HEALTHCHANCE_QUARTERSTAFF",
+    "PASSIVE_CCDURATION_CHANCE_QUARTERSTAFF"
+   ]
+  }
  },
  {
   "id": "2H_FIRE_RINGPAIR_AVALON",
@@ -546,7 +1250,30 @@
    8
   ],
   "two_handed": true,
-  "category": "Bâtons de feu"
+  "category": "Bâtons de feu",
+  "spells": {
+   "q": [
+    "FIRESTAFFBOLT2",
+    "FIRESTAFFBOLT_AOE",
+    "SEARING_FLAME"
+   ],
+   "w": [
+    "FIRESTAFFIGNITE2_SPREAD",
+    "FIREWALL",
+    "SKILLSHOT_FIREBALL",
+    "FIRECONE",
+    "FIREARTILLERY"
+   ],
+   "e": [
+    "FIREPHOENIX"
+   ],
+   "p": [
+    "PASSIVE_BURN",
+    "PASSIVE_ENERGYCHANCE_FIRESTAFF",
+    "PASSIVE_CASTINGSPEED_CHANCE_FIRESTAFF",
+    "PASSIVE_SPELLPOWER_CASTER_FIRESTAFF"
+   ]
+  }
  },
  {
   "id": "2H_INFERNOSTAFF_MORGANA",
@@ -562,7 +1289,30 @@
    8
   ],
   "two_handed": true,
-  "category": "Bâtons de feu"
+  "category": "Bâtons de feu",
+  "spells": {
+   "q": [
+    "FIRESTAFFBOLT2",
+    "FIRESTAFFBOLT_AOE",
+    "SEARING_FLAME"
+   ],
+   "w": [
+    "FIRESTAFFIGNITE2_SPREAD",
+    "FIREWALL",
+    "SKILLSHOT_FIREBALL",
+    "FIRECONE",
+    "FIREARTILLERY"
+   ],
+   "e": [
+    "FLAMETORNADO"
+   ],
+   "p": [
+    "PASSIVE_BURN",
+    "PASSIVE_ENERGYCHANCE_FIRESTAFF",
+    "PASSIVE_CASTINGSPEED_CHANCE_FIRESTAFF",
+    "PASSIVE_SPELLPOWER_CASTER_FIRESTAFF"
+   ]
+  }
  },
  {
   "id": "MAIN_FIRESTAFF_KEEPER",
@@ -578,7 +1328,30 @@
    8
   ],
   "two_handed": false,
-  "category": "Bâtons de feu"
+  "category": "Bâtons de feu",
+  "spells": {
+   "q": [
+    "FIRESTAFFBOLT2",
+    "FIRESTAFFBOLT_AOE",
+    "SEARING_FLAME"
+   ],
+   "w": [
+    "FIRESTAFFIGNITE2_SPREAD",
+    "FIREWALL",
+    "SKILLSHOT_FIREBALL",
+    "FIRECONE",
+    "FIREARTILLERY"
+   ],
+   "e": [
+    "MAGMASPHERE"
+   ],
+   "p": [
+    "PASSIVE_BURN",
+    "PASSIVE_ENERGYCHANCE_FIRESTAFF",
+    "PASSIVE_CASTINGSPEED_CHANCE_FIRESTAFF",
+    "PASSIVE_SPELLPOWER_CASTER_FIRESTAFF"
+   ]
+  }
  },
  {
   "id": "MAIN_FIRESTAFF_CRYSTAL",
@@ -594,7 +1367,30 @@
    8
   ],
   "two_handed": false,
-  "category": "Bâtons de feu"
+  "category": "Bâtons de feu",
+  "spells": {
+   "q": [
+    "FIRESTAFFBOLT2",
+    "FIRESTAFFBOLT_AOE",
+    "SEARING_FLAME"
+   ],
+   "w": [
+    "FIRESTAFFIGNITE2_SPREAD",
+    "FIREWALL",
+    "SKILLSHOT_FIREBALL",
+    "FIRECONE",
+    "FIREARTILLERY"
+   ],
+   "e": [
+    "FLAMEDASH"
+   ],
+   "p": [
+    "PASSIVE_BURN",
+    "PASSIVE_ENERGYCHANCE_FIRESTAFF",
+    "PASSIVE_CASTINGSPEED_CHANCE_FIRESTAFF",
+    "PASSIVE_SPELLPOWER_CASTER_FIRESTAFF"
+   ]
+  }
  },
  {
   "id": "MAIN_FIRESTAFF",
@@ -612,7 +1408,30 @@
    8
   ],
   "two_handed": false,
-  "category": "Bâtons de feu"
+  "category": "Bâtons de feu",
+  "spells": {
+   "q": [
+    "FIRESTAFFBOLT2",
+    "FIRESTAFFBOLT_AOE",
+    "SEARING_FLAME"
+   ],
+   "w": [
+    "FIRESTAFFIGNITE2_SPREAD",
+    "FIREWALL",
+    "SKILLSHOT_FIREBALL",
+    "FIRECONE",
+    "FIREARTILLERY"
+   ],
+   "e": [
+    "PYROBLAST_SKILLSHOT"
+   ],
+   "p": [
+    "PASSIVE_BURN",
+    "PASSIVE_ENERGYCHANCE_FIRESTAFF",
+    "PASSIVE_CASTINGSPEED_CHANCE_FIRESTAFF",
+    "PASSIVE_SPELLPOWER_CASTER_FIRESTAFF"
+   ]
+  }
  },
  {
   "id": "2H_INFERNOSTAFF",
@@ -628,7 +1447,30 @@
    8
   ],
   "two_handed": true,
-  "category": "Bâtons de feu"
+  "category": "Bâtons de feu",
+  "spells": {
+   "q": [
+    "FIRESTAFFBOLT2",
+    "FIRESTAFFBOLT_AOE",
+    "SEARING_FLAME"
+   ],
+   "w": [
+    "FIRESTAFFIGNITE2_SPREAD",
+    "FIREWALL",
+    "SKILLSHOT_FIREBALL",
+    "FIRECONE",
+    "FIREARTILLERY"
+   ],
+   "e": [
+    "HUMAN_TORCH"
+   ],
+   "p": [
+    "PASSIVE_BURN",
+    "PASSIVE_ENERGYCHANCE_FIRESTAFF",
+    "PASSIVE_CASTINGSPEED_CHANCE_FIRESTAFF",
+    "PASSIVE_SPELLPOWER_CASTER_FIRESTAFF"
+   ]
+  }
  },
  {
   "id": "2H_FIRESTAFF_HELL",
@@ -644,7 +1486,69 @@
    8
   ],
   "two_handed": true,
-  "category": "Bâtons de feu"
+  "category": "Bâtons de feu",
+  "spells": {
+   "q": [
+    "FIRESTAFFBOLT2",
+    "FIRESTAFFBOLT_AOE",
+    "SEARING_FLAME"
+   ],
+   "w": [
+    "FIRESTAFFIGNITE2_SPREAD",
+    "FIREWALL",
+    "SKILLSHOT_FIREBALL",
+    "FIRECONE",
+    "FIREARTILLERY"
+   ],
+   "e": [
+    "METEOR"
+   ],
+   "p": [
+    "PASSIVE_BURN",
+    "PASSIVE_ENERGYCHANCE_FIRESTAFF",
+    "PASSIVE_CASTINGSPEED_CHANCE_FIRESTAFF",
+    "PASSIVE_SPELLPOWER_CASTER_FIRESTAFF"
+   ]
+  }
+ },
+ {
+  "id": "2H_FIRESTAFF",
+  "slot": "mainhand",
+  "name": "Grand bâton de feu",
+  "name_en": "Great Fire Staff",
+  "icon": "T8_2H_FIRESTAFF",
+  "tiers": [
+   4,
+   5,
+   6,
+   7,
+   8
+  ],
+  "two_handed": true,
+  "category": "Bâtons de feu",
+  "spells": {
+   "q": [
+    "FIRESTAFFBOLT2",
+    "FIRESTAFFBOLT_AOE",
+    "SEARING_FLAME"
+   ],
+   "w": [
+    "FIRESTAFFIGNITE2_SPREAD",
+    "FIREWALL",
+    "SKILLSHOT_FIREBALL",
+    "FIRECONE",
+    "FIREARTILLERY"
+   ],
+   "e": [
+    "FLAMEPILLAR"
+   ],
+   "p": [
+    "PASSIVE_BURN",
+    "PASSIVE_ENERGYCHANCE_FIRESTAFF",
+    "PASSIVE_CASTINGSPEED_CHANCE_FIRESTAFF",
+    "PASSIVE_SPELLPOWER_CASTER_FIRESTAFF"
+   ]
+  }
  },
  {
   "id": "2H_FROSTSTAFF_CRYSTAL",
@@ -660,7 +1564,30 @@
    8
   ],
   "two_handed": true,
-  "category": "Bâtons de givre"
+  "category": "Bâtons de givre",
+  "spells": {
+   "q": [
+    "FROST_BITE",
+    "ICESHARD",
+    "SHATTER_Q"
+   ],
+   "w": [
+    "FROSTBOMB_CASTSLOW",
+    "FROSTBEAM",
+    "FROSTNOVA",
+    "FROST_LANCE",
+    "ICE_SCULPTURE"
+   ],
+   "e": [
+    "FROST_TARGETED_CHANNEL"
+   ],
+   "p": [
+    "PASSIVE_FROST",
+    "PASSIVE_ENERGYCHANCE_FROSTSTAFF",
+    "PASSIVE_CASTINGSPEED_CHANCE_FROSTSTAFF",
+    "PASSIVE_SPELLPOWER_CASTER_FROSTSTAFF"
+   ]
+  }
  },
  {
   "id": "MAIN_FROSTSTAFF_KEEPER",
@@ -676,7 +1603,30 @@
    8
   ],
   "two_handed": false,
-  "category": "Bâtons de givre"
+  "category": "Bâtons de givre",
+  "spells": {
+   "q": [
+    "FROST_BITE",
+    "ICESHARD",
+    "SHATTER_Q"
+   ],
+   "w": [
+    "FROSTBOMB_CASTSLOW",
+    "FROSTBEAM",
+    "FROSTNOVA",
+    "FROST_LANCE",
+    "ICE_SCULPTURE"
+   ],
+   "e": [
+    "ICEROCK_EXPLODE"
+   ],
+   "p": [
+    "PASSIVE_FROST",
+    "PASSIVE_ENERGYCHANCE_FROSTSTAFF",
+    "PASSIVE_CASTINGSPEED_CHANCE_FROSTSTAFF",
+    "PASSIVE_SPELLPOWER_CASTER_FROSTSTAFF"
+   ]
+  }
  },
  {
   "id": "MAIN_FROSTSTAFF",
@@ -693,7 +1643,30 @@
    8
   ],
   "two_handed": false,
-  "category": "Bâtons de givre"
+  "category": "Bâtons de givre",
+  "spells": {
+   "q": [
+    "FROST_BITE",
+    "ICESHARD",
+    "SHATTER_Q"
+   ],
+   "w": [
+    "FROSTBOMB_CASTSLOW",
+    "FROSTBEAM",
+    "FROSTNOVA",
+    "FROST_LANCE",
+    "ICE_SCULPTURE"
+   ],
+   "e": [
+    "FREEZINGWIND"
+   ],
+   "p": [
+    "PASSIVE_FROST",
+    "PASSIVE_ENERGYCHANCE_FROSTSTAFF",
+    "PASSIVE_CASTINGSPEED_CHANCE_FROSTSTAFF",
+    "PASSIVE_SPELLPOWER_CASTER_FROSTSTAFF"
+   ]
+  }
  },
  {
   "id": "2H_ICEGAUNTLETS_HELL",
@@ -709,7 +1682,30 @@
    8
   ],
   "two_handed": true,
-  "category": "Bâtons de givre"
+  "category": "Bâtons de givre",
+  "spells": {
+   "q": [
+    "FROST_BITE",
+    "ICESHARD",
+    "SHATTER_Q"
+   ],
+   "w": [
+    "FROSTBOMB_CASTSLOW",
+    "FROSTBEAM",
+    "FROSTNOVA",
+    "FROST_LANCE",
+    "ICE_SCULPTURE"
+   ],
+   "e": [
+    "GLACIALFIELD"
+   ],
+   "p": [
+    "PASSIVE_FROST",
+    "PASSIVE_ENERGYCHANCE_FROSTSTAFF",
+    "PASSIVE_CASTINGSPEED_CHANCE_FROSTSTAFF",
+    "PASSIVE_SPELLPOWER_CASTER_FROSTSTAFF"
+   ]
+  }
  },
  {
   "id": "2H_GLACIALSTAFF",
@@ -725,7 +1721,30 @@
    8
   ],
   "two_handed": true,
-  "category": "Bâtons de givre"
+  "category": "Bâtons de givre",
+  "spells": {
+   "q": [
+    "FROST_BITE",
+    "ICESHARD",
+    "SHATTER_Q"
+   ],
+   "w": [
+    "FROSTBOMB_CASTSLOW",
+    "FROSTBEAM",
+    "FROSTNOVA",
+    "FROST_LANCE",
+    "ICE_SCULPTURE"
+   ],
+   "e": [
+    "ICESTORM2"
+   ],
+   "p": [
+    "PASSIVE_FROST",
+    "PASSIVE_ENERGYCHANCE_FROSTSTAFF",
+    "PASSIVE_CASTINGSPEED_CHANCE_FROSTSTAFF",
+    "PASSIVE_SPELLPOWER_CASTER_FROSTSTAFF"
+   ]
+  }
  },
  {
   "id": "2H_FROSTSTAFF",
@@ -741,7 +1760,30 @@
    8
   ],
   "two_handed": true,
-  "category": "Bâtons de givre"
+  "category": "Bâtons de givre",
+  "spells": {
+   "q": [
+    "FROST_BITE",
+    "ICESHARD",
+    "SHATTER_Q"
+   ],
+   "w": [
+    "FROSTBOMB_CASTSLOW",
+    "FROSTBEAM",
+    "FROSTNOVA",
+    "FROST_LANCE",
+    "ICE_SCULPTURE"
+   ],
+   "e": [
+    "HAIL_MULTI_1"
+   ],
+   "p": [
+    "PASSIVE_FROST",
+    "PASSIVE_ENERGYCHANCE_FROSTSTAFF",
+    "PASSIVE_CASTINGSPEED_CHANCE_FROSTSTAFF",
+    "PASSIVE_SPELLPOWER_CASTER_FROSTSTAFF"
+   ]
+  }
  },
  {
   "id": "MAIN_FROSTSTAFF_AVALON",
@@ -757,7 +1799,30 @@
    8
   ],
   "two_handed": false,
-  "category": "Bâtons de givre"
+  "category": "Bâtons de givre",
+  "spells": {
+   "q": [
+    "FROST_BITE",
+    "ICESHARD",
+    "SHATTER_Q"
+   ],
+   "w": [
+    "FROSTBOMB_CASTSLOW",
+    "FROSTBEAM",
+    "FROSTNOVA",
+    "FROST_LANCE",
+    "ICE_SCULPTURE"
+   ],
+   "e": [
+    "FROZEN_CRYSTAL"
+   ],
+   "p": [
+    "PASSIVE_FROST",
+    "PASSIVE_ENERGYCHANCE_FROSTSTAFF",
+    "PASSIVE_CASTINGSPEED_CHANCE_FROSTSTAFF",
+    "PASSIVE_SPELLPOWER_CASTER_FROSTSTAFF"
+   ]
+  }
  },
  {
   "id": "2H_ICECRYSTAL_UNDEAD",
@@ -773,7 +1838,30 @@
    8
   ],
   "two_handed": true,
-  "category": "Bâtons de givre"
+  "category": "Bâtons de givre",
+  "spells": {
+   "q": [
+    "FROST_BITE",
+    "ICESHARD",
+    "SHATTER_Q"
+   ],
+   "w": [
+    "FROSTBOMB_CASTSLOW",
+    "FROSTBEAM",
+    "FROSTNOVA",
+    "FROST_LANCE",
+    "ICE_SCULPTURE"
+   ],
+   "e": [
+    "FROST_ULTIMATE"
+   ],
+   "p": [
+    "PASSIVE_FROST",
+    "PASSIVE_ENERGYCHANCE_FROSTSTAFF",
+    "PASSIVE_CASTINGSPEED_CHANCE_FROSTSTAFF",
+    "PASSIVE_SPELLPOWER_CASTER_FROSTSTAFF"
+   ]
+  }
  },
  {
   "id": "2H_SHAPESHIFTER_CRYSTAL",
@@ -789,7 +1877,30 @@
    8
   ],
   "two_handed": true,
-  "category": "Bâtons de métamorphe"
+  "category": "Bâtons de métamorphe",
+  "spells": {
+   "q": [
+    "SHAPE_Q_CAST",
+    "SHAPE_Q_SKILLSHOT",
+    "SHAPE_Q_DAMAGE_AND_SHIELD",
+    "SHAPE_Q_CONE_MELEE"
+   ],
+   "w": [
+    "SHAPE_W_DAMAGE_AOE",
+    "SHAPE_W_AREA_PULL",
+    "SHAPE_W_TETHERBEAM",
+    "SHAPE_W_POLYMORPH"
+   ],
+   "e": [
+    "SHAPESHIFT_CRYSTAL_COBRA"
+   ],
+   "p": [
+    "PASSIVE_SHAPESHIFT_ATTACK_BUFF",
+    "PASSIVE_SHAPESHIFT_Q_CAST_DAMAGE_REDUCE",
+    "PASSIVE_SHAPESHIFT_GATHER_CHARGES",
+    "PASSIVE_SHAPESHIFT_W_CAST_SPEED_BUFF"
+   ]
+  }
  },
  {
   "id": "2H_SHAPESHIFTER_HELL",
@@ -805,7 +1916,30 @@
    8
   ],
   "two_handed": true,
-  "category": "Bâtons de métamorphe"
+  "category": "Bâtons de métamorphe",
+  "spells": {
+   "q": [
+    "SHAPE_Q_CAST",
+    "SHAPE_Q_SKILLSHOT",
+    "SHAPE_Q_DAMAGE_AND_SHIELD",
+    "SHAPE_Q_CONE_MELEE"
+   ],
+   "w": [
+    "SHAPE_W_DAMAGE_AOE",
+    "SHAPE_W_AREA_PULL",
+    "SHAPE_W_TETHERBEAM",
+    "SHAPE_W_POLYMORPH"
+   ],
+   "e": [
+    "SHAPESHIFT_IMP"
+   ],
+   "p": [
+    "PASSIVE_SHAPESHIFT_ATTACK_BUFF",
+    "PASSIVE_SHAPESHIFT_Q_CAST_DAMAGE_REDUCE",
+    "PASSIVE_SHAPESHIFT_GATHER_CHARGES",
+    "PASSIVE_SHAPESHIFT_W_CAST_SPEED_BUFF"
+   ]
+  }
  },
  {
   "id": "2H_SHAPESHIFTER_MORGANA",
@@ -821,7 +1955,30 @@
    8
   ],
   "two_handed": true,
-  "category": "Bâtons de métamorphe"
+  "category": "Bâtons de métamorphe",
+  "spells": {
+   "q": [
+    "SHAPE_Q_CAST",
+    "SHAPE_Q_SKILLSHOT",
+    "SHAPE_Q_DAMAGE_AND_SHIELD",
+    "SHAPE_Q_CONE_MELEE"
+   ],
+   "w": [
+    "SHAPE_W_DAMAGE_AOE",
+    "SHAPE_W_AREA_PULL",
+    "SHAPE_W_TETHERBEAM",
+    "SHAPE_W_POLYMORPH"
+   ],
+   "e": [
+    "SHAPESHIFT_WEREWOLF"
+   ],
+   "p": [
+    "PASSIVE_SHAPESHIFT_ATTACK_BUFF",
+    "PASSIVE_SHAPESHIFT_Q_CAST_DAMAGE_REDUCE",
+    "PASSIVE_SHAPESHIFT_GATHER_CHARGES",
+    "PASSIVE_SHAPESHIFT_W_CAST_SPEED_BUFF"
+   ]
+  }
  },
  {
   "id": "2H_SHAPESHIFTER_KEEPER",
@@ -837,7 +1994,30 @@
    8
   ],
   "two_handed": true,
-  "category": "Bâtons de métamorphe"
+  "category": "Bâtons de métamorphe",
+  "spells": {
+   "q": [
+    "SHAPE_Q_CAST",
+    "SHAPE_Q_SKILLSHOT",
+    "SHAPE_Q_DAMAGE_AND_SHIELD",
+    "SHAPE_Q_CONE_MELEE"
+   ],
+   "w": [
+    "SHAPE_W_DAMAGE_AOE",
+    "SHAPE_W_AREA_PULL",
+    "SHAPE_W_TETHERBEAM",
+    "SHAPE_W_POLYMORPH"
+   ],
+   "e": [
+    "SHAPESHIFT_ROCK_ELEMENTAL"
+   ],
+   "p": [
+    "PASSIVE_SHAPESHIFT_ATTACK_BUFF",
+    "PASSIVE_SHAPESHIFT_Q_CAST_DAMAGE_REDUCE",
+    "PASSIVE_SHAPESHIFT_GATHER_CHARGES",
+    "PASSIVE_SHAPESHIFT_W_CAST_SPEED_BUFF"
+   ]
+  }
  },
  {
   "id": "2H_SHAPESHIFTER_SET2",
@@ -853,7 +2033,30 @@
    8
   ],
   "two_handed": true,
-  "category": "Bâtons de métamorphe"
+  "category": "Bâtons de métamorphe",
+  "spells": {
+   "q": [
+    "SHAPE_Q_CAST",
+    "SHAPE_Q_SKILLSHOT",
+    "SHAPE_Q_DAMAGE_AND_SHIELD",
+    "SHAPE_Q_CONE_MELEE"
+   ],
+   "w": [
+    "SHAPE_W_DAMAGE_AOE",
+    "SHAPE_W_AREA_PULL",
+    "SHAPE_W_TETHERBEAM",
+    "SHAPE_W_POLYMORPH"
+   ],
+   "e": [
+    "SHAPESHIFT_ENT"
+   ],
+   "p": [
+    "PASSIVE_SHAPESHIFT_ATTACK_BUFF",
+    "PASSIVE_SHAPESHIFT_Q_CAST_DAMAGE_REDUCE",
+    "PASSIVE_SHAPESHIFT_GATHER_CHARGES",
+    "PASSIVE_SHAPESHIFT_W_CAST_SPEED_BUFF"
+   ]
+  }
  },
  {
   "id": "2H_SHAPESHIFTER_SET3",
@@ -869,7 +2072,30 @@
    8
   ],
   "two_handed": true,
-  "category": "Bâtons de métamorphe"
+  "category": "Bâtons de métamorphe",
+  "spells": {
+   "q": [
+    "SHAPE_Q_CAST",
+    "SHAPE_Q_SKILLSHOT",
+    "SHAPE_Q_DAMAGE_AND_SHIELD",
+    "SHAPE_Q_CONE_MELEE"
+   ],
+   "w": [
+    "SHAPE_W_DAMAGE_AOE",
+    "SHAPE_W_AREA_PULL",
+    "SHAPE_W_TETHERBEAM",
+    "SHAPE_W_POLYMORPH"
+   ],
+   "e": [
+    "SHAPESHIFT_BEAR"
+   ],
+   "p": [
+    "PASSIVE_SHAPESHIFT_ATTACK_BUFF",
+    "PASSIVE_SHAPESHIFT_Q_CAST_DAMAGE_REDUCE",
+    "PASSIVE_SHAPESHIFT_GATHER_CHARGES",
+    "PASSIVE_SHAPESHIFT_W_CAST_SPEED_BUFF"
+   ]
+  }
  },
  {
   "id": "2H_SHAPESHIFTER_SET1",
@@ -886,7 +2112,30 @@
    8
   ],
   "two_handed": true,
-  "category": "Bâtons de métamorphe"
+  "category": "Bâtons de métamorphe",
+  "spells": {
+   "q": [
+    "SHAPE_Q_CAST",
+    "SHAPE_Q_SKILLSHOT",
+    "SHAPE_Q_DAMAGE_AND_SHIELD",
+    "SHAPE_Q_CONE_MELEE"
+   ],
+   "w": [
+    "SHAPE_W_DAMAGE_AOE",
+    "SHAPE_W_AREA_PULL",
+    "SHAPE_W_TETHERBEAM",
+    "SHAPE_W_POLYMORPH"
+   ],
+   "e": [
+    "SHAPESHIFT_PANTHER"
+   ],
+   "p": [
+    "PASSIVE_SHAPESHIFT_ATTACK_BUFF",
+    "PASSIVE_SHAPESHIFT_Q_CAST_DAMAGE_REDUCE",
+    "PASSIVE_SHAPESHIFT_GATHER_CHARGES",
+    "PASSIVE_SHAPESHIFT_W_CAST_SPEED_BUFF"
+   ]
+  }
  },
  {
   "id": "2H_SHAPESHIFTER_AVALON",
@@ -902,7 +2151,30 @@
    8
   ],
   "two_handed": true,
-  "category": "Bâtons de métamorphe"
+  "category": "Bâtons de métamorphe",
+  "spells": {
+   "q": [
+    "SHAPE_Q_CAST",
+    "SHAPE_Q_SKILLSHOT",
+    "SHAPE_Q_DAMAGE_AND_SHIELD",
+    "SHAPE_Q_CONE_MELEE"
+   ],
+   "w": [
+    "SHAPE_W_DAMAGE_AOE",
+    "SHAPE_W_AREA_PULL",
+    "SHAPE_W_TETHERBEAM",
+    "SHAPE_W_POLYMORPH"
+   ],
+   "e": [
+    "SHAPESHIFT_AVALONIAN_EAGLE"
+   ],
+   "p": [
+    "PASSIVE_SHAPESHIFT_ATTACK_BUFF",
+    "PASSIVE_SHAPESHIFT_Q_CAST_DAMAGE_REDUCE",
+    "PASSIVE_SHAPESHIFT_GATHER_CHARGES",
+    "PASSIVE_SHAPESHIFT_W_CAST_SPEED_BUFF"
+   ]
+  }
  },
  {
   "id": "MAIN_NATURESTAFF_CRYSTAL",
@@ -918,7 +2190,30 @@
    8
   ],
   "two_handed": false,
-  "category": "Bâtons de nature"
+  "category": "Bâtons de nature",
+  "spells": {
+   "q": [
+    "REJUVENATION",
+    "THORNSAREA",
+    "REJUVMUSHROOM_GRENADE"
+   ],
+   "w": [
+    "BRAMBLESEED",
+    "REANIMATE",
+    "NATURERESILIENCE",
+    "CLEANSEHEAL",
+    "REJUVENATING_BREEZE"
+   ],
+   "e": [
+    "DUAL_NATURE"
+   ],
+   "p": [
+    "PASSIVE_HEALPOWERCHANCE",
+    "PASSIVE_ENERGYCHANCE_NATURESTAFF",
+    "PASSIVE_ARMOR_CASTER_NATURESTAFF",
+    "PASSIVE_MOVESPEED_CHANCE_NATURESTAFF"
+   ]
+  }
  },
  {
   "id": "2H_NATURESTAFF_HELL",
@@ -934,7 +2229,30 @@
    8
   ],
   "two_handed": true,
-  "category": "Bâtons de nature"
+  "category": "Bâtons de nature",
+  "spells": {
+   "q": [
+    "REJUVENATION",
+    "THORNSAREA",
+    "REJUVMUSHROOM_GRENADE"
+   ],
+   "w": [
+    "BRAMBLESEED",
+    "REANIMATE",
+    "NATURERESILIENCE",
+    "CLEANSEHEAL",
+    "REJUVENATING_BREEZE"
+   ],
+   "e": [
+    "ROTTENVINES"
+   ],
+   "p": [
+    "PASSIVE_HEALPOWERCHANCE",
+    "PASSIVE_ENERGYCHANCE_NATURESTAFF",
+    "PASSIVE_ARMOR_CASTER_NATURESTAFF",
+    "PASSIVE_MOVESPEED_CHANCE_NATURESTAFF"
+   ]
+  }
  },
  {
   "id": "MAIN_NATURESTAFF_KEEPER",
@@ -950,7 +2268,30 @@
    8
   ],
   "two_handed": false,
-  "category": "Bâtons de nature"
+  "category": "Bâtons de nature",
+  "spells": {
+   "q": [
+    "REJUVENATION",
+    "THORNSAREA",
+    "REJUVMUSHROOM_GRENADE"
+   ],
+   "w": [
+    "BRAMBLESEED",
+    "REANIMATE",
+    "NATURERESILIENCE",
+    "CLEANSEHEAL",
+    "REJUVENATING_BREEZE"
+   ],
+   "e": [
+    "NATURE_ULTIMATE_SINGLE"
+   ],
+   "p": [
+    "PASSIVE_HEALPOWERCHANCE",
+    "PASSIVE_ENERGYCHANCE_NATURESTAFF",
+    "PASSIVE_ARMOR_CASTER_NATURESTAFF",
+    "PASSIVE_MOVESPEED_CHANCE_NATURESTAFF"
+   ]
+  }
  },
  {
   "id": "2H_NATURESTAFF_KEEPER",
@@ -966,7 +2307,30 @@
    8
   ],
   "two_handed": true,
-  "category": "Bâtons de nature"
+  "category": "Bâtons de nature",
+  "spells": {
+   "q": [
+    "REJUVENATION",
+    "THORNSAREA",
+    "REJUVMUSHROOM_GRENADE"
+   ],
+   "w": [
+    "BRAMBLESEED",
+    "REANIMATE",
+    "NATURERESILIENCE",
+    "CLEANSEHEAL",
+    "REJUVENATING_BREEZE"
+   ],
+   "e": [
+    "SPIRITANIMAL"
+   ],
+   "p": [
+    "PASSIVE_HEALPOWERCHANCE",
+    "PASSIVE_ENERGYCHANCE_NATURESTAFF",
+    "PASSIVE_ARMOR_CASTER_NATURESTAFF",
+    "PASSIVE_MOVESPEED_CHANCE_NATURESTAFF"
+   ]
+  }
  },
  {
   "id": "MAIN_NATURESTAFF",
@@ -983,7 +2347,30 @@
    8
   ],
   "two_handed": false,
-  "category": "Bâtons de nature"
+  "category": "Bâtons de nature",
+  "spells": {
+   "q": [
+    "REJUVENATION",
+    "THORNSAREA",
+    "REJUVMUSHROOM_GRENADE"
+   ],
+   "w": [
+    "BRAMBLESEED",
+    "REANIMATE",
+    "NATURERESILIENCE",
+    "CLEANSEHEAL",
+    "REJUVENATING_BREEZE"
+   ],
+   "e": [
+    "CIRCLEOFLIFE"
+   ],
+   "p": [
+    "PASSIVE_HEALPOWERCHANCE",
+    "PASSIVE_ENERGYCHANCE_NATURESTAFF",
+    "PASSIVE_ARMOR_CASTER_NATURESTAFF",
+    "PASSIVE_MOVESPEED_CHANCE_NATURESTAFF"
+   ]
+  }
  },
  {
   "id": "2H_WILDSTAFF",
@@ -999,7 +2386,30 @@
    8
   ],
   "two_handed": true,
-  "category": "Bâtons de nature"
+  "category": "Bâtons de nature",
+  "spells": {
+   "q": [
+    "REJUVENATION",
+    "THORNSAREA",
+    "REJUVMUSHROOM_GRENADE"
+   ],
+   "w": [
+    "BRAMBLESEED",
+    "REANIMATE",
+    "NATURERESILIENCE",
+    "CLEANSEHEAL",
+    "REJUVENATING_BREEZE"
+   ],
+   "e": [
+    "WELLOFLIFE2"
+   ],
+   "p": [
+    "PASSIVE_HEALPOWERCHANCE",
+    "PASSIVE_ENERGYCHANCE_NATURESTAFF",
+    "PASSIVE_ARMOR_CASTER_NATURESTAFF",
+    "PASSIVE_MOVESPEED_CHANCE_NATURESTAFF"
+   ]
+  }
  },
  {
   "id": "MAIN_NATURESTAFF_AVALON",
@@ -1015,7 +2425,30 @@
    8
   ],
   "two_handed": false,
-  "category": "Bâtons de nature"
+  "category": "Bâtons de nature",
+  "spells": {
+   "q": [
+    "REJUVENATION",
+    "THORNSAREA",
+    "REJUVMUSHROOM_GRENADE"
+   ],
+   "w": [
+    "BRAMBLESEED",
+    "REANIMATE",
+    "NATURERESILIENCE",
+    "CLEANSEHEAL",
+    "REJUVENATING_BREEZE"
+   ],
+   "e": [
+    "SOUL_LINK"
+   ],
+   "p": [
+    "PASSIVE_HEALPOWERCHANCE",
+    "PASSIVE_ENERGYCHANCE_NATURESTAFF",
+    "PASSIVE_ARMOR_CASTER_NATURESTAFF",
+    "PASSIVE_MOVESPEED_CHANCE_NATURESTAFF"
+   ]
+  }
  },
  {
   "id": "2H_NATURESTAFF",
@@ -1031,7 +2464,30 @@
    8
   ],
   "two_handed": true,
-  "category": "Bâtons de nature"
+  "category": "Bâtons de nature",
+  "spells": {
+   "q": [
+    "REJUVENATION",
+    "THORNSAREA",
+    "REJUVMUSHROOM_GRENADE"
+   ],
+   "w": [
+    "BRAMBLESEED",
+    "REANIMATE",
+    "NATURERESILIENCE",
+    "CLEANSEHEAL",
+    "REJUVENATING_BREEZE"
+   ],
+   "e": [
+    "BRIEROFLIFE"
+   ],
+   "p": [
+    "PASSIVE_HEALPOWERCHANCE",
+    "PASSIVE_ENERGYCHANCE_NATURESTAFF",
+    "PASSIVE_ARMOR_CASTER_NATURESTAFF",
+    "PASSIVE_MOVESPEED_CHANCE_NATURESTAFF"
+   ]
+  }
  },
  {
   "id": "MAIN_CURSEDSTAFF",
@@ -1048,7 +2504,30 @@
    8
   ],
   "two_handed": false,
-  "category": "Bâtons maudits"
+  "category": "Bâtons maudits",
+  "spells": {
+   "q": [
+    "CURSEDOT",
+    "CURSEBLADE",
+    "CURSED_SPLAT"
+   ],
+   "w": [
+    "ARMORPIERCER",
+    "CURSENOVA",
+    "CURSEDHANDS_STACKUP",
+    "CURSEDBEAM",
+    "DARKMATTER"
+   ],
+   "e": [
+    "DEATHCURSE2"
+   ],
+   "p": [
+    "PASSIVE_CURSE",
+    "PASSIVE_ENERGYCHANCE_CURSEDSTAFF",
+    "PASSIVE_SPELLPOWER_CASTER_CURSEDSTAFF",
+    "PASSIVE_MOVESPEED_CHANCE_CURSEDSTAFF"
+   ]
+  }
  },
  {
   "id": "MAIN_CURSEDSTAFF_CRYSTAL",
@@ -1064,7 +2543,30 @@
    8
   ],
   "two_handed": false,
-  "category": "Bâtons maudits"
+  "category": "Bâtons maudits",
+  "spells": {
+   "q": [
+    "CURSEDOT",
+    "CURSEBLADE",
+    "CURSED_SPLAT"
+   ],
+   "w": [
+    "ARMORPIERCER",
+    "CURSENOVA",
+    "CURSEDHANDS_STACKUP",
+    "CURSEDBEAM",
+    "DARKMATTER"
+   ],
+   "e": [
+    "CURSE_SKELETON_BARF_FDHR"
+   ],
+   "p": [
+    "PASSIVE_CURSE",
+    "PASSIVE_ENERGYCHANCE_CURSEDSTAFF",
+    "PASSIVE_SPELLPOWER_CASTER_CURSEDSTAFF",
+    "PASSIVE_MOVESPEED_CHANCE_CURSEDSTAFF"
+   ]
+  }
  },
  {
   "id": "2H_CURSEDSTAFF_MORGANA",
@@ -1080,7 +2582,30 @@
    8
   ],
   "two_handed": true,
-  "category": "Bâtons maudits"
+  "category": "Bâtons maudits",
+  "spells": {
+   "q": [
+    "CURSEDOT",
+    "CURSEBLADE",
+    "CURSED_SPLAT"
+   ],
+   "w": [
+    "ARMORPIERCER",
+    "CURSENOVA",
+    "CURSEDHANDS_STACKUP",
+    "CURSEDBEAM",
+    "DARKMATTER"
+   ],
+   "e": [
+    "CURSEULTIMATE"
+   ],
+   "p": [
+    "PASSIVE_CURSE",
+    "PASSIVE_ENERGYCHANCE_CURSEDSTAFF",
+    "PASSIVE_SPELLPOWER_CASTER_CURSEDSTAFF",
+    "PASSIVE_MOVESPEED_CHANCE_CURSEDSTAFF"
+   ]
+  }
  },
  {
   "id": "MAIN_CURSEDSTAFF_UNDEAD",
@@ -1096,7 +2621,30 @@
    8
   ],
   "two_handed": false,
-  "category": "Bâtons maudits"
+  "category": "Bâtons maudits",
+  "spells": {
+   "q": [
+    "CURSEDOT",
+    "CURSEBLADE",
+    "CURSED_SPLAT"
+   ],
+   "w": [
+    "ARMORPIERCER",
+    "CURSENOVA",
+    "CURSEDHANDS_STACKUP",
+    "CURSEDBEAM",
+    "DARKMATTER"
+   ],
+   "e": [
+    "ENFEEBLEBLADES"
+   ],
+   "p": [
+    "PASSIVE_CURSE",
+    "PASSIVE_ENERGYCHANCE_CURSEDSTAFF",
+    "PASSIVE_SPELLPOWER_CASTER_CURSEDSTAFF",
+    "PASSIVE_MOVESPEED_CHANCE_CURSEDSTAFF"
+   ]
+  }
  },
  {
   "id": "2H_DEMONICSTAFF",
@@ -1112,7 +2660,30 @@
    8
   ],
   "two_handed": true,
-  "category": "Bâtons maudits"
+  "category": "Bâtons maudits",
+  "spells": {
+   "q": [
+    "CURSEDOT",
+    "CURSEBLADE",
+    "CURSED_SPLAT"
+   ],
+   "w": [
+    "ARMORPIERCER",
+    "CURSENOVA",
+    "CURSEDHANDS_STACKUP",
+    "CURSEDBEAM",
+    "DARKMATTER"
+   ],
+   "e": [
+    "CURSED_WALL"
+   ],
+   "p": [
+    "PASSIVE_CURSE",
+    "PASSIVE_ENERGYCHANCE_CURSEDSTAFF",
+    "PASSIVE_SPELLPOWER_CASTER_CURSEDSTAFF",
+    "PASSIVE_MOVESPEED_CHANCE_CURSEDSTAFF"
+   ]
+  }
  },
  {
   "id": "2H_SKULLORB_HELL",
@@ -1128,7 +2699,30 @@
    8
   ],
   "two_handed": true,
-  "category": "Bâtons maudits"
+  "category": "Bâtons maudits",
+  "spells": {
+   "q": [
+    "CURSEDOT",
+    "CURSEBLADE",
+    "CURSED_SPLAT"
+   ],
+   "w": [
+    "ARMORPIERCER",
+    "CURSENOVA",
+    "CURSEDHANDS_STACKUP",
+    "CURSEDBEAM",
+    "DARKMATTER"
+   ],
+   "e": [
+    "SKULLCURSE"
+   ],
+   "p": [
+    "PASSIVE_CURSE",
+    "PASSIVE_ENERGYCHANCE_CURSEDSTAFF",
+    "PASSIVE_SPELLPOWER_CASTER_CURSEDSTAFF",
+    "PASSIVE_MOVESPEED_CHANCE_CURSEDSTAFF"
+   ]
+  }
  },
  {
   "id": "2H_CURSEDSTAFF",
@@ -1144,7 +2738,30 @@
    8
   ],
   "two_handed": true,
-  "category": "Bâtons maudits"
+  "category": "Bâtons maudits",
+  "spells": {
+   "q": [
+    "CURSEDOT",
+    "CURSEBLADE",
+    "CURSED_SPLAT"
+   ],
+   "w": [
+    "ARMORPIERCER",
+    "CURSENOVA",
+    "CURSEDHANDS_STACKUP",
+    "CURSEDBEAM",
+    "DARKMATTER"
+   ],
+   "e": [
+    "AREAOFDECAY"
+   ],
+   "p": [
+    "PASSIVE_CURSE",
+    "PASSIVE_ENERGYCHANCE_CURSEDSTAFF",
+    "PASSIVE_SPELLPOWER_CASTER_CURSEDSTAFF",
+    "PASSIVE_MOVESPEED_CHANCE_CURSEDSTAFF"
+   ]
+  }
  },
  {
   "id": "MAIN_CURSEDSTAFF_AVALON",
@@ -1160,7 +2777,30 @@
    8
   ],
   "two_handed": false,
-  "category": "Bâtons maudits"
+  "category": "Bâtons maudits",
+  "spells": {
+   "q": [
+    "CURSEDOT",
+    "CURSEBLADE",
+    "CURSED_SPLAT"
+   ],
+   "w": [
+    "ARMORPIERCER",
+    "CURSENOVA",
+    "CURSEDHANDS_STACKUP",
+    "CURSEDBEAM",
+    "DARKMATTER"
+   ],
+   "e": [
+    "DYNAMIC_CURSE"
+   ],
+   "p": [
+    "PASSIVE_CURSE",
+    "PASSIVE_ENERGYCHANCE_CURSEDSTAFF",
+    "PASSIVE_SPELLPOWER_CASTER_CURSEDSTAFF",
+    "PASSIVE_MOVESPEED_CHANCE_CURSEDSTAFF"
+   ]
+  }
  },
  {
   "id": "MAIN_HOLYSTAFF",
@@ -1177,7 +2817,30 @@
    8
   ],
   "two_handed": false,
-  "category": "Bâtons sacrés"
+  "category": "Bâtons sacrés",
+  "spells": {
+   "q": [
+    "GENEROUSHEAL",
+    "SMITE_AOE",
+    "HOLYFLASH"
+   ],
+   "w": [
+    "PULSINGHEAL",
+    "HEALINGBEAM",
+    "HOLYHOT",
+    "HOLYORB",
+    "RESURRECTION"
+   ],
+   "e": [
+    "HOLYDESPERATEPRAYER2"
+   ],
+   "p": [
+    "PASSIVE_HEALPOWERCHANCE",
+    "PASSIVE_ENERGYCHANCE_HOLYSTAFF",
+    "PASSIVE_KNOCKBACK_CASTER_HOLYSTAFF",
+    "PASSIVE_HOLY_ASCENDED"
+   ]
+  }
  },
  {
   "id": "2H_HOLYSTAFF_UNDEAD",
@@ -1193,7 +2856,30 @@
    8
   ],
   "two_handed": true,
-  "category": "Bâtons sacrés"
+  "category": "Bâtons sacrés",
+  "spells": {
+   "q": [
+    "GENEROUSHEAL",
+    "SMITE_AOE",
+    "HOLYFLASH"
+   ],
+   "w": [
+    "PULSINGHEAL",
+    "HEALINGBEAM",
+    "HOLYHOT",
+    "HOLYORB",
+    "RESURRECTION"
+   ],
+   "e": [
+    "CELESTIAL_SPHERE"
+   ],
+   "p": [
+    "PASSIVE_HEALPOWERCHANCE",
+    "PASSIVE_ENERGYCHANCE_HOLYSTAFF",
+    "PASSIVE_KNOCKBACK_CASTER_HOLYSTAFF",
+    "PASSIVE_HOLY_ASCENDED"
+   ]
+  }
  },
  {
   "id": "MAIN_HOLYSTAFF_MORGANA",
@@ -1209,7 +2895,30 @@
    8
   ],
   "two_handed": false,
-  "category": "Bâtons sacrés"
+  "category": "Bâtons sacrés",
+  "spells": {
+   "q": [
+    "GENEROUSHEAL",
+    "SMITE_AOE",
+    "HOLYFLASH"
+   ],
+   "w": [
+    "PULSINGHEAL",
+    "HEALINGBEAM",
+    "HOLYHOT",
+    "HOLYORB",
+    "RESURRECTION"
+   ],
+   "e": [
+    "HOLYTOUCH"
+   ],
+   "p": [
+    "PASSIVE_HEALPOWERCHANCE",
+    "PASSIVE_ENERGYCHANCE_HOLYSTAFF",
+    "PASSIVE_KNOCKBACK_CASTER_HOLYSTAFF",
+    "PASSIVE_HOLY_ASCENDED"
+   ]
+  }
  },
  {
   "id": "2H_DIVINESTAFF",
@@ -1225,7 +2934,30 @@
    8
   ],
   "two_handed": true,
-  "category": "Bâtons sacrés"
+  "category": "Bâtons sacrés",
+  "spells": {
+   "q": [
+    "GENEROUSHEAL",
+    "SMITE_AOE",
+    "HOLYFLASH"
+   ],
+   "w": [
+    "PULSINGHEAL",
+    "HEALINGBEAM",
+    "HOLYHOT",
+    "HOLYORB",
+    "RESURRECTION"
+   ],
+   "e": [
+    "HOLYSHIELD"
+   ],
+   "p": [
+    "PASSIVE_HEALPOWERCHANCE",
+    "PASSIVE_ENERGYCHANCE_HOLYSTAFF",
+    "PASSIVE_KNOCKBACK_CASTER_HOLYSTAFF",
+    "PASSIVE_HOLY_ASCENDED"
+   ]
+  }
  },
  {
   "id": "2H_HOLYSTAFF_HELL",
@@ -1241,7 +2973,30 @@
    8
   ],
   "two_handed": true,
-  "category": "Bâtons sacrés"
+  "category": "Bâtons sacrés",
+  "spells": {
+   "q": [
+    "GENEROUSHEAL",
+    "SMITE_AOE",
+    "HOLYFLASH"
+   ],
+   "w": [
+    "PULSINGHEAL",
+    "HEALINGBEAM",
+    "HOLYHOT",
+    "HOLYORB",
+    "RESURRECTION"
+   ],
+   "e": [
+    "HOLY_ULTIMATE"
+   ],
+   "p": [
+    "PASSIVE_HEALPOWERCHANCE",
+    "PASSIVE_ENERGYCHANCE_HOLYSTAFF",
+    "PASSIVE_KNOCKBACK_CASTER_HOLYSTAFF",
+    "PASSIVE_HOLY_ASCENDED"
+   ]
+  }
  },
  {
   "id": "2H_HOLYSTAFF_CRYSTAL",
@@ -1257,7 +3012,30 @@
    8
   ],
   "two_handed": true,
-  "category": "Bâtons sacrés"
+  "category": "Bâtons sacrés",
+  "spells": {
+   "q": [
+    "GENEROUSHEAL",
+    "SMITE_AOE",
+    "HOLYFLASH"
+   ],
+   "w": [
+    "PULSINGHEAL",
+    "HEALINGBEAM",
+    "HOLYHOT",
+    "HOLYORB",
+    "RESURRECTION"
+   ],
+   "e": [
+    "HOLY_DISPEL"
+   ],
+   "p": [
+    "PASSIVE_HEALPOWERCHANCE",
+    "PASSIVE_ENERGYCHANCE_HOLYSTAFF",
+    "PASSIVE_KNOCKBACK_CASTER_HOLYSTAFF",
+    "PASSIVE_HOLY_ASCENDED"
+   ]
+  }
  },
  {
   "id": "2H_HOLYSTAFF",
@@ -1273,7 +3051,30 @@
    8
   ],
   "two_handed": true,
-  "category": "Bâtons sacrés"
+  "category": "Bâtons sacrés",
+  "spells": {
+   "q": [
+    "GENEROUSHEAL",
+    "SMITE_AOE",
+    "HOLYFLASH"
+   ],
+   "w": [
+    "PULSINGHEAL",
+    "HEALINGBEAM",
+    "HOLYHOT",
+    "HOLYORB",
+    "RESURRECTION"
+   ],
+   "e": [
+    "HOLYEXPLOSION"
+   ],
+   "p": [
+    "PASSIVE_HEALPOWERCHANCE",
+    "PASSIVE_ENERGYCHANCE_HOLYSTAFF",
+    "PASSIVE_KNOCKBACK_CASTER_HOLYSTAFF",
+    "PASSIVE_HOLY_ASCENDED"
+   ]
+  }
  },
  {
   "id": "MAIN_HOLYSTAFF_AVALON",
@@ -1289,7 +3090,30 @@
    8
   ],
   "two_handed": false,
-  "category": "Bâtons sacrés"
+  "category": "Bâtons sacrés",
+  "spells": {
+   "q": [
+    "GENEROUSHEAL",
+    "SMITE_AOE",
+    "HOLYFLASH"
+   ],
+   "w": [
+    "PULSINGHEAL",
+    "HEALINGBEAM",
+    "HOLYHOT",
+    "HOLYORB",
+    "RESURRECTION"
+   ],
+   "e": [
+    "DIVINE_JUMP"
+   ],
+   "p": [
+    "PASSIVE_HEALPOWERCHANCE",
+    "PASSIVE_ENERGYCHANCE_HOLYSTAFF",
+    "PASSIVE_KNOCKBACK_CASTER_HOLYSTAFF",
+    "PASSIVE_HOLY_ASCENDED"
+   ]
+  }
  },
  {
   "id": "2H_DAGGER_KATAR_AVALON",
@@ -1305,7 +3129,30 @@
    8
   ],
   "two_handed": true,
-  "category": "Dagues"
+  "category": "Dagues",
+  "spells": {
+   "q": [
+    "SUNDERARMOR2",
+    "QDASH",
+    "ASSASSINSPIRIT"
+   ],
+   "w": [
+    "THROWINGBLADES",
+    "GROUNDDASH",
+    "DEEPCUTS",
+    "SKILLSHOT_TELEPORT",
+    "CHAINDASH"
+   ],
+   "e": [
+    "BACK_SLASH"
+   ],
+   "p": [
+    "PASSIVE_BLEEDCHANCE",
+    "PASSIVE_HEALTHCHANCE_DAGGER",
+    "PASSIVE_AASPEEDCHANCE_DAGGER",
+    "PASSIVE_SPELLPOWER_CHANCE_DAGGER"
+   ]
+  }
  },
  {
   "id": "MAIN_DAGGER_HELL",
@@ -1321,7 +3168,30 @@
    8
   ],
   "two_handed": false,
-  "category": "Dagues"
+  "category": "Dagues",
+  "spells": {
+   "q": [
+    "SUNDERARMOR2",
+    "QDASH",
+    "ASSASSINSPIRIT"
+   ],
+   "w": [
+    "THROWINGBLADES",
+    "GROUNDDASH",
+    "DEEPCUTS",
+    "SKILLSHOT_TELEPORT",
+    "CHAINDASH"
+   ],
+   "e": [
+    "BLOOD_BLADE"
+   ],
+   "p": [
+    "PASSIVE_BLEEDCHANCE",
+    "PASSIVE_HEALTHCHANCE_DAGGER",
+    "PASSIVE_AASPEEDCHANCE_DAGGER",
+    "PASSIVE_SPELLPOWER_CHANCE_DAGGER"
+   ]
+  }
  },
  {
   "id": "MAIN_DAGGER",
@@ -1338,7 +3208,30 @@
    8
   ],
   "two_handed": false,
-  "category": "Dagues"
+  "category": "Dagues",
+  "spells": {
+   "q": [
+    "SUNDERARMOR2",
+    "QDASH",
+    "ASSASSINSPIRIT"
+   ],
+   "w": [
+    "THROWINGBLADES",
+    "GROUNDDASH",
+    "DEEPCUTS",
+    "SKILLSHOT_TELEPORT",
+    "CHAINDASH"
+   ],
+   "e": [
+    "BLOODTHIRSTYBLADE"
+   ],
+   "p": [
+    "PASSIVE_BLEEDCHANCE",
+    "PASSIVE_HEALTHCHANCE_DAGGER",
+    "PASSIVE_AASPEEDCHANCE_DAGGER",
+    "PASSIVE_SPELLPOWER_CHANCE_DAGGER"
+   ]
+  }
  },
  {
   "id": "2H_CLAWPAIR",
@@ -1354,7 +3247,30 @@
    8
   ],
   "two_handed": true,
-  "category": "Dagues"
+  "category": "Dagues",
+  "spells": {
+   "q": [
+    "SUNDERARMOR2",
+    "QDASH",
+    "ASSASSINSPIRIT"
+   ],
+   "w": [
+    "THROWINGBLADES",
+    "GROUNDDASH",
+    "DEEPCUTS",
+    "SKILLSHOT_TELEPORT",
+    "CHAINDASH"
+   ],
+   "e": [
+    "DISEMBOWEL"
+   ],
+   "p": [
+    "PASSIVE_BLEEDCHANCE",
+    "PASSIVE_HEALTHCHANCE_DAGGER",
+    "PASSIVE_AASPEEDCHANCE_DAGGER",
+    "PASSIVE_SPELLPOWER_CHANCE_DAGGER"
+   ]
+  }
  },
  {
   "id": "2H_DAGGERPAIR_CRYSTAL",
@@ -1370,7 +3286,30 @@
    8
   ],
   "two_handed": true,
-  "category": "Dagues"
+  "category": "Dagues",
+  "spells": {
+   "q": [
+    "SUNDERARMOR2",
+    "QDASH",
+    "ASSASSINSPIRIT"
+   ],
+   "w": [
+    "THROWINGBLADES",
+    "GROUNDDASH",
+    "DEEPCUTS",
+    "SKILLSHOT_TELEPORT",
+    "CHAINDASH"
+   ],
+   "e": [
+    "CRYSTAL_DAGGER_BLADE_RING"
+   ],
+   "p": [
+    "PASSIVE_BLEEDCHANCE",
+    "PASSIVE_HEALTHCHANCE_DAGGER",
+    "PASSIVE_AASPEEDCHANCE_DAGGER",
+    "PASSIVE_SPELLPOWER_CHANCE_DAGGER"
+   ]
+  }
  },
  {
   "id": "2H_DAGGERPAIR",
@@ -1386,7 +3325,30 @@
    8
   ],
   "two_handed": true,
-  "category": "Dagues"
+  "category": "Dagues",
+  "spells": {
+   "q": [
+    "SUNDERARMOR2",
+    "QDASH",
+    "ASSASSINSPIRIT"
+   ],
+   "w": [
+    "THROWINGBLADES",
+    "GROUNDDASH",
+    "DEEPCUTS",
+    "SKILLSHOT_TELEPORT",
+    "CHAINDASH"
+   ],
+   "e": [
+    "EXECUTEDAGGER"
+   ],
+   "p": [
+    "PASSIVE_BLEEDCHANCE",
+    "PASSIVE_HEALTHCHANCE_DAGGER",
+    "PASSIVE_AASPEEDCHANCE_DAGGER",
+    "PASSIVE_SPELLPOWER_CHANCE_DAGGER"
+   ]
+  }
  },
  {
   "id": "2H_DUALSICKLE_UNDEAD",
@@ -1402,7 +3364,30 @@
    8
   ],
   "two_handed": true,
-  "category": "Dagues"
+  "category": "Dagues",
+  "spells": {
+   "q": [
+    "SUNDERARMOR2",
+    "QDASH",
+    "ASSASSINSPIRIT"
+   ],
+   "w": [
+    "THROWINGBLADES",
+    "GROUNDDASH",
+    "DEEPCUTS",
+    "SKILLSHOT_TELEPORT",
+    "CHAINDASH"
+   ],
+   "e": [
+    "GHOSTSTRIKE"
+   ],
+   "p": [
+    "PASSIVE_BLEEDCHANCE",
+    "PASSIVE_HEALTHCHANCE_DAGGER",
+    "PASSIVE_AASPEEDCHANCE_DAGGER",
+    "PASSIVE_SPELLPOWER_CHANCE_DAGGER"
+   ]
+  }
  },
  {
   "id": "MAIN_RAPIER_MORGANA",
@@ -1418,7 +3403,30 @@
    8
   ],
   "two_handed": false,
-  "category": "Dagues"
+  "category": "Dagues",
+  "spells": {
+   "q": [
+    "SUNDERARMOR2",
+    "QDASH",
+    "ASSASSINSPIRIT"
+   ],
+   "w": [
+    "THROWINGBLADES",
+    "GROUNDDASH",
+    "DEEPCUTS",
+    "SKILLSHOT_TELEPORT",
+    "CHAINDASH"
+   ],
+   "e": [
+    "RAPIERSTAB"
+   ],
+   "p": [
+    "PASSIVE_BLEEDCHANCE",
+    "PASSIVE_HEALTHCHANCE_DAGGER",
+    "PASSIVE_AASPEEDCHANCE_DAGGER",
+    "PASSIVE_SPELLPOWER_CHANCE_DAGGER"
+   ]
+  }
  },
  {
   "id": "2H_KNUCKLES_CRYSTAL",
@@ -1434,7 +3442,30 @@
    8
   ],
   "two_handed": true,
-  "category": "Gantelets de combat"
+  "category": "Gantelets de combat",
+  "spells": {
+   "q": [
+    "CREATE_OPENING",
+    "DASHKICK",
+    "CROSSSTEP_ROUNDHOUSE",
+    "SHOCKWAVE_PUNCH"
+   ],
+   "w": [
+    "TRIPLE_KICK",
+    "BACKHAND_KNOCKBACK",
+    "KNUCKLE_COUNTER",
+    "KNUCKLECOMBO"
+   ],
+   "e": [
+    "CONEPUNCH2"
+   ],
+   "p": [
+    "PASSIVE_KNUCKLE_RAGE",
+    "PASSIVE_KNUCKLE_RUSHDOWN",
+    "PASSIVE_KNUCKLE_COMBOBREAKER",
+    "PASSIVE_KNUCKLE_BRAWLER_SPEED"
+   ]
+  }
  },
  {
   "id": "2H_KNUCKLES_SET2",
@@ -1450,7 +3481,30 @@
    8
   ],
   "two_handed": true,
-  "category": "Gantelets de combat"
+  "category": "Gantelets de combat",
+  "spells": {
+   "q": [
+    "CREATE_OPENING",
+    "DASHKICK",
+    "CROSSSTEP_ROUNDHOUSE",
+    "SHOCKWAVE_PUNCH"
+   ],
+   "w": [
+    "TRIPLE_KICK",
+    "BACKHAND_KNOCKBACK",
+    "KNUCKLE_COUNTER",
+    "KNUCKLECOMBO"
+   ],
+   "e": [
+    "DIVEPUNCH_RISE"
+   ],
+   "p": [
+    "PASSIVE_KNUCKLE_RAGE",
+    "PASSIVE_KNUCKLE_RUSHDOWN",
+    "PASSIVE_KNUCKLE_COMBOBREAKER",
+    "PASSIVE_KNUCKLE_BRAWLER_SPEED"
+   ]
+  }
  },
  {
   "id": "2H_KNUCKLES_MORGANA",
@@ -1466,7 +3520,30 @@
    8
   ],
   "two_handed": true,
-  "category": "Gantelets de combat"
+  "category": "Gantelets de combat",
+  "spells": {
+   "q": [
+    "CREATE_OPENING",
+    "DASHKICK",
+    "CROSSSTEP_ROUNDHOUSE",
+    "SHOCKWAVE_PUNCH"
+   ],
+   "w": [
+    "TRIPLE_KICK",
+    "BACKHAND_KNOCKBACK",
+    "KNUCKLE_COUNTER",
+    "KNUCKLECOMBO"
+   ],
+   "e": [
+    "GROWING_PUNCH"
+   ],
+   "p": [
+    "PASSIVE_KNUCKLE_RAGE",
+    "PASSIVE_KNUCKLE_RUSHDOWN",
+    "PASSIVE_KNUCKLE_COMBOBREAKER",
+    "PASSIVE_KNUCKLE_BRAWLER_SPEED"
+   ]
+  }
  },
  {
   "id": "2H_KNUCKLES_SET1",
@@ -1483,7 +3560,30 @@
    8
   ],
   "two_handed": true,
-  "category": "Gantelets de combat"
+  "category": "Gantelets de combat",
+  "spells": {
+   "q": [
+    "CREATE_OPENING",
+    "DASHKICK",
+    "CROSSSTEP_ROUNDHOUSE",
+    "SHOCKWAVE_PUNCH"
+   ],
+   "w": [
+    "TRIPLE_KICK",
+    "BACKHAND_KNOCKBACK",
+    "KNUCKLE_COUNTER",
+    "KNUCKLECOMBO"
+   ],
+   "e": [
+    "BLAZING_GEYSER"
+   ],
+   "p": [
+    "PASSIVE_KNUCKLE_BRAWLER",
+    "PASSIVE_KNUCKLE_RAGE",
+    "PASSIVE_KNUCKLE_RUSHDOWN",
+    "PASSIVE_KNUCKLE_COMBOBREAKER"
+   ]
+  }
  },
  {
   "id": "2H_KNUCKLES_SET3",
@@ -1499,7 +3599,30 @@
    8
   ],
   "two_handed": true,
-  "category": "Gantelets de combat"
+  "category": "Gantelets de combat",
+  "spells": {
+   "q": [
+    "CREATE_OPENING",
+    "DASHKICK",
+    "CROSSSTEP_ROUNDHOUSE",
+    "SHOCKWAVE_PUNCH"
+   ],
+   "w": [
+    "TRIPLE_KICK",
+    "BACKHAND_KNOCKBACK",
+    "KNUCKLE_COUNTER",
+    "KNUCKLECOMBO"
+   ],
+   "e": [
+    "IMPULSE_PUNCH"
+   ],
+   "p": [
+    "PASSIVE_KNUCKLE_BRAWLER",
+    "PASSIVE_KNUCKLE_RAGE",
+    "PASSIVE_KNUCKLE_RUSHDOWN",
+    "PASSIVE_KNUCKLE_COMBOBREAKER"
+   ]
+  }
  },
  {
   "id": "2H_KNUCKLES_HELL",
@@ -1515,7 +3638,30 @@
    8
   ],
   "two_handed": true,
-  "category": "Gantelets de combat"
+  "category": "Gantelets de combat",
+  "spells": {
+   "q": [
+    "CREATE_OPENING",
+    "DASHKICK",
+    "CROSSSTEP_ROUNDHOUSE",
+    "SHOCKWAVE_PUNCH"
+   ],
+   "w": [
+    "TRIPLE_KICK",
+    "BACKHAND_KNOCKBACK",
+    "KNUCKLE_COUNTER",
+    "KNUCKLECOMBO"
+   ],
+   "e": [
+    "BOULDER_TOSS"
+   ],
+   "p": [
+    "PASSIVE_KNUCKLE_BRAWLER",
+    "PASSIVE_KNUCKLE_RAGE",
+    "PASSIVE_KNUCKLE_RUSHDOWN",
+    "PASSIVE_KNUCKLE_COMBOBREAKER"
+   ]
+  }
  },
  {
   "id": "2H_KNUCKLES_KEEPER",
@@ -1531,7 +3677,30 @@
    8
   ],
   "two_handed": true,
-  "category": "Gantelets de combat"
+  "category": "Gantelets de combat",
+  "spells": {
+   "q": [
+    "CREATE_OPENING",
+    "DASHKICK",
+    "CROSSSTEP_ROUNDHOUSE",
+    "SHOCKWAVE_PUNCH"
+   ],
+   "w": [
+    "TRIPLE_KICK",
+    "BACKHAND_KNOCKBACK",
+    "KNUCKLE_COUNTER",
+    "KNUCKLECOMBO"
+   ],
+   "e": [
+    "PUMMELING_STRIKES"
+   ],
+   "p": [
+    "PASSIVE_KNUCKLE_BRAWLER",
+    "PASSIVE_KNUCKLE_RAGE",
+    "PASSIVE_KNUCKLE_RUSHDOWN",
+    "PASSIVE_KNUCKLE_COMBOBREAKER"
+   ]
+  }
  },
  {
   "id": "2H_KNUCKLES_AVALON",
@@ -1547,23 +3716,30 @@
    8
   ],
   "two_handed": true,
-  "category": "Gantelets de combat"
- },
- {
-  "id": "2H_AXE",
-  "slot": "mainhand",
-  "name": "Grande hache",
-  "name_en": "Greataxe",
-  "icon": "T8_2H_AXE",
-  "tiers": [
-   4,
-   5,
-   6,
-   7,
-   8
-  ],
-  "two_handed": true,
-  "category": "Haches"
+  "category": "Gantelets de combat",
+  "spells": {
+   "q": [
+    "CREATE_OPENING",
+    "DASHKICK",
+    "CROSSSTEP_ROUNDHOUSE",
+    "SHOCKWAVE_PUNCH"
+   ],
+   "w": [
+    "TRIPLE_KICK",
+    "BACKHAND_KNOCKBACK",
+    "KNUCKLE_COUNTER",
+    "KNUCKLECOMBO"
+   ],
+   "e": [
+    "TRIPLECOMBO_DIVEKICK"
+   ],
+   "p": [
+    "PASSIVE_KNUCKLE_RAGE",
+    "PASSIVE_KNUCKLE_RUSHDOWN",
+    "PASSIVE_KNUCKLE_COMBOBREAKER",
+    "PASSIVE_KNUCKLE_BRAWLER_SPEED"
+   ]
+  }
  },
  {
   "id": "2H_AXE_AVALON",
@@ -1579,7 +3755,30 @@
    8
   ],
   "two_handed": true,
-  "category": "Haches"
+  "category": "Haches",
+  "spells": {
+   "q": [
+    "RENDINGSTRIKE",
+    "RENDINGSPIN",
+    "RENDINGCOMBO"
+   ],
+   "w": [
+    "AXESMASH",
+    "AXEBOOST",
+    "AXE_CHARGE",
+    "INNERBLEEDING",
+    "BLADE_AURA"
+   ],
+   "e": [
+    "LETHAL_CLEAVER"
+   ],
+   "p": [
+    "PASSIVE_BLEEDCHANCE",
+    "PASSIVE_HEALTHCHANCE_AXE",
+    "PASSIVE_ARMORCHANCE_AXE",
+    "PASSIVE_SPELLPOWER_CHANCE_AXE"
+   ]
+  }
  },
  {
   "id": "2H_SCYTHE_CRYSTAL",
@@ -1595,7 +3794,30 @@
    8
   ],
   "two_handed": true,
-  "category": "Haches"
+  "category": "Haches",
+  "spells": {
+   "q": [
+    "RENDINGSTRIKE",
+    "RENDINGSPIN",
+    "RENDINGCOMBO"
+   ],
+   "w": [
+    "AXESMASH",
+    "AXEBOOST",
+    "AXE_CHARGE",
+    "INNERBLEEDING",
+    "BLADE_AURA"
+   ],
+   "e": [
+    "CRYSTAL_SCYTHE_DASH_ZONE"
+   ],
+   "p": [
+    "PASSIVE_BLEEDCHANCE",
+    "PASSIVE_HEALTHCHANCE_AXE",
+    "PASSIVE_ARMORCHANCE_AXE",
+    "PASSIVE_SPELLPOWER_CHANCE_AXE"
+   ]
+  }
  },
  {
   "id": "2H_SCYTHE_HELL",
@@ -1611,7 +3833,69 @@
    8
   ],
   "two_handed": true,
-  "category": "Haches"
+  "category": "Haches",
+  "spells": {
+   "q": [
+    "RENDINGSTRIKE",
+    "RENDINGSPIN",
+    "RENDINGCOMBO"
+   ],
+   "w": [
+    "AXESMASH",
+    "AXEBOOST",
+    "AXE_CHARGE",
+    "INNERBLEEDING",
+    "BLADE_AURA"
+   ],
+   "e": [
+    "SCYTHESWING"
+   ],
+   "p": [
+    "PASSIVE_BLEEDCHANCE",
+    "PASSIVE_HEALTHCHANCE_AXE",
+    "PASSIVE_ARMORCHANCE_AXE",
+    "PASSIVE_SPELLPOWER_CHANCE_AXE"
+   ]
+  }
+ },
+ {
+  "id": "2H_AXE",
+  "slot": "mainhand",
+  "name": "Grande hache",
+  "name_en": "Greataxe",
+  "icon": "T8_2H_AXE",
+  "tiers": [
+   4,
+   5,
+   6,
+   7,
+   8
+  ],
+  "two_handed": true,
+  "category": "Haches",
+  "spells": {
+   "q": [
+    "RENDINGSTRIKE",
+    "RENDINGSPIN",
+    "RENDINGCOMBO"
+   ],
+   "w": [
+    "AXESMASH",
+    "AXEBOOST",
+    "AXE_CHARGE",
+    "INNERBLEEDING",
+    "BLADE_AURA"
+   ],
+   "e": [
+    "AXEWHIRLWIND2"
+   ],
+   "p": [
+    "PASSIVE_BLEEDCHANCE",
+    "PASSIVE_HEALTHCHANCE_AXE",
+    "PASSIVE_ARMORCHANCE_AXE",
+    "PASSIVE_SPELLPOWER_CHANCE_AXE"
+   ]
+  }
  },
  {
   "id": "MAIN_AXE",
@@ -1628,7 +3912,30 @@
    8
   ],
   "two_handed": false,
-  "category": "Haches"
+  "category": "Haches",
+  "spells": {
+   "q": [
+    "RENDINGSTRIKE",
+    "RENDINGSPIN",
+    "RENDINGCOMBO"
+   ],
+   "w": [
+    "AXESMASH",
+    "AXEBOOST",
+    "AXE_CHARGE",
+    "INNERBLEEDING",
+    "BLADE_AURA"
+   ],
+   "e": [
+    "AXETHROW"
+   ],
+   "p": [
+    "PASSIVE_BLEEDCHANCE",
+    "PASSIVE_HEALTHCHANCE_AXE",
+    "PASSIVE_ARMORCHANCE_AXE",
+    "PASSIVE_SPELLPOWER_CHANCE_AXE"
+   ]
+  }
  },
  {
   "id": "2H_HALBERD",
@@ -1644,7 +3951,30 @@
    8
   ],
   "two_handed": true,
-  "category": "Haches"
+  "category": "Haches",
+  "spells": {
+   "q": [
+    "RENDINGSTRIKE",
+    "RENDINGSPIN",
+    "RENDINGCOMBO"
+   ],
+   "w": [
+    "AXESMASH",
+    "AXEBOOST",
+    "AXE_CHARGE",
+    "INNERBLEEDING",
+    "BLADE_AURA"
+   ],
+   "e": [
+    "RENDINGSWING"
+   ],
+   "p": [
+    "PASSIVE_BLEEDCHANCE",
+    "PASSIVE_HEALTHCHANCE_AXE",
+    "PASSIVE_ARMORCHANCE_AXE",
+    "PASSIVE_SPELLPOWER_CHANCE_AXE"
+   ]
+  }
  },
  {
   "id": "2H_HALBERD_MORGANA",
@@ -1660,7 +3990,30 @@
    8
   ],
   "two_handed": true,
-  "category": "Haches"
+  "category": "Haches",
+  "spells": {
+   "q": [
+    "RENDINGSTRIKE",
+    "RENDINGSPIN",
+    "RENDINGCOMBO"
+   ],
+   "w": [
+    "AXESMASH",
+    "AXEBOOST",
+    "AXE_CHARGE",
+    "INNERBLEEDING",
+    "BLADE_AURA"
+   ],
+   "e": [
+    "SHOCKWAVE"
+   ],
+   "p": [
+    "PASSIVE_BLEEDCHANCE",
+    "PASSIVE_HEALTHCHANCE_AXE",
+    "PASSIVE_ARMORCHANCE_AXE",
+    "PASSIVE_SPELLPOWER_CHANCE_AXE"
+   ]
+  }
  },
  {
   "id": "2H_DUALAXE_KEEPER",
@@ -1676,7 +4029,30 @@
    8
   ],
   "two_handed": true,
-  "category": "Haches"
+  "category": "Haches",
+  "spells": {
+   "q": [
+    "RENDINGSTRIKE",
+    "RENDINGSPIN",
+    "RENDINGCOMBO"
+   ],
+   "w": [
+    "AXESMASH",
+    "AXEBOOST",
+    "AXE_CHARGE",
+    "INNERBLEEDING",
+    "BLADE_AURA"
+   ],
+   "e": [
+    "DUALAXE_CRAWLER"
+   ],
+   "p": [
+    "PASSIVE_BLEEDCHANCE",
+    "PASSIVE_HEALTHCHANCE_AXE",
+    "PASSIVE_ARMORCHANCE_AXE",
+    "PASSIVE_SPELLPOWER_CHANCE_AXE"
+   ]
+  }
  },
  {
   "id": "2H_HARPOON_HELL",
@@ -1692,7 +4068,30 @@
    8
   ],
   "two_handed": true,
-  "category": "Lances"
+  "category": "Lances",
+  "spells": {
+   "q": [
+    "SPEAR_LUNGE",
+    "SPIRITSPEAR"
+   ],
+   "w": [
+    "FORESTOFSPEARS",
+    "CHARGINGBLADE",
+    "LEGBREAKER",
+    "DEFLECTINGSTANCE",
+    "GROUNDSPEAR",
+    "SKILLSHOT_PULL"
+   ],
+   "e": [
+    "TAINTED_STEEL"
+   ],
+   "p": [
+    "PASSIVE_SLOWPOISON",
+    "PASSIVE_HEALTHCHANCE_SPEAR",
+    "PASSIVE_SPELLPOWER_CHANCE_SPEAR",
+    "PASSIVE_AASPEEDCHANCE_SPEAR"
+   ]
+  }
  },
  {
   "id": "MAIN_SPEAR_LANCE_AVALON",
@@ -1708,7 +4107,30 @@
    8
   ],
   "two_handed": false,
-  "category": "Lances"
+  "category": "Lances",
+  "spells": {
+   "q": [
+    "SPEAR_LUNGE",
+    "SPIRITSPEAR"
+   ],
+   "w": [
+    "FORESTOFSPEARS",
+    "CHARGINGBLADE",
+    "LEGBREAKER",
+    "DEFLECTINGSTANCE",
+    "GROUNDSPEAR",
+    "SKILLSHOT_PULL"
+   ],
+   "e": [
+    "LANCE_CHARGE"
+   ],
+   "p": [
+    "PASSIVE_SLOWPOISON",
+    "PASSIVE_HEALTHCHANCE_SPEAR",
+    "PASSIVE_SPELLPOWER_CHANCE_SPEAR",
+    "PASSIVE_AASPEEDCHANCE_SPEAR"
+   ]
+  }
  },
  {
   "id": "2H_GLAIVE",
@@ -1724,7 +4146,30 @@
    8
   ],
   "two_handed": true,
-  "category": "Lances"
+  "category": "Lances",
+  "spells": {
+   "q": [
+    "SPEAR_LUNGE",
+    "SPIRITSPEAR"
+   ],
+   "w": [
+    "FORESTOFSPEARS",
+    "CHARGINGBLADE",
+    "LEGBREAKER",
+    "DEFLECTINGSTANCE",
+    "GROUNDSPEAR",
+    "SKILLSHOT_PULL"
+   ],
+   "e": [
+    "SHOVEL"
+   ],
+   "p": [
+    "PASSIVE_SLOWPOISON",
+    "PASSIVE_HEALTHCHANCE_SPEAR",
+    "PASSIVE_SPELLPOWER_CHANCE_SPEAR",
+    "PASSIVE_AASPEEDCHANCE_SPEAR"
+   ]
+  }
  },
  {
   "id": "2H_GLAIVE_CRYSTAL",
@@ -1740,7 +4185,30 @@
    8
   ],
   "two_handed": true,
-  "category": "Lances"
+  "category": "Lances",
+  "spells": {
+   "q": [
+    "SPEAR_LUNGE",
+    "SPIRITSPEAR"
+   ],
+   "w": [
+    "FORESTOFSPEARS",
+    "CHARGINGBLADE",
+    "LEGBREAKER",
+    "DEFLECTINGSTANCE",
+    "GROUNDSPEAR",
+    "SKILLSHOT_PULL"
+   ],
+   "e": [
+    "SPEAR_AOE_FINISHER"
+   ],
+   "p": [
+    "PASSIVE_SLOWPOISON",
+    "PASSIVE_HEALTHCHANCE_SPEAR",
+    "PASSIVE_SPELLPOWER_CHANCE_SPEAR",
+    "PASSIVE_AASPEEDCHANCE_SPEAR"
+   ]
+  }
  },
  {
   "id": "MAIN_SPEAR",
@@ -1757,7 +4225,30 @@
    8
   ],
   "two_handed": false,
-  "category": "Lances"
+  "category": "Lances",
+  "spells": {
+   "q": [
+    "SPEAR_LUNGE",
+    "SPIRITSPEAR"
+   ],
+   "w": [
+    "FORESTOFSPEARS",
+    "CHARGINGBLADE",
+    "LEGBREAKER",
+    "DEFLECTINGSTANCE",
+    "GROUNDSPEAR",
+    "SKILLSHOT_PULL"
+   ],
+   "e": [
+    "DASHDMG"
+   ],
+   "p": [
+    "PASSIVE_SLOWPOISON",
+    "PASSIVE_HEALTHCHANCE_SPEAR",
+    "PASSIVE_SPELLPOWER_CHANCE_SPEAR",
+    "PASSIVE_AASPEEDCHANCE_SPEAR"
+   ]
+  }
  },
  {
   "id": "MAIN_SPEAR_KEEPER",
@@ -1773,7 +4264,30 @@
    8
   ],
   "two_handed": false,
-  "category": "Lances"
+  "category": "Lances",
+  "spells": {
+   "q": [
+    "SPEAR_LUNGE",
+    "SPIRITSPEAR"
+   ],
+   "w": [
+    "FORESTOFSPEARS",
+    "CHARGINGBLADE",
+    "LEGBREAKER",
+    "DEFLECTINGSTANCE",
+    "GROUNDSPEAR",
+    "SKILLSHOT_PULL"
+   ],
+   "e": [
+    "SPEARTHROW"
+   ],
+   "p": [
+    "PASSIVE_SLOWPOISON",
+    "PASSIVE_HEALTHCHANCE_SPEAR",
+    "PASSIVE_SPELLPOWER_CHANCE_SPEAR",
+    "PASSIVE_AASPEEDCHANCE_SPEAR"
+   ]
+  }
  },
  {
   "id": "2H_TRIDENT_UNDEAD",
@@ -1789,7 +4303,30 @@
    8
   ],
   "two_handed": true,
-  "category": "Lances"
+  "category": "Lances",
+  "spells": {
+   "q": [
+    "SPEAR_LUNGE",
+    "SPIRITSPEAR"
+   ],
+   "w": [
+    "FORESTOFSPEARS",
+    "CHARGINGBLADE",
+    "LEGBREAKER",
+    "DEFLECTINGSTANCE",
+    "GROUNDSPEAR",
+    "SKILLSHOT_PULL"
+   ],
+   "e": [
+    "TRIDENTTHROW"
+   ],
+   "p": [
+    "PASSIVE_SLOWPOISON",
+    "PASSIVE_HEALTHCHANCE_SPEAR",
+    "PASSIVE_SPELLPOWER_CHANCE_SPEAR",
+    "PASSIVE_AASPEEDCHANCE_SPEAR"
+   ]
+  }
  },
  {
   "id": "2H_SPEAR",
@@ -1805,7 +4342,30 @@
    8
   ],
   "two_handed": true,
-  "category": "Lances"
+  "category": "Lances",
+  "spells": {
+   "q": [
+    "SPEAR_LUNGE",
+    "SPIRITSPEAR"
+   ],
+   "w": [
+    "FORESTOFSPEARS",
+    "CHARGINGBLADE",
+    "LEGBREAKER",
+    "DEFLECTINGSTANCE",
+    "GROUNDSPEAR",
+    "SKILLSHOT_PULL"
+   ],
+   "e": [
+    "HALBERDSMASH"
+   ],
+   "p": [
+    "PASSIVE_SLOWPOISON",
+    "PASSIVE_HEALTHCHANCE_SPEAR",
+    "PASSIVE_SPELLPOWER_CHANCE_SPEAR",
+    "PASSIVE_AASPEEDCHANCE_SPEAR"
+   ]
+  }
  },
  {
   "id": "2H_POLEHAMMER",
@@ -1821,7 +4381,30 @@
    8
   ],
   "two_handed": true,
-  "category": "Marteaux"
+  "category": "Marteaux",
+  "spells": {
+   "q": [
+    "HAMMER_SHOVE",
+    "THREATENINGSTRIKE_HAMMER",
+    "IRONBREAKER"
+   ],
+   "w": [
+    "HAMMER_TREMOR",
+    "CHARGESLOWAE",
+    "GEYSER",
+    "KNOCKOUT",
+    "TAR_RING"
+   ],
+   "e": [
+    "GROUNDBREAKER2"
+   ],
+   "p": [
+    "PASSIVE_STUNCHANCE",
+    "PASSIVE_ENERGYCHANCE_HAMMER",
+    "PASSIVE_HEALTHCHANCE_HAMMER",
+    "PASSIVE_CCDURATION_CHANCE_HAMMER"
+   ]
+  }
  },
  {
   "id": "2H_RAM_KEEPER",
@@ -1837,7 +4420,30 @@
    8
   ],
   "two_handed": true,
-  "category": "Marteaux"
+  "category": "Marteaux",
+  "spells": {
+   "q": [
+    "HAMMER_SHOVE",
+    "THREATENINGSTRIKE_HAMMER",
+    "IRONBREAKER"
+   ],
+   "w": [
+    "HAMMER_TREMOR",
+    "CHARGESLOWAE",
+    "GEYSER",
+    "KNOCKOUT",
+    "TAR_RING"
+   ],
+   "e": [
+    "RAM_CHARGE"
+   ],
+   "p": [
+    "PASSIVE_STUNCHANCE",
+    "PASSIVE_ENERGYCHANCE_HAMMER",
+    "PASSIVE_HEALTHCHANCE_HAMMER",
+    "PASSIVE_CCDURATION_CHANCE_HAMMER"
+   ]
+  }
  },
  {
   "id": "2H_HAMMER",
@@ -1853,7 +4459,30 @@
    8
   ],
   "two_handed": true,
-  "category": "Marteaux"
+  "category": "Marteaux",
+  "spells": {
+   "q": [
+    "HAMMER_SHOVE",
+    "THREATENINGSTRIKE_HAMMER",
+    "IRONBREAKER"
+   ],
+   "w": [
+    "HAMMER_TREMOR",
+    "CHARGESLOWAE",
+    "GEYSER",
+    "KNOCKOUT",
+    "TAR_RING"
+   ],
+   "e": [
+    "HAMMERTACKLE"
+   ],
+   "p": [
+    "PASSIVE_STUNCHANCE",
+    "PASSIVE_ENERGYCHANCE_HAMMER",
+    "PASSIVE_HEALTHCHANCE_HAMMER",
+    "PASSIVE_CCDURATION_CHANCE_HAMMER"
+   ]
+  }
  },
  {
   "id": "2H_HAMMER_AVALON",
@@ -1869,7 +4498,30 @@
    8
   ],
   "two_handed": true,
-  "category": "Marteaux"
+  "category": "Marteaux",
+  "spells": {
+   "q": [
+    "HAMMER_SHOVE",
+    "THREATENINGSTRIKE_HAMMER",
+    "IRONBREAKER"
+   ],
+   "w": [
+    "HAMMER_TREMOR",
+    "CHARGESLOWAE",
+    "GEYSER",
+    "KNOCKOUT",
+    "TAR_RING"
+   ],
+   "e": [
+    "SPINNING_SMASH"
+   ],
+   "p": [
+    "PASSIVE_STUNCHANCE",
+    "PASSIVE_ENERGYCHANCE_HAMMER",
+    "PASSIVE_HEALTHCHANCE_HAMMER",
+    "PASSIVE_CCDURATION_CHANCE_HAMMER"
+   ]
+  }
  },
  {
   "id": "MAIN_HAMMER",
@@ -1886,7 +4538,30 @@
    8
   ],
   "two_handed": false,
-  "category": "Marteaux"
+  "category": "Marteaux",
+  "spells": {
+   "q": [
+    "HAMMER_SHOVE",
+    "THREATENINGSTRIKE_HAMMER",
+    "IRONBREAKER"
+   ],
+   "w": [
+    "HAMMER_TREMOR",
+    "CHARGESLOWAE",
+    "GEYSER",
+    "KNOCKOUT",
+    "TAR_RING"
+   ],
+   "e": [
+    "HAMMERWHIRLWIND2"
+   ],
+   "p": [
+    "PASSIVE_STUNCHANCE",
+    "PASSIVE_ENERGYCHANCE_HAMMER",
+    "PASSIVE_HEALTHCHANCE_HAMMER",
+    "PASSIVE_CCDURATION_CHANCE_HAMMER"
+   ]
+  }
  },
  {
   "id": "2H_HAMMER_CRYSTAL",
@@ -1902,7 +4577,30 @@
    8
   ],
   "two_handed": true,
-  "category": "Marteaux"
+  "category": "Marteaux",
+  "spells": {
+   "q": [
+    "HAMMER_SHOVE",
+    "THREATENINGSTRIKE_HAMMER",
+    "IRONBREAKER"
+   ],
+   "w": [
+    "HAMMER_TREMOR",
+    "CHARGESLOWAE",
+    "GEYSER",
+    "KNOCKOUT",
+    "TAR_RING"
+   ],
+   "e": [
+    "CRYSTALWAVE"
+   ],
+   "p": [
+    "PASSIVE_STUNCHANCE",
+    "PASSIVE_ENERGYCHANCE_HAMMER",
+    "PASSIVE_HEALTHCHANCE_HAMMER",
+    "PASSIVE_CCDURATION_CHANCE_HAMMER"
+   ]
+  }
  },
  {
   "id": "2H_DUALHAMMER_HELL",
@@ -1918,7 +4616,30 @@
    8
   ],
   "two_handed": true,
-  "category": "Marteaux"
+  "category": "Marteaux",
+  "spells": {
+   "q": [
+    "HAMMER_SHOVE",
+    "THREATENINGSTRIKE_HAMMER",
+    "IRONBREAKER"
+   ],
+   "w": [
+    "HAMMER_TREMOR",
+    "CHARGESLOWAE",
+    "GEYSER",
+    "KNOCKOUT",
+    "TAR_RING"
+   ],
+   "e": [
+    "GIANTSTEPS"
+   ],
+   "p": [
+    "PASSIVE_STUNCHANCE",
+    "PASSIVE_ENERGYCHANCE_HAMMER",
+    "PASSIVE_HEALTHCHANCE_HAMMER",
+    "PASSIVE_CCDURATION_CHANCE_HAMMER"
+   ]
+  }
  },
  {
   "id": "2H_HAMMER_UNDEAD",
@@ -1934,7 +4655,30 @@
    8
   ],
   "two_handed": true,
-  "category": "Marteaux"
+  "category": "Marteaux",
+  "spells": {
+   "q": [
+    "HAMMER_SHOVE",
+    "THREATENINGSTRIKE_HAMMER",
+    "IRONBREAKER"
+   ],
+   "w": [
+    "HAMMER_TREMOR",
+    "CHARGESLOWAE",
+    "GEYSER",
+    "KNOCKOUT",
+    "TAR_RING"
+   ],
+   "e": [
+    "UNDEADHAND"
+   ],
+   "p": [
+    "PASSIVE_STUNCHANCE",
+    "PASSIVE_ENERGYCHANCE_HAMMER",
+    "PASSIVE_HEALTHCHANCE_HAMMER",
+    "PASSIVE_CCDURATION_CHANCE_HAMMER"
+   ]
+  }
  },
  {
   "id": "2H_DUALMACE_AVALON",
@@ -1950,7 +4694,29 @@
    8
   ],
   "two_handed": true,
-  "category": "Masses"
+  "category": "Masses",
+  "spells": {
+   "q": [
+    "DEFENSIVESLAM",
+    "THREATENINGSMASH",
+    "SACRED_GROUND"
+   ],
+   "w": [
+    "GROUNDSHAKER",
+    "CHARGE_ROOT",
+    "GUARDRUNE",
+    "PBAOE_PULL"
+   ],
+   "e": [
+    "BLESSED_MACES"
+   ],
+   "p": [
+    "PASSIVE_STUNCHANCE",
+    "PASSIVE_ENERGYCHANCE_MACE",
+    "PASSIVE_HEALTHCHANCE_MACE",
+    "PASSIVE_CCDURATION_CHANCE_MACE"
+   ]
+  }
  },
  {
   "id": "MAIN_MACE",
@@ -1967,7 +4733,29 @@
    8
   ],
   "two_handed": false,
-  "category": "Masses"
+  "category": "Masses",
+  "spells": {
+   "q": [
+    "DEFENSIVESLAM",
+    "THREATENINGSMASH",
+    "SACRED_GROUND"
+   ],
+   "w": [
+    "GROUNDSHAKER",
+    "CHARGE_ROOT",
+    "GUARDRUNE",
+    "PBAOE_PULL"
+   ],
+   "e": [
+    "MACELEAP"
+   ],
+   "p": [
+    "PASSIVE_STUNCHANCE",
+    "PASSIVE_ENERGYCHANCE_MACE",
+    "PASSIVE_HEALTHCHANCE_MACE",
+    "PASSIVE_CCDURATION_CHANCE_MACE"
+   ]
+  }
  },
  {
   "id": "MAIN_MACE_HELL",
@@ -1983,7 +4771,29 @@
    8
   ],
   "two_handed": false,
-  "category": "Masses"
+  "category": "Masses",
+  "spells": {
+   "q": [
+    "DEFENSIVESLAM",
+    "THREATENINGSMASH",
+    "SACRED_GROUND"
+   ],
+   "w": [
+    "GROUNDSHAKER",
+    "CHARGE_ROOT",
+    "GUARDRUNE",
+    "PBAOE_PULL"
+   ],
+   "e": [
+    "SHRINKINGSMASH"
+   ],
+   "p": [
+    "PASSIVE_STUNCHANCE",
+    "PASSIVE_ENERGYCHANCE_MACE",
+    "PASSIVE_HEALTHCHANCE_MACE",
+    "PASSIVE_CCDURATION_CHANCE_MACE"
+   ]
+  }
  },
  {
   "id": "2H_MACE_MORGANA",
@@ -1999,7 +4809,29 @@
    8
   ],
   "two_handed": true,
-  "category": "Masses"
+  "category": "Masses",
+  "spells": {
+   "q": [
+    "DEFENSIVESLAM",
+    "THREATENINGSMASH",
+    "SACRED_GROUND"
+   ],
+   "w": [
+    "GROUNDSHAKER",
+    "CHARGE_ROOT",
+    "GUARDRUNE",
+    "PBAOE_PULL"
+   ],
+   "e": [
+    "VACUUMSLASH"
+   ],
+   "p": [
+    "PASSIVE_STUNCHANCE",
+    "PASSIVE_ENERGYCHANCE_MACE",
+    "PASSIVE_HEALTHCHANCE_MACE",
+    "PASSIVE_CCDURATION_CHANCE_MACE"
+   ]
+  }
  },
  {
   "id": "MAIN_ROCKMACE_KEEPER",
@@ -2015,7 +4847,29 @@
    8
   ],
   "two_handed": false,
-  "category": "Masses"
+  "category": "Masses",
+  "spells": {
+   "q": [
+    "DEFENSIVESLAM",
+    "THREATENINGSMASH",
+    "SACRED_GROUND"
+   ],
+   "w": [
+    "GROUNDSHAKER",
+    "CHARGE_ROOT",
+    "GUARDRUNE",
+    "PBAOE_PULL"
+   ],
+   "e": [
+    "PRIMALSLAM"
+   ],
+   "p": [
+    "PASSIVE_STUNCHANCE",
+    "PASSIVE_ENERGYCHANCE_MACE",
+    "PASSIVE_HEALTHCHANCE_MACE",
+    "PASSIVE_CCDURATION_CHANCE_MACE"
+   ]
+  }
  },
  {
   "id": "2H_MACE",
@@ -2031,7 +4885,29 @@
    8
   ],
   "two_handed": true,
-  "category": "Masses"
+  "category": "Masses",
+  "spells": {
+   "q": [
+    "DEFENSIVESLAM",
+    "THREATENINGSMASH",
+    "SACRED_GROUND"
+   ],
+   "w": [
+    "GROUNDSHAKER",
+    "CHARGE_ROOT",
+    "GUARDRUNE",
+    "PBAOE_PULL"
+   ],
+   "e": [
+    "SHRIEKMACE"
+   ],
+   "p": [
+    "PASSIVE_STUNCHANCE",
+    "PASSIVE_ENERGYCHANCE_MACE",
+    "PASSIVE_HEALTHCHANCE_MACE",
+    "PASSIVE_CCDURATION_CHANCE_MACE"
+   ]
+  }
  },
  {
   "id": "MAIN_MACE_CRYSTAL",
@@ -2047,7 +4923,29 @@
    8
   ],
   "two_handed": false,
-  "category": "Masses"
+  "category": "Masses",
+  "spells": {
+   "q": [
+    "DEFENSIVESLAM",
+    "THREATENINGSMASH",
+    "SACRED_GROUND"
+   ],
+   "w": [
+    "GROUNDSHAKER",
+    "CHARGE_ROOT",
+    "GUARDRUNE",
+    "PBAOE_PULL"
+   ],
+   "e": [
+    "MACE_CRYSTAL_FRAGMENT_STORM"
+   ],
+   "p": [
+    "PASSIVE_STUNCHANCE",
+    "PASSIVE_ENERGYCHANCE_MACE",
+    "PASSIVE_HEALTHCHANCE_MACE",
+    "PASSIVE_CCDURATION_CHANCE_MACE"
+   ]
+  }
  },
  {
   "id": "2H_FLAIL",
@@ -2063,7 +4961,29 @@
    8
   ],
   "two_handed": true,
-  "category": "Masses"
+  "category": "Masses",
+  "spells": {
+   "q": [
+    "DEFENSIVESLAM",
+    "THREATENINGSMASH",
+    "SACRED_GROUND"
+   ],
+   "w": [
+    "GROUNDSHAKER",
+    "CHARGE_ROOT",
+    "GUARDRUNE",
+    "PBAOE_PULL"
+   ],
+   "e": [
+    "ROOTFIELD"
+   ],
+   "p": [
+    "PASSIVE_STUNCHANCE",
+    "PASSIVE_ENERGYCHANCE_MACE",
+    "PASSIVE_HEALTHCHANCE_MACE",
+    "PASSIVE_CCDURATION_CHANCE_MACE"
+   ]
+  }
  },
  {
   "id": "2H_CLAYMORE_AVALON",
@@ -2079,7 +4999,30 @@
    8
   ],
   "two_handed": true,
-  "category": "Épées"
+  "category": "Épées",
+  "spells": {
+   "q": [
+    "HEROICSTRIKE2",
+    "CLEAVE"
+   ],
+   "w": [
+    "SWORD_SPIN",
+    "INTERRUPT2",
+    "SPLITTINGSLASH",
+    "HAMSTRINGSWORD",
+    "PARRY",
+    "DEFENSERUN"
+   ],
+   "e": [
+    "MAJESTIC_SMASH"
+   ],
+   "p": [
+    "PASSIVE_BLEEDCHANCE",
+    "PASSIVE_REDUCE_DMG_SWORD",
+    "PASSIVE_HEROICSTACK",
+    "PASSIVE_ARMORCHANCE_SWORD"
+   ]
+  }
  },
  {
   "id": "2H_CLAYMORE",
@@ -2095,7 +5038,30 @@
    8
   ],
   "two_handed": true,
-  "category": "Épées"
+  "category": "Épées",
+  "spells": {
+   "q": [
+    "HEROICSTRIKE2",
+    "CLEAVE"
+   ],
+   "w": [
+    "SWORD_SPIN",
+    "INTERRUPT2",
+    "SPLITTINGSLASH",
+    "HAMSTRINGSWORD",
+    "PARRY",
+    "DEFENSERUN"
+   ],
+   "e": [
+    "CLAYMORECHARGE"
+   ],
+   "p": [
+    "PASSIVE_BLEEDCHANCE",
+    "PASSIVE_REDUCE_DMG_SWORD",
+    "PASSIVE_HEROICSTACK",
+    "PASSIVE_ARMORCHANCE_SWORD"
+   ]
+  }
  },
  {
   "id": "MAIN_SCIMITAR_MORGANA",
@@ -2111,7 +5077,30 @@
    8
   ],
   "two_handed": false,
-  "category": "Épées"
+  "category": "Épées",
+  "spells": {
+   "q": [
+    "HEROICSTRIKE2",
+    "CLEAVE"
+   ],
+   "w": [
+    "SWORD_SPIN",
+    "INTERRUPT2",
+    "SPLITTINGSLASH",
+    "HAMSTRINGSWORD",
+    "PARRY",
+    "DEFENSERUN"
+   ],
+   "e": [
+    "MIGHTYSWING"
+   ],
+   "p": [
+    "PASSIVE_BLEEDCHANCE",
+    "PASSIVE_REDUCE_DMG_SWORD",
+    "PASSIVE_HEROICSTACK",
+    "PASSIVE_ARMORCHANCE_SWORD"
+   ]
+  }
  },
  {
   "id": "MAIN_SWORD_CRYSTAL",
@@ -2127,7 +5116,30 @@
    8
   ],
   "two_handed": false,
-  "category": "Épées"
+  "category": "Épées",
+  "spells": {
+   "q": [
+    "HEROICSTRIKE2",
+    "CLEAVE"
+   ],
+   "w": [
+    "SWORD_SPIN",
+    "INTERRUPT2",
+    "SPLITTINGSLASH",
+    "HAMSTRINGSWORD",
+    "PARRY",
+    "DEFENSERUN"
+   ],
+   "e": [
+    "SWORD_BERSERK_RUN_RE"
+   ],
+   "p": [
+    "PASSIVE_BLEEDCHANCE",
+    "PASSIVE_REDUCE_DMG_SWORD",
+    "PASSIVE_HEROICSTACK",
+    "PASSIVE_ARMORCHANCE_SWORD"
+   ]
+  }
  },
  {
   "id": "2H_DUALSCIMITAR_UNDEAD",
@@ -2143,7 +5155,30 @@
    8
   ],
   "two_handed": true,
-  "category": "Épées"
+  "category": "Épées",
+  "spells": {
+   "q": [
+    "HEROICSTRIKE2",
+    "CLEAVE"
+   ],
+   "w": [
+    "SWORD_SPIN",
+    "INTERRUPT2",
+    "SPLITTINGSLASH",
+    "HAMSTRINGSWORD",
+    "PARRY",
+    "DEFENSERUN"
+   ],
+   "e": [
+    "BLADE_AREA"
+   ],
+   "p": [
+    "PASSIVE_BLEEDCHANCE",
+    "PASSIVE_REDUCE_DMG_SWORD",
+    "PASSIVE_HEROICSTACK",
+    "PASSIVE_ARMORCHANCE_SWORD"
+   ]
+  }
  },
  {
   "id": "2H_DUALSWORD",
@@ -2159,7 +5194,30 @@
    8
   ],
   "two_handed": true,
-  "category": "Épées"
+  "category": "Épées",
+  "spells": {
+   "q": [
+    "HEROICSTRIKE2",
+    "CLEAVE"
+   ],
+   "w": [
+    "SWORD_SPIN",
+    "INTERRUPT2",
+    "SPLITTINGSLASH",
+    "HAMSTRINGSWORD",
+    "PARRY",
+    "DEFENSERUN"
+   ],
+   "e": [
+    "SPINATTACK"
+   ],
+   "p": [
+    "PASSIVE_BLEEDCHANCE",
+    "PASSIVE_REDUCE_DMG_SWORD",
+    "PASSIVE_HEROICSTACK",
+    "PASSIVE_ARMORCHANCE_SWORD"
+   ]
+  }
  },
  {
   "id": "MAIN_SWORD",
@@ -2178,7 +5236,30 @@
    8
   ],
   "two_handed": false,
-  "category": "Épées"
+  "category": "Épées",
+  "spells": {
+   "q": [
+    "HEROICSTRIKE2",
+    "CLEAVE"
+   ],
+   "w": [
+    "SWORD_SPIN",
+    "INTERRUPT2",
+    "SPLITTINGSLASH",
+    "HAMSTRINGSWORD",
+    "PARRY",
+    "DEFENSERUN"
+   ],
+   "e": [
+    "MIGHTYBLOW"
+   ],
+   "p": [
+    "PASSIVE_BLEEDCHANCE",
+    "PASSIVE_REDUCE_DMG_SWORD",
+    "PASSIVE_HEROICSTACK",
+    "PASSIVE_ARMORCHANCE_SWORD"
+   ]
+  }
  },
  {
   "id": "2H_CLEAVER_HELL",
@@ -2194,7 +5275,30 @@
    8
   ],
   "two_handed": true,
-  "category": "Épées"
+  "category": "Épées",
+  "spells": {
+   "q": [
+    "HEROICSTRIKE2",
+    "CLEAVE"
+   ],
+   "w": [
+    "SWORD_SPIN",
+    "INTERRUPT2",
+    "SPLITTINGSLASH",
+    "HAMSTRINGSWORD",
+    "PARRY",
+    "DEFENSERUN"
+   ],
+   "e": [
+    "CLAYMORESLASH"
+   ],
+   "p": [
+    "PASSIVE_BLEEDCHANCE",
+    "PASSIVE_REDUCE_DMG_SWORD",
+    "PASSIVE_HEROICSTACK",
+    "PASSIVE_ARMORCHANCE_SWORD"
+   ]
+  }
  },
  {
   "id": "OFF_SHIELD_CRYSTAL",
@@ -2296,24 +5400,6 @@
   "category": "Boucliers"
  },
  {
-  "id": "OFF_BOOK",
-  "slot": "offhand",
-  "name": "Tome de sorts",
-  "name_en": "Tome of Spells",
-  "icon": "T8_OFF_BOOK",
-  "tiers": [
-   2,
-   3,
-   4,
-   5,
-   6,
-   7,
-   8
-  ],
-  "two_handed": false,
-  "category": "Tomes"
- },
- {
   "id": "OFF_CENSER_AVALON",
   "slot": "offhand",
   "name": "Encens céleste",
@@ -2368,6 +5454,24 @@
   "name_en": "Taproot",
   "icon": "T8_OFF_TOTEM_KEEPER",
   "tiers": [
+   4,
+   5,
+   6,
+   7,
+   8
+  ],
+  "two_handed": false,
+  "category": "Tomes"
+ },
+ {
+  "id": "OFF_BOOK",
+  "slot": "offhand",
+  "name": "Tome de sorts",
+  "name_en": "Tome of Spells",
+  "icon": "T8_OFF_BOOK",
+  "tiers": [
+   2,
+   3,
    4,
    5,
    6,
@@ -2504,7 +5608,19 @@
    8
   ],
   "two_handed": false,
-  "category": "Cuir"
+  "category": "Cuir",
+  "spells": {
+   "a": [
+    "ENERGY_BARRIER",
+    "SELF_CLEANSE",
+    "SUMMONER_CD_REDUCTION"
+   ],
+   "p": [
+    "PASSIVE_BALANCE",
+    "PASSIVE_INCREASED_AASPEED",
+    "PASSIVE_CD_REDUCTION"
+   ]
+  }
  },
  {
   "id": "HEAD_LEATHER_DRAGON",
@@ -2520,7 +5636,19 @@
    8
   ],
   "two_handed": false,
-  "category": "Cuir"
+  "category": "Cuir",
+  "spells": {
+   "a": [
+    "ENERGY_BARRIER",
+    "SELF_CLEANSE",
+    "FLARE"
+   ],
+   "p": [
+    "PASSIVE_BALANCE",
+    "PASSIVE_INCREASED_AASPEED",
+    "PASSIVE_CD_REDUCTION"
+   ]
+  }
  },
  {
   "id": "HEAD_LEATHER_SET2",
@@ -2536,7 +5664,19 @@
    8
   ],
   "two_handed": false,
-  "category": "Cuir"
+  "category": "Cuir",
+  "spells": {
+   "a": [
+    "ENERGY_BARRIER",
+    "SELF_CLEANSE",
+    "RETALIATE2"
+   ],
+   "p": [
+    "PASSIVE_BALANCE",
+    "PASSIVE_INCREASED_AASPEED",
+    "PASSIVE_CD_REDUCTION"
+   ]
+  }
  },
  {
   "id": "HEAD_LEATHER_FEY",
@@ -2552,7 +5692,19 @@
    8
   ],
   "two_handed": false,
-  "category": "Cuir"
+  "category": "Cuir",
+  "spells": {
+   "a": [
+    "ENERGY_BARRIER",
+    "SELF_CLEANSE",
+    "IMMORTAL"
+   ],
+   "p": [
+    "PASSIVE_BALANCE",
+    "PASSIVE_INCREASED_AASPEED",
+    "PASSIVE_CD_REDUCTION"
+   ]
+  }
  },
  {
   "id": "HEAD_LEATHER_SET1",
@@ -2571,7 +5723,19 @@
    8
   ],
   "two_handed": false,
-  "category": "Cuir"
+  "category": "Cuir",
+  "spells": {
+   "a": [
+    "ENERGY_BARRIER",
+    "SELF_CLEANSE",
+    "HOWL"
+   ],
+   "p": [
+    "PASSIVE_BALANCE",
+    "PASSIVE_INCREASED_AASPEED",
+    "PASSIVE_CD_REDUCTION"
+   ]
+  }
  },
  {
   "id": "HEAD_LEATHER_UNDEAD",
@@ -2587,7 +5751,19 @@
    8
   ],
   "two_handed": false,
-  "category": "Cuir"
+  "category": "Cuir",
+  "spells": {
+   "a": [
+    "ENERGY_BARRIER",
+    "SELF_CLEANSE",
+    "ARMOR_CD_RESET"
+   ],
+   "p": [
+    "PASSIVE_BALANCE",
+    "PASSIVE_INCREASED_AASPEED",
+    "PASSIVE_CD_REDUCTION"
+   ]
+  }
  },
  {
   "id": "HEAD_LEATHER_HELL",
@@ -2603,7 +5779,19 @@
    8
   ],
   "two_handed": false,
-  "category": "Cuir"
+  "category": "Cuir",
+  "spells": {
+   "a": [
+    "ENERGY_BARRIER",
+    "SELF_CLEANSE",
+    "SMOKEBOMB"
+   ],
+   "p": [
+    "PASSIVE_BALANCE",
+    "PASSIVE_INCREASED_AASPEED",
+    "PASSIVE_CD_REDUCTION"
+   ]
+  }
  },
  {
   "id": "HEAD_LEATHER_MORGANA",
@@ -2619,7 +5807,19 @@
    8
   ],
   "two_handed": false,
-  "category": "Cuir"
+  "category": "Cuir",
+  "spells": {
+   "a": [
+    "ENERGY_BARRIER",
+    "SELF_CLEANSE",
+    "SMELLOFBLOOD"
+   ],
+   "p": [
+    "PASSIVE_BALANCE",
+    "PASSIVE_INCREASED_AASPEED",
+    "PASSIVE_CD_REDUCTION"
+   ]
+  }
  },
  {
   "id": "HEAD_LEATHER_AVALON",
@@ -2635,7 +5835,19 @@
    8
   ],
   "two_handed": false,
-  "category": "Cuir"
+  "category": "Cuir",
+  "spells": {
+   "a": [
+    "ENERGY_BARRIER",
+    "SELF_CLEANSE",
+    "NASTY_WOUNDS"
+   ],
+   "p": [
+    "PASSIVE_BALANCE",
+    "PASSIVE_INCREASED_AASPEED",
+    "PASSIVE_CD_REDUCTION"
+   ]
+  }
  },
  {
   "id": "HEAD_LEATHER_ROYAL",
@@ -2651,7 +5863,19 @@
    8
   ],
   "two_handed": false,
-  "category": "Cuir"
+  "category": "Cuir",
+  "spells": {
+   "a": [
+    "ENERGY_BARRIER",
+    "SELF_CLEANSE",
+    "GROWING_RAGE"
+   ],
+   "p": [
+    "PASSIVE_BALANCE",
+    "PASSIVE_INCREASED_AASPEED",
+    "PASSIVE_CD_REDUCTION"
+   ]
+  }
  },
  {
   "id": "HEAD_PLATE_ROYAL",
@@ -2667,7 +5891,19 @@
    8
   ],
   "two_handed": false,
-  "category": "Plaque"
+  "category": "Plaque",
+  "spells": {
+   "a": [
+    "ENERGY_BARRIER",
+    "STONESKIN",
+    "ARTILLERY_COMMAND"
+   ],
+   "p": [
+    "PASSIVE_MR_AR",
+    "PASSIVE_CCDURATION",
+    "PASSIVE_INCREASED_CCR"
+   ]
+  }
  },
  {
   "id": "HEAD_PLATE_FEY",
@@ -2683,7 +5919,19 @@
    8
   ],
   "two_handed": false,
-  "category": "Plaque"
+  "category": "Plaque",
+  "spells": {
+   "a": [
+    "ENERGY_BARRIER",
+    "STONESKIN",
+    "SPIDER_THREAD"
+   ],
+   "p": [
+    "PASSIVE_MR_AR",
+    "PASSIVE_CCDURATION",
+    "PASSIVE_INCREASED_CCR"
+   ]
+  }
  },
  {
   "id": "HEAD_PLATE_AVALON",
@@ -2699,7 +5947,19 @@
    8
   ],
   "two_handed": false,
-  "category": "Plaque"
+  "category": "Plaque",
+  "spells": {
+   "a": [
+    "ENERGY_BARRIER",
+    "STONESKIN",
+    "PURIFYING_SMOKE"
+   ],
+   "p": [
+    "PASSIVE_MR_AR",
+    "PASSIVE_CCDURATION",
+    "PASSIVE_INCREASED_CCR"
+   ]
+  }
  },
  {
   "id": "HEAD_PLATE_SET2",
@@ -2715,7 +5975,19 @@
    8
   ],
   "two_handed": false,
-  "category": "Plaque"
+  "category": "Plaque",
+  "spells": {
+   "a": [
+    "ENERGY_BARRIER",
+    "STONESKIN",
+    "DISRUPTIONIMMUNITY"
+   ],
+   "p": [
+    "PASSIVE_MR_AR",
+    "PASSIVE_CCDURATION",
+    "PASSIVE_INCREASED_CCR"
+   ]
+  }
  },
  {
   "id": "HEAD_PLATE_HELL",
@@ -2731,7 +6003,19 @@
    8
   ],
   "two_handed": false,
-  "category": "Plaque"
+  "category": "Plaque",
+  "spells": {
+   "a": [
+    "ENERGY_BARRIER",
+    "STONESKIN",
+    "WEAPON_SILENCE"
+   ],
+   "p": [
+    "PASSIVE_MR_AR",
+    "PASSIVE_CCDURATION",
+    "PASSIVE_INCREASED_CCR"
+   ]
+  }
  },
  {
   "id": "HEAD_PLATE_UNDEAD",
@@ -2747,7 +6031,19 @@
    8
   ],
   "two_handed": false,
-  "category": "Plaque"
+  "category": "Plaque",
+  "spells": {
+   "a": [
+    "ENERGY_BARRIER",
+    "STONESKIN",
+    "SACRIFICE_HEAL"
+   ],
+   "p": [
+    "PASSIVE_MR_AR",
+    "PASSIVE_CCDURATION",
+    "PASSIVE_INCREASED_CCR"
+   ]
+  }
  },
  {
   "id": "HEAD_PLATE_SET3",
@@ -2763,7 +6059,19 @@
    8
   ],
   "two_handed": false,
-  "category": "Plaque"
+  "category": "Plaque",
+  "spells": {
+   "a": [
+    "ENERGY_BARRIER",
+    "STONESKIN",
+    "EMERGENCY_SHIELD"
+   ],
+   "p": [
+    "PASSIVE_MR_AR",
+    "PASSIVE_CCDURATION",
+    "PASSIVE_INCREASED_CCR"
+   ]
+  }
  },
  {
   "id": "HEAD_PLATE_KEEPER",
@@ -2779,7 +6087,19 @@
    8
   ],
   "two_handed": false,
-  "category": "Plaque"
+  "category": "Plaque",
+  "spells": {
+   "a": [
+    "ENERGY_BARRIER",
+    "STONESKIN",
+    "ELECTRICSHOCK"
+   ],
+   "p": [
+    "PASSIVE_MR_AR",
+    "PASSIVE_CCDURATION",
+    "PASSIVE_INCREASED_CCR"
+   ]
+  }
  },
  {
   "id": "HEAD_PLATE_SET1",
@@ -2797,7 +6117,19 @@
    8
   ],
   "two_handed": false,
-  "category": "Plaque"
+  "category": "Plaque",
+  "spells": {
+   "a": [
+    "ENERGY_BARRIER",
+    "STONESKIN",
+    "BLOCK"
+   ],
+   "p": [
+    "PASSIVE_MR_AR",
+    "PASSIVE_CCDURATION",
+    "PASSIVE_INCREASED_CCR"
+   ]
+  }
  },
  {
   "id": "HEAD_CLOTH_SET2",
@@ -2813,7 +6145,19 @@
    8
   ],
   "two_handed": false,
-  "category": "Tissu"
+  "category": "Tissu",
+  "spells": {
+   "a": [
+    "ENERGY_BARRIER",
+    "PBAOE_KNOCKBACK",
+    "ICEBLOCK2"
+   ],
+   "p": [
+    "PASSIVE_INCREASED_DAMAGE",
+    "PASSIVE_CASTSPEED",
+    "PASSIVE_REDUCED_ENERGYCOST"
+   ]
+  }
  },
  {
   "id": "HEAD_CLOTH_SET1",
@@ -2831,7 +6175,19 @@
    8
   ],
   "two_handed": false,
-  "category": "Tissu"
+  "category": "Tissu",
+  "spells": {
+   "a": [
+    "ENERGY_BARRIER",
+    "PBAOE_KNOCKBACK",
+    "ENERGYSHIELD2"
+   ],
+   "p": [
+    "PASSIVE_INCREASED_DAMAGE",
+    "PASSIVE_CASTSPEED",
+    "PASSIVE_REDUCED_ENERGYCOST"
+   ]
+  }
  },
  {
   "id": "HEAD_CLOTH_MORGANA",
@@ -2847,7 +6203,19 @@
    8
   ],
   "two_handed": false,
-  "category": "Tissu"
+  "category": "Tissu",
+  "spells": {
+   "a": [
+    "ENERGY_BARRIER",
+    "PBAOE_KNOCKBACK",
+    "INNER_CORRUPTION"
+   ],
+   "p": [
+    "PASSIVE_INCREASED_DAMAGE",
+    "PASSIVE_CASTSPEED",
+    "PASSIVE_REDUCED_ENERGYCOST"
+   ]
+  }
  },
  {
   "id": "HEAD_CLOTH_KEEPER",
@@ -2863,7 +6231,19 @@
    8
   ],
   "two_handed": false,
-  "category": "Tissu"
+  "category": "Tissu",
+  "spells": {
+   "a": [
+    "ENERGY_BARRIER",
+    "PBAOE_KNOCKBACK",
+    "ENERGYFIELD"
+   ],
+   "p": [
+    "PASSIVE_INCREASED_DAMAGE",
+    "PASSIVE_CASTSPEED",
+    "PASSIVE_REDUCED_ENERGYCOST"
+   ]
+  }
  },
  {
   "id": "HEAD_CLOTH_SET3",
@@ -2879,7 +6259,19 @@
    8
   ],
   "two_handed": false,
-  "category": "Tissu"
+  "category": "Tissu",
+  "spells": {
+   "a": [
+    "ENERGY_BARRIER",
+    "PBAOE_KNOCKBACK",
+    "HELMET_FIREBREATH"
+   ],
+   "p": [
+    "PASSIVE_INCREASED_DAMAGE",
+    "PASSIVE_CASTSPEED",
+    "PASSIVE_REDUCED_ENERGYCOST"
+   ]
+  }
  },
  {
   "id": "HEAD_CLOTH_HELL",
@@ -2895,7 +6287,19 @@
    8
   ],
   "two_handed": false,
-  "category": "Tissu"
+  "category": "Tissu",
+  "spells": {
+   "a": [
+    "ENERGY_BARRIER",
+    "PBAOE_KNOCKBACK",
+    "PURGE_HELMET"
+   ],
+   "p": [
+    "PASSIVE_INCREASED_DAMAGE",
+    "PASSIVE_CASTSPEED",
+    "PASSIVE_REDUCED_ENERGYCOST"
+   ]
+  }
  },
  {
   "id": "HEAD_CLOTH_AVALON",
@@ -2911,7 +6315,19 @@
    8
   ],
   "two_handed": false,
-  "category": "Tissu"
+  "category": "Tissu",
+  "spells": {
+   "a": [
+    "ENERGY_BARRIER",
+    "PBAOE_KNOCKBACK",
+    "AVALON_BEAM"
+   ],
+   "p": [
+    "PASSIVE_INCREASED_DAMAGE",
+    "PASSIVE_CASTSPEED",
+    "PASSIVE_REDUCED_ENERGYCOST"
+   ]
+  }
  },
  {
   "id": "HEAD_CLOTH_ROYAL",
@@ -2927,7 +6343,19 @@
    8
   ],
   "two_handed": false,
-  "category": "Tissu"
+  "category": "Tissu",
+  "spells": {
+   "a": [
+    "ENERGY_BARRIER",
+    "PBAOE_KNOCKBACK",
+    "PERPETUALENERGY"
+   ],
+   "p": [
+    "PASSIVE_INCREASED_DAMAGE",
+    "PASSIVE_CASTSPEED",
+    "PASSIVE_REDUCED_ENERGYCOST"
+   ]
+  }
  },
  {
   "id": "HEAD_CLOTH_FEY",
@@ -2943,7 +6371,19 @@
    8
   ],
   "two_handed": false,
-  "category": "Tissu"
+  "category": "Tissu",
+  "spells": {
+   "a": [
+    "ENERGY_BARRIER",
+    "PBAOE_KNOCKBACK",
+    "HYPER_FOCUS"
+   ],
+   "p": [
+    "PASSIVE_INCREASED_DAMAGE",
+    "PASSIVE_CASTSPEED",
+    "PASSIVE_REDUCED_ENERGYCOST"
+   ]
+  }
  },
  {
   "id": "ARMOR_LEATHER_SET3",
@@ -2959,7 +6399,19 @@
    8
   ],
   "two_handed": false,
-  "category": "Cuir"
+  "category": "Cuir",
+  "spells": {
+   "a": [
+    "OUTOFCOMBATHEAL",
+    "FLAMESHIELD",
+    "AMBUSH"
+   ],
+   "p": [
+    "PASSIVE_ARMOR_BALANCE",
+    "PASSIVE_ARMOR_INCREASED_AASPEED",
+    "PASSIVE_ARMOR_CD_REDUCTION"
+   ]
+  }
  },
  {
   "id": "ARMOR_LEATHER_DRAGON",
@@ -2975,7 +6427,19 @@
    8
   ],
   "two_handed": false,
-  "category": "Cuir"
+  "category": "Cuir",
+  "spells": {
+   "a": [
+    "OUTOFCOMBATHEAL",
+    "FLAMESHIELD",
+    "IMMUNEAREA"
+   ],
+   "p": [
+    "PASSIVE_ARMOR_BALANCE",
+    "PASSIVE_ARMOR_INCREASED_AASPEED",
+    "PASSIVE_ARMOR_CD_REDUCTION"
+   ]
+  }
  },
  {
   "id": "ARMOR_LEATHER_SET2",
@@ -2991,7 +6455,19 @@
    8
   ],
   "two_handed": false,
-  "category": "Cuir"
+  "category": "Cuir",
+  "spells": {
+   "a": [
+    "OUTOFCOMBATHEAL",
+    "FLAMESHIELD",
+    "HASTE"
+   ],
+   "p": [
+    "PASSIVE_ARMOR_BALANCE",
+    "PASSIVE_ARMOR_INCREASED_AASPEED",
+    "PASSIVE_ARMOR_CD_REDUCTION"
+   ]
+  }
  },
  {
   "id": "ARMOR_LEATHER_FEY",
@@ -3007,7 +6483,19 @@
    8
   ],
   "two_handed": false,
-  "category": "Cuir"
+  "category": "Cuir",
+  "spells": {
+   "a": [
+    "OUTOFCOMBATHEAL",
+    "FLAMESHIELD",
+    "MIST_WALKER"
+   ],
+   "p": [
+    "PASSIVE_ARMOR_BALANCE",
+    "PASSIVE_ARMOR_INCREASED_AASPEED",
+    "PASSIVE_ARMOR_CD_REDUCTION"
+   ]
+  }
  },
  {
   "id": "ARMOR_LEATHER_SET1",
@@ -3026,7 +6514,19 @@
    8
   ],
   "two_handed": false,
-  "category": "Cuir"
+  "category": "Cuir",
+  "spells": {
+   "a": [
+    "OUTOFCOMBATHEAL",
+    "FLAMESHIELD",
+    "BLOODLUST"
+   ],
+   "p": [
+    "PASSIVE_ARMOR_BALANCE",
+    "PASSIVE_ARMOR_INCREASED_AASPEED",
+    "PASSIVE_ARMOR_CD_REDUCTION"
+   ]
+  }
  },
  {
   "id": "ARMOR_LEATHER_UNDEAD",
@@ -3042,7 +6542,19 @@
    8
   ],
   "two_handed": false,
-  "category": "Cuir"
+  "category": "Cuir",
+  "spells": {
+   "a": [
+    "OUTOFCOMBATHEAL",
+    "FLAMESHIELD",
+    "BURNAURA"
+   ],
+   "p": [
+    "PASSIVE_ARMOR_BALANCE",
+    "PASSIVE_ARMOR_INCREASED_AASPEED",
+    "PASSIVE_ARMOR_CD_REDUCTION"
+   ]
+  }
  },
  {
   "id": "ARMOR_LEATHER_HELL",
@@ -3058,7 +6570,19 @@
    8
   ],
   "two_handed": false,
-  "category": "Cuir"
+  "category": "Cuir",
+  "spells": {
+   "a": [
+    "OUTOFCOMBATHEAL",
+    "FLAMESHIELD",
+    "LIFESTEALAURA"
+   ],
+   "p": [
+    "PASSIVE_ARMOR_BALANCE",
+    "PASSIVE_ARMOR_INCREASED_AASPEED",
+    "PASSIVE_ARMOR_CD_REDUCTION"
+   ]
+  }
  },
  {
   "id": "ARMOR_LEATHER_MORGANA",
@@ -3074,7 +6598,19 @@
    8
   ],
   "two_handed": false,
-  "category": "Cuir"
+  "category": "Cuir",
+  "spells": {
+   "a": [
+    "OUTOFCOMBATHEAL",
+    "FLAMESHIELD",
+    "STORMSHIELD"
+   ],
+   "p": [
+    "PASSIVE_ARMOR_BALANCE",
+    "PASSIVE_ARMOR_INCREASED_AASPEED",
+    "PASSIVE_ARMOR_CD_REDUCTION"
+   ]
+  }
  },
  {
   "id": "ARMOR_LEATHER_AVALON",
@@ -3090,7 +6626,19 @@
    8
   ],
   "two_handed": false,
-  "category": "Cuir"
+  "category": "Cuir",
+  "spells": {
+   "a": [
+    "OUTOFCOMBATHEAL",
+    "FLAMESHIELD",
+    "DYNAMIC_DEFENSE"
+   ],
+   "p": [
+    "PASSIVE_ARMOR_BALANCE",
+    "PASSIVE_ARMOR_INCREASED_AASPEED",
+    "PASSIVE_ARMOR_CD_REDUCTION"
+   ]
+  }
  },
  {
   "id": "ARMOR_LEATHER_ROYAL",
@@ -3106,7 +6654,19 @@
    8
   ],
   "two_handed": false,
-  "category": "Cuir"
+  "category": "Cuir",
+  "spells": {
+   "a": [
+    "OUTOFCOMBATHEAL",
+    "FLAMESHIELD",
+    "ROYAL_BANNER"
+   ],
+   "p": [
+    "PASSIVE_ARMOR_BALANCE",
+    "PASSIVE_ARMOR_INCREASED_AASPEED",
+    "PASSIVE_ARMOR_CD_REDUCTION"
+   ]
+  }
  },
  {
   "id": "ARMOR_PLATE_FEY",
@@ -3122,7 +6682,23 @@
    8
   ],
   "two_handed": false,
-  "category": "Plaque"
+  "category": "Plaque",
+  "spells": {
+   "a": [
+    "OUTOFCOMBATHEAL",
+    "TAUNT",
+    "ARMOR_WEB"
+   ],
+   "p": [
+    "PASSIVE_ARMOR_MR_AR",
+    "PASSIVE_ARMOR_CCDURATION",
+    "PASSIVE_ARMOR_INCREASED_CCR"
+   ],
+   "p2": [
+    "PASSIVE_PLATEARMOR_HEALTH_REDUCTION",
+    "PASSIVE_PLATEARMOR_THREATGENERATION"
+   ]
+  }
  },
  {
   "id": "ARMOR_PLATE_AVALON",
@@ -3138,7 +6714,23 @@
    8
   ],
   "two_handed": false,
-  "category": "Plaque"
+  "category": "Plaque",
+  "spells": {
+   "a": [
+    "OUTOFCOMBATHEAL",
+    "TAUNT",
+    "REFLECT_CHANNEL"
+   ],
+   "p": [
+    "PASSIVE_ARMOR_MR_AR",
+    "PASSIVE_ARMOR_CCDURATION",
+    "PASSIVE_ARMOR_INCREASED_CCR"
+   ],
+   "p2": [
+    "PASSIVE_PLATEARMOR_HEALTH_REDUCTION",
+    "PASSIVE_PLATEARMOR_THREATGENERATION"
+   ]
+  }
  },
  {
   "id": "ARMOR_PLATE_SET2",
@@ -3154,7 +6746,23 @@
    8
   ],
   "two_handed": false,
-  "category": "Plaque"
+  "category": "Plaque",
+  "spells": {
+   "a": [
+    "OUTOFCOMBATHEAL",
+    "TAUNT",
+    "WINDWALL"
+   ],
+   "p": [
+    "PASSIVE_ARMOR_MR_AR",
+    "PASSIVE_ARMOR_CCDURATION",
+    "PASSIVE_ARMOR_INCREASED_CCR"
+   ],
+   "p2": [
+    "PASSIVE_PLATEARMOR_HEALTH_REDUCTION",
+    "PASSIVE_PLATEARMOR_THREATGENERATION"
+   ]
+  }
  },
  {
   "id": "ARMOR_PLATE_HELL",
@@ -3170,7 +6778,23 @@
    8
   ],
   "two_handed": false,
-  "category": "Plaque"
+  "category": "Plaque",
+  "spells": {
+   "a": [
+    "OUTOFCOMBATHEAL",
+    "TAUNT",
+    "REFLECTAREA"
+   ],
+   "p": [
+    "PASSIVE_ARMOR_MR_AR",
+    "PASSIVE_ARMOR_CCDURATION",
+    "PASSIVE_ARMOR_INCREASED_CCR"
+   ],
+   "p2": [
+    "PASSIVE_PLATEARMOR_HEALTH_REDUCTION",
+    "PASSIVE_PLATEARMOR_THREATGENERATION"
+   ]
+  }
  },
  {
   "id": "ARMOR_PLATE_UNDEAD",
@@ -3186,7 +6810,23 @@
    8
   ],
   "two_handed": false,
-  "category": "Plaque"
+  "category": "Plaque",
+  "spells": {
+   "a": [
+    "OUTOFCOMBATHEAL",
+    "TAUNT",
+    "ARMORCHAIN"
+   ],
+   "p": [
+    "PASSIVE_ARMOR_MR_AR",
+    "PASSIVE_ARMOR_CCDURATION",
+    "PASSIVE_ARMOR_INCREASED_CCR"
+   ],
+   "p2": [
+    "PASSIVE_PLATEARMOR_HEALTH_REDUCTION",
+    "PASSIVE_PLATEARMOR_THREATGENERATION"
+   ]
+  }
  },
  {
   "id": "ARMOR_PLATE_SET3",
@@ -3202,7 +6842,23 @@
    8
   ],
   "two_handed": false,
-  "category": "Plaque"
+  "category": "Plaque",
+  "spells": {
+   "a": [
+    "OUTOFCOMBATHEAL",
+    "TAUNT",
+    "ENFEEBLEAURA"
+   ],
+   "p": [
+    "PASSIVE_ARMOR_MR_AR",
+    "PASSIVE_ARMOR_CCDURATION",
+    "PASSIVE_ARMOR_INCREASED_CCR"
+   ],
+   "p2": [
+    "PASSIVE_PLATEARMOR_HEALTH_REDUCTION",
+    "PASSIVE_PLATEARMOR_THREATGENERATION"
+   ]
+  }
  },
  {
   "id": "ARMOR_PLATE_KEEPER",
@@ -3218,7 +6874,23 @@
    8
   ],
   "two_handed": false,
-  "category": "Plaque"
+  "category": "Plaque",
+  "spells": {
+   "a": [
+    "OUTOFCOMBATHEAL",
+    "TAUNT",
+    "FORCESHIELD"
+   ],
+   "p": [
+    "PASSIVE_ARMOR_MR_AR",
+    "PASSIVE_ARMOR_CCDURATION",
+    "PASSIVE_ARMOR_INCREASED_CCR"
+   ],
+   "p2": [
+    "PASSIVE_PLATEARMOR_HEALTH_REDUCTION",
+    "PASSIVE_PLATEARMOR_THREATGENERATION"
+   ]
+  }
  },
  {
   "id": "ARMOR_PLATE_SET1",
@@ -3236,7 +6908,23 @@
    8
   ],
   "two_handed": false,
-  "category": "Plaque"
+  "category": "Plaque",
+  "spells": {
+   "a": [
+    "OUTOFCOMBATHEAL",
+    "TAUNT",
+    "ENRAGE"
+   ],
+   "p": [
+    "PASSIVE_ARMOR_MR_AR",
+    "PASSIVE_ARMOR_CCDURATION",
+    "PASSIVE_ARMOR_INCREASED_CCR"
+   ],
+   "p2": [
+    "PASSIVE_PLATEARMOR_HEALTH_REDUCTION",
+    "PASSIVE_PLATEARMOR_THREATGENERATION"
+   ]
+  }
  },
  {
   "id": "ARMOR_PLATE_ROYAL",
@@ -3252,7 +6940,23 @@
    8
   ],
   "two_handed": false,
-  "category": "Plaque"
+  "category": "Plaque",
+  "spells": {
+   "a": [
+    "OUTOFCOMBATHEAL",
+    "TAUNT",
+    "MANADRAIN"
+   ],
+   "p": [
+    "PASSIVE_ARMOR_MR_AR",
+    "PASSIVE_ARMOR_CCDURATION",
+    "PASSIVE_ARMOR_INCREASED_CCR"
+   ],
+   "p2": [
+    "PASSIVE_PLATEARMOR_HEALTH_REDUCTION",
+    "PASSIVE_PLATEARMOR_THREATGENERATION"
+   ]
+  }
  },
  {
   "id": "ARMOR_CLOTH_SET2",
@@ -3268,7 +6972,19 @@
    8
   ],
   "two_handed": false,
-  "category": "Tissu"
+  "category": "Tissu",
+  "spells": {
+   "a": [
+    "OUTOFCOMBATHEAL",
+    "FROSTSHIELD",
+    "LIFESAVIOR"
+   ],
+   "p": [
+    "PASSIVE_ARMOR_INCREASED_DAMAGE",
+    "PASSIVE_ARMOR_INCREASED_CASTSPEED",
+    "PASSIVE_ARMOR_REDUCED_ENERGYCOST"
+   ]
+  }
  },
  {
   "id": "ARMOR_CLOTH_FEY",
@@ -3284,7 +7000,19 @@
    8
   ],
   "two_handed": false,
-  "category": "Tissu"
+  "category": "Tissu",
+  "spells": {
+   "a": [
+    "OUTOFCOMBATHEAL",
+    "FROSTSHIELD",
+    "WILD_MAGIC"
+   ],
+   "p": [
+    "PASSIVE_ARMOR_INCREASED_DAMAGE",
+    "PASSIVE_ARMOR_INCREASED_CASTSPEED",
+    "PASSIVE_ARMOR_REDUCED_ENERGYCOST"
+   ]
+  }
  },
  {
   "id": "ARMOR_CLOTH_SET1",
@@ -3302,7 +7030,19 @@
    8
   ],
   "two_handed": false,
-  "category": "Tissu"
+  "category": "Tissu",
+  "spells": {
+   "a": [
+    "OUTOFCOMBATHEAL",
+    "FROSTSHIELD",
+    "SPEEDCASTER"
+   ],
+   "p": [
+    "PASSIVE_ARMOR_INCREASED_DAMAGE",
+    "PASSIVE_ARMOR_INCREASED_CASTSPEED",
+    "PASSIVE_ARMOR_REDUCED_ENERGYCOST"
+   ]
+  }
  },
  {
   "id": "ARMOR_CLOTH_MORGANA",
@@ -3318,7 +7058,19 @@
    8
   ],
   "two_handed": false,
-  "category": "Tissu"
+  "category": "Tissu",
+  "spells": {
+   "a": [
+    "OUTOFCOMBATHEAL",
+    "FROSTSHIELD",
+    "LEVITATE"
+   ],
+   "p": [
+    "PASSIVE_ARMOR_INCREASED_DAMAGE",
+    "PASSIVE_ARMOR_INCREASED_CASTSPEED",
+    "PASSIVE_ARMOR_REDUCED_ENERGYCOST"
+   ]
+  }
  },
  {
   "id": "ARMOR_CLOTH_KEEPER",
@@ -3334,7 +7086,19 @@
    8
   ],
   "two_handed": false,
-  "category": "Tissu"
+  "category": "Tissu",
+  "spells": {
+   "a": [
+    "OUTOFCOMBATHEAL",
+    "FROSTSHIELD",
+    "SPELLRUSH"
+   ],
+   "p": [
+    "PASSIVE_ARMOR_INCREASED_DAMAGE",
+    "PASSIVE_ARMOR_INCREASED_CASTSPEED",
+    "PASSIVE_ARMOR_REDUCED_ENERGYCOST"
+   ]
+  }
  },
  {
   "id": "ARMOR_CLOTH_SET3",
@@ -3350,7 +7114,19 @@
    8
   ],
   "two_handed": false,
-  "category": "Tissu"
+  "category": "Tissu",
+  "spells": {
+   "a": [
+    "OUTOFCOMBATHEAL",
+    "FROSTSHIELD",
+    "PURGINGSHIELD2"
+   ],
+   "p": [
+    "PASSIVE_ARMOR_INCREASED_DAMAGE",
+    "PASSIVE_ARMOR_INCREASED_CASTSPEED",
+    "PASSIVE_ARMOR_REDUCED_ENERGYCOST"
+   ]
+  }
  },
  {
   "id": "ARMOR_CLOTH_HELL",
@@ -3366,7 +7142,19 @@
    8
   ],
   "two_handed": false,
-  "category": "Tissu"
+  "category": "Tissu",
+  "spells": {
+   "a": [
+    "OUTOFCOMBATHEAL",
+    "FROSTSHIELD",
+    "FEAR_AURA"
+   ],
+   "p": [
+    "PASSIVE_ARMOR_INCREASED_DAMAGE",
+    "PASSIVE_ARMOR_INCREASED_CASTSPEED",
+    "PASSIVE_ARMOR_REDUCED_ENERGYCOST"
+   ]
+  }
  },
  {
   "id": "ARMOR_CLOTH_AVALON",
@@ -3382,7 +7170,19 @@
    8
   ],
   "two_handed": false,
-  "category": "Tissu"
+  "category": "Tissu",
+  "spells": {
+   "a": [
+    "OUTOFCOMBATHEAL",
+    "FROSTSHIELD",
+    "CASTBUBBLE"
+   ],
+   "p": [
+    "PASSIVE_ARMOR_INCREASED_DAMAGE",
+    "PASSIVE_ARMOR_INCREASED_CASTSPEED",
+    "PASSIVE_ARMOR_REDUCED_ENERGYCOST"
+   ]
+  }
  },
  {
   "id": "ARMOR_CLOTH_ROYAL",
@@ -3398,7 +7198,19 @@
    8
   ],
   "two_handed": false,
-  "category": "Tissu"
+  "category": "Tissu",
+  "spells": {
+   "a": [
+    "OUTOFCOMBATHEAL",
+    "FROSTSHIELD",
+    "MAGICCIRCLE"
+   ],
+   "p": [
+    "PASSIVE_ARMOR_INCREASED_DAMAGE",
+    "PASSIVE_ARMOR_INCREASED_CASTSPEED",
+    "PASSIVE_ARMOR_REDUCED_ENERGYCOST"
+   ]
+  }
  },
  {
   "id": "SHOES_LEATHER_SET3",
@@ -3414,7 +7226,20 @@
    8
   ],
   "two_handed": false,
-  "category": "Cuir"
+  "category": "Cuir",
+  "spells": {
+   "a": [
+    "DODGE",
+    "SPRINT_CD_REDUCTION",
+    "ASSASSIN_DASH"
+   ],
+   "p": [
+    "PASSIVE_MAXLOAD_SHOES",
+    "PASSIVE_BALANCE",
+    "PASSIVE_INCREASED_AASPEED",
+    "PASSIVE_CD_REDUCTION"
+   ]
+  }
  },
  {
   "id": "SHOES_LEATHER_DRAGON",
@@ -3430,7 +7255,20 @@
    8
   ],
   "two_handed": false,
-  "category": "Cuir"
+  "category": "Cuir",
+  "spells": {
+   "a": [
+    "DODGE",
+    "SPRINT_CD_REDUCTION",
+    "WEAPON_SPRINT"
+   ],
+   "p": [
+    "PASSIVE_MAXLOAD_SHOES",
+    "PASSIVE_BALANCE",
+    "PASSIVE_INCREASED_AASPEED",
+    "PASSIVE_CD_REDUCTION"
+   ]
+  }
  },
  {
   "id": "SHOES_LEATHER_SET2",
@@ -3446,7 +7284,20 @@
    8
   ],
   "two_handed": false,
-  "category": "Cuir"
+  "category": "Cuir",
+  "spells": {
+   "a": [
+    "DODGE",
+    "SPRINT_CD_REDUCTION",
+    "OVERSPRINT"
+   ],
+   "p": [
+    "PASSIVE_MAXLOAD_SHOES",
+    "PASSIVE_BALANCE",
+    "PASSIVE_INCREASED_AASPEED",
+    "PASSIVE_CD_REDUCTION"
+   ]
+  }
  },
  {
   "id": "SHOES_LEATHER_FEY",
@@ -3462,7 +7313,20 @@
    8
   ],
   "two_handed": false,
-  "category": "Cuir"
+  "category": "Cuir",
+  "spells": {
+   "a": [
+    "DODGE",
+    "SPRINT_CD_REDUCTION",
+    "AFTER_IMAGE"
+   ],
+   "p": [
+    "PASSIVE_MAXLOAD_SHOES",
+    "PASSIVE_BALANCE",
+    "PASSIVE_INCREASED_AASPEED",
+    "PASSIVE_CD_REDUCTION"
+   ]
+  }
  },
  {
   "id": "SHOES_LEATHER_SET1",
@@ -3481,7 +7345,20 @@
    8
   ],
   "two_handed": false,
-  "category": "Cuir"
+  "category": "Cuir",
+  "spells": {
+   "a": [
+    "DODGE",
+    "SPRINT_CD_REDUCTION",
+    "CLEANSE_DASH"
+   ],
+   "p": [
+    "PASSIVE_MAXLOAD_SHOES",
+    "PASSIVE_BALANCE",
+    "PASSIVE_INCREASED_AASPEED",
+    "PASSIVE_CD_REDUCTION"
+   ]
+  }
  },
  {
   "id": "SHOES_LEATHER_UNDEAD",
@@ -3497,7 +7374,20 @@
    8
   ],
   "two_handed": false,
-  "category": "Cuir"
+  "category": "Cuir",
+  "spells": {
+   "a": [
+    "DODGE",
+    "SPRINT_CD_REDUCTION",
+    "INVISIBLE_WALK"
+   ],
+   "p": [
+    "PASSIVE_MAXLOAD_SHOES",
+    "PASSIVE_BALANCE",
+    "PASSIVE_INCREASED_AASPEED",
+    "PASSIVE_CD_REDUCTION"
+   ]
+  }
  },
  {
   "id": "SHOES_LEATHER_HELL",
@@ -3513,7 +7403,20 @@
    8
   ],
   "two_handed": false,
-  "category": "Cuir"
+  "category": "Cuir",
+  "spells": {
+   "a": [
+    "DODGE",
+    "SPRINT_CD_REDUCTION",
+    "DEATHMARK"
+   ],
+   "p": [
+    "PASSIVE_MAXLOAD_SHOES",
+    "PASSIVE_BALANCE",
+    "PASSIVE_INCREASED_AASPEED",
+    "PASSIVE_CD_REDUCTION"
+   ]
+  }
  },
  {
   "id": "SHOES_LEATHER_MORGANA",
@@ -3529,7 +7432,20 @@
    8
   ],
   "two_handed": false,
-  "category": "Cuir"
+  "category": "Cuir",
+  "spells": {
+   "a": [
+    "DODGE",
+    "SPRINT_CD_REDUCTION",
+    "DMG_BLINK"
+   ],
+   "p": [
+    "PASSIVE_MAXLOAD_SHOES",
+    "PASSIVE_BALANCE",
+    "PASSIVE_INCREASED_AASPEED",
+    "PASSIVE_CD_REDUCTION"
+   ]
+  }
  },
  {
   "id": "SHOES_LEATHER_AVALON",
@@ -3545,7 +7461,20 @@
    8
   ],
   "two_handed": false,
-  "category": "Cuir"
+  "category": "Cuir",
+  "spells": {
+   "a": [
+    "DODGE",
+    "SPRINT_CD_REDUCTION",
+    "BLINDSPOT"
+   ],
+   "p": [
+    "PASSIVE_MAXLOAD_SHOES",
+    "PASSIVE_BALANCE",
+    "PASSIVE_INCREASED_AASPEED",
+    "PASSIVE_CD_REDUCTION"
+   ]
+  }
  },
  {
   "id": "SHOES_LEATHER_ROYAL",
@@ -3561,7 +7490,20 @@
    8
   ],
   "two_handed": false,
-  "category": "Cuir"
+  "category": "Cuir",
+  "spells": {
+   "a": [
+    "DODGE",
+    "SPRINT_CD_REDUCTION",
+    "JUMP"
+   ],
+   "p": [
+    "PASSIVE_MAXLOAD_SHOES",
+    "PASSIVE_BALANCE",
+    "PASSIVE_INCREASED_AASPEED",
+    "PASSIVE_CD_REDUCTION"
+   ]
+  }
  },
  {
   "id": "SHOES_PLATE_FEY",
@@ -3577,7 +7519,20 @@
    8
   ],
   "two_handed": false,
-  "category": "Plaque"
+  "category": "Plaque",
+  "spells": {
+   "a": [
+    "DODGE",
+    "SPRINTHOT",
+    "CHARGE_IN"
+   ],
+   "p": [
+    "PASSIVE_MAXLOAD_SHOES",
+    "PASSIVE_MR_AR",
+    "PASSIVE_CCDURATION",
+    "PASSIVE_INCREASED_CCR"
+   ]
+  }
  },
  {
   "id": "SHOES_PLATE_AVALON",
@@ -3593,7 +7548,20 @@
    8
   ],
   "two_handed": false,
-  "category": "Plaque"
+  "category": "Plaque",
+  "spells": {
+   "a": [
+    "DODGE",
+    "SPRINTHOT",
+    "CC_BLOCK"
+   ],
+   "p": [
+    "PASSIVE_MAXLOAD_SHOES",
+    "PASSIVE_MR_AR",
+    "PASSIVE_CCDURATION",
+    "PASSIVE_INCREASED_CCR"
+   ]
+  }
  },
  {
   "id": "SHOES_PLATE_SET2",
@@ -3609,7 +7577,20 @@
    8
   ],
   "two_handed": false,
-  "category": "Plaque"
+  "category": "Plaque",
+  "spells": {
+   "a": [
+    "DODGE",
+    "SPRINTHOT",
+    "CHARGE_SHIELD"
+   ],
+   "p": [
+    "PASSIVE_MAXLOAD_SHOES",
+    "PASSIVE_MR_AR",
+    "PASSIVE_CCDURATION",
+    "PASSIVE_INCREASED_CCR"
+   ]
+  }
  },
  {
   "id": "SHOES_PLATE_HELL",
@@ -3625,7 +7606,20 @@
    8
   ],
   "two_handed": false,
-  "category": "Plaque"
+  "category": "Plaque",
+  "spells": {
+   "a": [
+    "DODGE",
+    "SPRINTHOT",
+    "BERSERK_SPRINT"
+   ],
+   "p": [
+    "PASSIVE_MAXLOAD_SHOES",
+    "PASSIVE_MR_AR",
+    "PASSIVE_CCDURATION",
+    "PASSIVE_INCREASED_CCR"
+   ]
+  }
  },
  {
   "id": "SHOES_PLATE_UNDEAD",
@@ -3641,7 +7635,20 @@
    8
   ],
   "two_handed": false,
-  "category": "Plaque"
+  "category": "Plaque",
+  "spells": {
+   "a": [
+    "DODGE",
+    "SPRINTHOT",
+    "BATTLEFRENZY"
+   ],
+   "p": [
+    "PASSIVE_MAXLOAD_SHOES",
+    "PASSIVE_MR_AR",
+    "PASSIVE_CCDURATION",
+    "PASSIVE_INCREASED_CCR"
+   ]
+  }
  },
  {
   "id": "SHOES_PLATE_SET3",
@@ -3657,7 +7664,20 @@
    8
   ],
   "two_handed": false,
-  "category": "Plaque"
+  "category": "Plaque",
+  "spells": {
+   "a": [
+    "DODGE",
+    "SPRINTHOT",
+    "MAXHEALTHBUFF"
+   ],
+   "p": [
+    "PASSIVE_MAXLOAD_SHOES",
+    "PASSIVE_MR_AR",
+    "PASSIVE_CCDURATION",
+    "PASSIVE_INCREASED_CCR"
+   ]
+  }
  },
  {
   "id": "SHOES_PLATE_KEEPER",
@@ -3673,7 +7693,20 @@
    8
   ],
   "two_handed": false,
-  "category": "Plaque"
+  "category": "Plaque",
+  "spells": {
+   "a": [
+    "DODGE",
+    "SPRINTHOT",
+    "SHOULDERTACKLE"
+   ],
+   "p": [
+    "PASSIVE_MAXLOAD_SHOES",
+    "PASSIVE_MR_AR",
+    "PASSIVE_CCDURATION",
+    "PASSIVE_INCREASED_CCR"
+   ]
+  }
  },
  {
   "id": "SHOES_PLATE_SET1",
@@ -3691,7 +7724,20 @@
    8
   ],
   "two_handed": false,
-  "category": "Plaque"
+  "category": "Plaque",
+  "spells": {
+   "a": [
+    "DODGE",
+    "SPRINTHOT",
+    "WANDERLUST"
+   ],
+   "p": [
+    "PASSIVE_MAXLOAD_SHOES",
+    "PASSIVE_MR_AR",
+    "PASSIVE_CCDURATION",
+    "PASSIVE_INCREASED_CCR"
+   ]
+  }
  },
  {
   "id": "SHOES_PLATE_ROYAL",
@@ -3707,7 +7753,20 @@
    8
   ],
   "two_handed": false,
-  "category": "Plaque"
+  "category": "Plaque",
+  "spells": {
+   "a": [
+    "DODGE",
+    "SPRINTHOT",
+    "ROYAL_MARCH"
+   ],
+   "p": [
+    "PASSIVE_MAXLOAD_SHOES",
+    "PASSIVE_MR_AR",
+    "PASSIVE_CCDURATION",
+    "PASSIVE_INCREASED_CCR"
+   ]
+  }
  },
  {
   "id": "SHOES_CLOTH_SET2",
@@ -3723,7 +7782,20 @@
    8
   ],
   "two_handed": false,
-  "category": "Tissu"
+  "category": "Tissu",
+  "spells": {
+   "a": [
+    "DODGE",
+    "SPRINTEOT",
+    "BLINK"
+   ],
+   "p": [
+    "PASSIVE_MAXLOAD_SHOES",
+    "PASSIVE_INCREASED_DAMAGE",
+    "PASSIVE_CASTSPEED",
+    "PASSIVE_REDUCED_ENERGYCOST"
+   ]
+  }
  },
  {
   "id": "SHOES_CLOTH_FEY",
@@ -3739,7 +7811,20 @@
    8
   ],
   "two_handed": false,
-  "category": "Tissu"
+  "category": "Tissu",
+  "spells": {
+   "a": [
+    "DODGE",
+    "SPRINTEOT",
+    "TRANSLUCENT"
+   ],
+   "p": [
+    "PASSIVE_MAXLOAD_SHOES",
+    "PASSIVE_INCREASED_DAMAGE",
+    "PASSIVE_CASTSPEED",
+    "PASSIVE_REDUCED_ENERGYCOST"
+   ]
+  }
  },
  {
   "id": "SHOES_CLOTH_SET1",
@@ -3757,7 +7842,20 @@
    8
   ],
   "two_handed": false,
-  "category": "Tissu"
+  "category": "Tissu",
+  "spells": {
+   "a": [
+    "DODGE",
+    "SPRINTEOT",
+    "CHANNELED_RUN"
+   ],
+   "p": [
+    "PASSIVE_MAXLOAD_SHOES",
+    "PASSIVE_INCREASED_DAMAGE",
+    "PASSIVE_CASTSPEED",
+    "PASSIVE_REDUCED_ENERGYCOST"
+   ]
+  }
  },
  {
   "id": "SHOES_CLOTH_MORGANA",
@@ -3773,7 +7871,20 @@
    8
   ],
   "two_handed": false,
-  "category": "Tissu"
+  "category": "Tissu",
+  "spells": {
+   "a": [
+    "DODGE",
+    "SPRINTEOT",
+    "DEMONWALK"
+   ],
+   "p": [
+    "PASSIVE_MAXLOAD_SHOES",
+    "PASSIVE_INCREASED_DAMAGE",
+    "PASSIVE_CASTSPEED",
+    "PASSIVE_REDUCED_ENERGYCOST"
+   ]
+  }
  },
  {
   "id": "SHOES_CLOTH_KEEPER",
@@ -3789,7 +7900,20 @@
    8
   ],
   "two_handed": false,
-  "category": "Tissu"
+  "category": "Tissu",
+  "spells": {
+   "a": [
+    "DODGE",
+    "SPRINTEOT",
+    "FROSTWALK"
+   ],
+   "p": [
+    "PASSIVE_MAXLOAD_SHOES",
+    "PASSIVE_INCREASED_DAMAGE",
+    "PASSIVE_CASTSPEED",
+    "PASSIVE_REDUCED_ENERGYCOST"
+   ]
+  }
  },
  {
   "id": "SHOES_CLOTH_SET3",
@@ -3805,7 +7929,20 @@
    8
   ],
   "two_handed": false,
-  "category": "Tissu"
+  "category": "Tissu",
+  "spells": {
+   "a": [
+    "DODGE",
+    "SPRINTEOT",
+    "DELAYED_TELEPORT"
+   ],
+   "p": [
+    "PASSIVE_MAXLOAD_SHOES",
+    "PASSIVE_INCREASED_DAMAGE",
+    "PASSIVE_CASTSPEED",
+    "PASSIVE_REDUCED_ENERGYCOST"
+   ]
+  }
  },
  {
   "id": "SHOES_CLOTH_HELL",
@@ -3821,7 +7958,20 @@
    8
   ],
   "two_handed": false,
-  "category": "Tissu"
+  "category": "Tissu",
+  "spells": {
+   "a": [
+    "DODGE",
+    "SPRINTEOT",
+    "SWAP"
+   ],
+   "p": [
+    "PASSIVE_MAXLOAD_SHOES",
+    "PASSIVE_INCREASED_DAMAGE",
+    "PASSIVE_CASTSPEED",
+    "PASSIVE_REDUCED_ENERGYCOST"
+   ]
+  }
  },
  {
   "id": "SHOES_CLOTH_AVALON",
@@ -3837,7 +7987,20 @@
    8
   ],
   "two_handed": false,
-  "category": "Tissu"
+  "category": "Tissu",
+  "spells": {
+   "a": [
+    "DODGE",
+    "SPRINTEOT",
+    "HOVER_SPRINT"
+   ],
+   "p": [
+    "PASSIVE_MAXLOAD_SHOES",
+    "PASSIVE_INCREASED_DAMAGE",
+    "PASSIVE_CASTSPEED",
+    "PASSIVE_REDUCED_ENERGYCOST"
+   ]
+  }
  },
  {
   "id": "SHOES_CLOTH_ROYAL",
@@ -3853,7 +8016,20 @@
    8
   ],
   "two_handed": false,
-  "category": "Tissu"
+  "category": "Tissu",
+  "spells": {
+   "a": [
+    "DODGE",
+    "SPRINTEOT",
+    "GLASS_MOVESPEED"
+   ],
+   "p": [
+    "PASSIVE_MAXLOAD_SHOES",
+    "PASSIVE_INCREASED_DAMAGE",
+    "PASSIVE_CASTSPEED",
+    "PASSIVE_REDUCED_ENERGYCOST"
+   ]
+  }
  },
  {
   "id": "CAPE",

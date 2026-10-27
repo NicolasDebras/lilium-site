@@ -105,8 +105,88 @@ NAME_FIXES = {
 REMOVED_ITEMS = {"2H_IRONGAUNTLETS_HELL"}  # anciennes « Mains noires »
 
 
-def build_catalog(raw_items: dict, localized: list[dict]) -> list[dict]:
-    """raw_items = contenu de items.json["items"] ; localized = formatted/items.json."""
+# ── Sorts et passifs (craftingspelllist des dumps) ──────────────────────────
+# Emplacements de sort d'un build, dans l'ordre d'affichage : Q/W/E de l'arme, actif d'armure,
+# passif, 2ᵉ passif (plastrons en plaque).
+SPELL_KEYS = ("q", "w", "e", "a", "p", "p2")
+SPELL_ITEM_SLOTS = ("mainhand", "head", "armor", "shoes")
+SPELLS_FILE = Path(__file__).parent / "data" / "spells.json"
+SHOES_ANY = "@shoes"   # clé de `spells` : sort imposé, bottes au choix
+
+
+def spell_icon_url(spell_id: str, size: int = 64) -> str:
+    return f"https://render.albiononline.com/v1/spell/{spell_id}.png?size={size}"
+
+
+def _as_list(value) -> list:
+    return value if isinstance(value, list) else [value] if value else []
+
+
+def spell_resolver(raw_items: dict):
+    """Fonction nom d'objet → [(sort, @slots)] : craftingspelllist résolue (`@reference` en
+    chaîne, `removespell`, puis les `craftspell` propres à l'objet)."""
+    by_name = {i.get("@uniquename"): i for section in raw_items.values() if isinstance(section, list)
+               for i in section if isinstance(i, dict)}
+    cache: dict[str, list[tuple[str, str | None]]] = {}
+
+    def resolve(name: str, depth: int = 0) -> list[tuple[str, str | None]]:
+        if name in cache:
+            return cache[name]
+        spell_list = (by_name.get(name) or {}).get("craftingspelllist") or {}
+        ref = spell_list.get("@reference")
+        out = list(resolve(ref, depth + 1)) if ref and ref != name and depth < 10 else []
+        removed = {s.get("@uniquename") for s in _as_list(spell_list.get("removespell"))}
+        out = [s for s in out if s[0] not in removed]
+        for s in _as_list(spell_list.get("craftspell")):
+            if s.get("@uniquename") and s["@uniquename"] not in (o[0] for o in out):
+                out.append((s["@uniquename"], s.get("@slots")))
+        cache[name] = out
+        return out
+
+    return resolve
+
+
+def spell_slots(slot: str, spells: list[tuple[str, str | None]], passives: set[str]) -> dict[str, list[str]]:
+    """Sorts d'un objet rangés par emplacement. Arme : @slots 1/2/3 = Q/W/E, sans @slots =
+    passif. Armure : actif, passif, et 2ᵉ passif quand le dump numérote les passifs (@slots 2)."""
+    out: dict[str, list[str]] = {}
+    for spell, slots in spells:
+        if spell in passives:
+            key = "p2" if slots == "2" else "p"
+        elif slot == "mainhand":
+            key = {"1": "q", "2": "w", "3": "e"}.get(slots or "")
+        else:
+            key = "a"
+        if key:
+            out.setdefault(key, []).append(spell)
+    return {k: out[k] for k in SPELL_KEYS if k in out}
+
+
+def build_spell_names(spell_ids: set[str], raw_spells: dict, localization: dict) -> dict[str, dict]:
+    """{id: {name, name_en}} des sorts utilisés ; raw_spells = spells.json["spells"],
+    localization = localization.json (tmx). Nom via @namelocatag, sinon « @SPELLS_<id> »."""
+    tags = {}
+    for kind in ("activespell", "passivespell", "togglespell"):
+        for s in _as_list(raw_spells.get(kind)):
+            if s.get("@uniquename") in spell_ids:
+                tags[s["@uniquename"]] = s.get("@namelocatag") or f"@SPELLS_{s['@uniquename']}"
+    wanted = set(tags.values())
+    texts: dict[str, dict[str, str]] = {}
+    for tu in _as_list(localization.get("tmx", {}).get("body", {}).get("tu")):
+        if tu.get("@tuid") in wanted:
+            texts[tu["@tuid"]] = {t.get("@xml:lang"): t.get("seg") for t in _as_list(tu.get("tuv"))}
+    out = {}
+    for spell_id in sorted(spell_ids):
+        names = texts.get(tags.get(spell_id, ""), {})
+        fr = names.get("FR-FR") or names.get("EN-US") or spell_id
+        out[spell_id] = {"name": fr, "name_en": names.get("EN-US") or fr}
+    return out
+
+
+def build_catalog(raw_items: dict, localized: list[dict], passives: set[str] | None = None) -> list[dict]:
+    """raw_items = contenu de items.json["items"] ; localized = formatted/items.json ;
+    passives = ids des passivespell de spells.json (None : catalogue sans sorts)."""
+    resolve = spell_resolver(raw_items) if passives is not None else None
     names = {i["UniqueName"]: i.get("LocalizedNames") or {} for i in localized if i.get("UniqueName")}
 
     def slot_of(section: str, item: dict) -> str | None:
@@ -147,7 +227,7 @@ def build_catalog(raw_items: dict, localized: list[dict]) -> list[dict]:
             name, name_en = _shared_start(fr), _shared_end(en) if en else ""
         # Noms par tier sans partie commune (« Grande hache »/« Hache de guerre »…) → nom fixé à la main
         name, name_en = NAME_FIXES.get(base_id, (name, name_en)) if not name else (name, name_en)
-        catalog.append({
+        entry = {
             "id":         base_id,
             "slot":       slot,
             "name":       name,
@@ -156,7 +236,10 @@ def build_catalog(raw_items: dict, localized: list[dict]) -> list[dict]:
             "tiers":      [t for t, _, _ in variants],
             "two_handed": top_item.get("@twohanded") == "true",
             "category":   category_label(category),
-        })
+        }
+        if resolve and slot in SPELL_ITEM_SLOTS and (spells := spell_slots(slot, resolve(top_name), passives)):
+            entry["spells"] = spells
+        catalog.append(entry)
 
     catalog.sort(key=lambda i: (SLOTS.index(i["slot"]), i["category"], i["name"]))
     return catalog
@@ -170,6 +253,26 @@ def load_catalog() -> tuple[dict, ...]:
 @lru_cache(maxsize=1)
 def items_by_id() -> dict[str, dict]:
     return {i["id"]: i for i in load_catalog()}
+
+
+@lru_cache(maxsize=1)
+def load_spell_names() -> dict[str, dict]:
+    return json.loads(SPELLS_FILE.read_text(encoding="utf-8")) if SPELLS_FILE.exists() else {}
+
+
+def shoe_spells(catalog: dict[str, dict] | None = None) -> dict[str, list[dict]]:
+    """Sorts de toutes les bottes (actif et passif), pour « sort imposé, bottes au choix » :
+    {"a": [{"id", "category"}], "p": [...]}, dans l'ordre du catalogue (Plaque, Cuir, Tissu…)."""
+    catalog = items_by_id() if catalog is None else catalog
+    out: dict[str, list[dict]] = {"a": [], "p": []}
+    for item in catalog.values():
+        if item["slot"] != "shoes":
+            continue
+        for key in out:
+            for spell in item.get("spells", {}).get(key, []):
+                if all(s["id"] != spell for s in out[key]):
+                    out[key].append({"id": spell, "category": item["category"]})
+    return out
 
 
 class InvalidItems(ValueError):
@@ -235,6 +338,14 @@ def _choices(value) -> list[str]:
     return out
 
 
+def normalize_spells(spells) -> dict[str, dict[str, str]]:
+    """Lecture tolérante des sorts d'un build (colonne JSONB, éventuellement en texte brut)."""
+    if isinstance(spells, str):
+        spells = json.loads(spells or "{}")
+    return {key: {k: v for k, v in chosen.items() if v} for key, chosen in (spells or {}).items()
+            if isinstance(chosen, dict) and any(chosen.values())}
+
+
 def normalize_items(items: dict | None) -> dict[str, list[str]]:
     """Lecture tolérante (lignes écrites avant les choix multiples : {slot: "ID"})."""
     return {slot: c for slot, value in (items or {}).items() if (c := _choices(value))}
@@ -296,6 +407,35 @@ def _validate_swaps(choices: list[str], catalog: dict[str, dict]) -> list[str]:
     for choice in choices:
         _check_choice(choice, catalog)
     return choices
+
+
+def validate_build_spells(spells: dict | None, items: dict[str, list[str]],
+                          catalog: dict[str, dict] | None = None) -> dict[str, dict[str, str]]:
+    """Nettoie les sorts d'un build (équipement déjà validé) : {id de base: {emplacement: sort}},
+    plus SHOES_ANY = sort de bottes imposé quand la case Bottes est vide ou « au choix ».
+    Refusé : objet absent du build, emplacement ou sort que l'objet n'a pas."""
+    catalog = items_by_id() if catalog is None else catalog
+    in_build = {parse_choice(c)[0] for slot in SPELL_ITEM_SLOTS for c in items.get(slot, []) if c != FREE_CHOICE}
+    cleaned: dict[str, dict[str, str]] = {}
+    for key, chosen in (spells or {}).items():
+        chosen = {k: str(v).strip() for k, v in (chosen or {}).items() if v and str(v).strip()}
+        if not chosen:
+            continue
+        if key == SHOES_ANY:
+            if any(c != FREE_CHOICE for c in items.get("shoes", [])):
+                raise InvalidItems(tr("shoes_spell_with_item"))
+            allowed = {k: [s["id"] for s in v] for k, v in shoe_spells(catalog).items()}
+            name = tr("shoes_any")
+        else:
+            item = catalog.get(key)
+            if item is None or key not in in_build:
+                raise InvalidItems(tr("spell_item_missing", item=key))
+            allowed, name = item.get("spells", {}), item_name(item)
+        for slot_key, spell in chosen.items():
+            if spell not in allowed.get(slot_key, []):
+                raise InvalidItems(tr("bad_spell", name=name, spell=spell))
+        cleaned[key] = {k: chosen[k] for k in SPELL_KEYS if k in chosen}
+    return cleaned
 
 
 def all_two_handed(mainhand: list[str], catalog: dict[str, dict]) -> bool:

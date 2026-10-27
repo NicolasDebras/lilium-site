@@ -145,11 +145,11 @@ async def test_no_discord_call_without_profile():
     assert calls == [GUILD]
 
 
-@pytest.mark.parametrize("image,ok", [
-    ("", True), ("https://i.imgur.com/x.png", True),
-    ("http://i.imgur.com/x.png", False), ("javascript:alert(1)", False), ("data:image/png;base64,AA", False),
-    ("https://a.com/x y.png", False),
-])
-def test_image_must_be_https(login, image, ok):
-    r = login(STAFF_ID).post(f"/api/guilds/{GUILD}/builds", json={**BUILD, "image": image})
-    assert (r.status_code == 201) is ok
+@pytest.mark.parametrize("image", ["javascript:alert(1)", "data:image/png;base64,AA", "http://i.imgur.com/x.png"])
+def test_build_image_url_is_ignored_and_never_served(login, image):
+    """Champ « Image (URL) » retiré des builds : une URL envoyée quand même n'est ni gardée ni renvoyée."""
+    client = login(STAFF_ID)
+    r = client.post(f"/api/guilds/{GUILD}/builds", json={**BUILD, "image": image, "notes": "<script>"})
+    assert r.status_code == 201
+    build = client.get(f"/api/guilds/{GUILD}/builds/{r.json()['id']}").json()
+    assert "image" not in build and "notes" not in build

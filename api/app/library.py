@@ -8,15 +8,16 @@ builds (snapshot), puis on la recrée dans le serveur cible :
 - la compo repasse par `build_template_entry` (mêmes règles que le formulaire : 50 joueurs
   max par ligne, un même build une seule fois par party…), même si elle vient d'un /addtemplate du bot.
 """
-from app.catalog import normalize_items
+from app.catalog import normalize_items, normalize_spells
 from app.compos import build_ids_of, build_template_entry, template_to_compo
 
-BUILD_FIELDS = ("name", "role", "type_acti", "weapon", "notes", "image")
+BUILD_FIELDS = ("name", "role", "type_acti", "weapon")
 
 
 def frozen_build(build: dict) -> dict:
     """Ce qu'on garde d'un build dans un snapshot (pas d'id ni d'auteur)."""
-    return {**{k: build.get(k) or "" for k in BUILD_FIELDS}, "items": normalize_items(build.get("items"))}
+    return {**{k: build.get(k) or "" for k in BUILD_FIELDS}, "items": normalize_items(build.get("items")),
+            "spells": normalize_spells(build.get("spells"))}
 
 
 def snapshot(template: dict, builds_by_id: dict[int, dict]) -> dict:

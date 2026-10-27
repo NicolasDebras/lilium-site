@@ -44,12 +44,13 @@ export function balStats(period: BalPeriod = '30d', due = 174_873_783): BalStats
   };
 }
 
-/** Les panneaux Activité, BAL par joueur et Erreurs du bot chargent aussi : on leur répond à vide
+/** Les panneaux Payouts, Activité, BAL par joueur et Erreurs du bot chargent aussi : on leur répond à vide
  *  (testés à part), sinon la page n'est jamais « stable ». */
 function flushPanels(http: HttpTestingController): void {
   http.match((q) => q.url === '/api/guilds/111/admin/activity').forEach((req) => req.flush(activityStats({ activities: 0, cancelled: 0 })));   // historique vide : pas de graphiques
   http.match((q) => q.url === '/api/guilds/111/admin/bal/players').forEach((req) => req.flush([]));
   http.match((q) => q.url === '/api/guilds/111/admin/errors').forEach((req) => req.flush(botErrors()));
+  http.match((q) => q.url === '/api/guilds/111/admin/payouts').forEach((req) => req.flush({ week: 0, start: '', payouts: [] }));
 }
 
 describe('AdminPage', () => {

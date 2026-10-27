@@ -197,3 +197,12 @@ def test_bal_operations_csv_neutralises_formulas():
     assert lines[1].split(";")[:2] == ["2026-10-01T20:00+02:00", "finacti"]
     assert "'=HYPERLINK" in lines[1] and "'@Officier" in lines[1]
     assert ";-5;10;" in lines[1]  # les nombres négatifs restent des nombres
+
+
+def test_payout_adjustments_count_with_sign_but_not_as_activities():
+    events = EVENTS + [ev(6, 29, "ajustbal", -300, "STATIK", uid="2", by="AdminSite"),
+                       ev(6, 29, "ajustbal", 80, "STATIK", uid="1", by="AdminSite")]
+    s = compute_bal_stats(events, BALANCES, "30d", NOW)
+    assert s["totals"]["credited"] == 950 - 300 + 80
+    assert s["totals"]["activities"] == 2                         # un ajustement n'est pas une activité
+    assert "AdminSite" not in {c["name"] for c in s["top_callers"]}

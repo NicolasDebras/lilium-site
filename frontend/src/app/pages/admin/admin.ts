@@ -15,6 +15,7 @@ import { PeriodPicker } from '../../shared/period-picker';
 import { ActivityStatsPanel } from './activity-stats';
 import { BalPlayers } from './bal-players';
 import { BotErrors } from './bot-errors';
+import { PayoutsEditor } from './payouts-editor';
 
 interface Tile {
   label: string;
@@ -30,7 +31,7 @@ interface Tile {
  *  chiffres clés + tableau de bord complet de la BAL. */
 @Component({
   selector: 'app-admin',
-  imports: [ActivityStatsPanel, BalPlayers, BotErrors, DecimalPipe, Delta, DonutChart, FlowChart, HBarChart, Heatmap, Icon, LineChart, PeriodPicker],
+  imports: [ActivityStatsPanel, BalPlayers, BotErrors, PayoutsEditor, DecimalPipe, Delta, DonutChart, FlowChart, HBarChart, Heatmap, Icon, LineChart, PeriodPicker],
   template: `
     <div class="page-head">
       <div>
@@ -160,6 +161,7 @@ interface Tile {
       }
     </section>
 
+    <app-payouts-editor [guildId]="guildId()" />
     <app-activity-stats [guildId]="guildId()" />
     <app-bal-players [guildId]="guildId()" />
     <app-bot-errors [guildId]="guildId()" />

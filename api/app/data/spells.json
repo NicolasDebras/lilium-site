@@ -1,0 +1,1802 @@
+{
+ "ACID_BOMB": {
+  "name": "Salve Explosive",
+  "name_en": "Explosive Salvo"
+ },
+ "AFTER_IMAGE": {
+  "name": "Image rémanescente",
+  "name_en": "After Image"
+ },
+ "AIR_RAID": {
+  "name": "Fureur du Ciel",
+  "name_en": "Sky's Fury"
+ },
+ "AMBUSH": {
+  "name": "Embuscade",
+  "name_en": "Ambush"
+ },
+ "ARCANECORRIDOR": {
+  "name": "Couloir temporel",
+  "name_en": "Time Corridor"
+ },
+ "ARCANEORB2": {
+  "name": "Orbe ésotérique",
+  "name_en": "Arcane Orb"
+ },
+ "ARCANE_CHAIN_MISSILE": {
+  "name": "Chaîne de missiles",
+  "name_en": "Chain Missile"
+ },
+ "ARCANE_METEOR": {
+  "name": "Sphère obscure",
+  "name_en": "Dark Sphere"
+ },
+ "AREAOFDECAY": {
+  "name": "Zone de déclin",
+  "name_en": "Area of Decay"
+ },
+ "ARMORCHAIN": {
+  "name": "Chaîne d'âme",
+  "name_en": "Soul Chain"
+ },
+ "ARMORPIERCER": {
+  "name": "Perce-armure",
+  "name_en": "Armor Piercer"
+ },
+ "ARMOR_CD_RESET": {
+  "name": "Éclair de perspicacité",
+  "name_en": "Flash of Insight"
+ },
+ "ARMOR_WEB": {
+  "name": "Toile mythique",
+  "name_en": "Mythical Web"
+ },
+ "ARROWRAIN": {
+  "name": "Pluie de flèches",
+  "name_en": "Rain of Arrows"
+ },
+ "ARTILLERY_COMMAND": {
+  "name": "Baliste de feu",
+  "name_en": "Ballista Support Fire"
+ },
+ "ASSASSINSPIRIT": {
+  "name": "Esprit de l'Assassin",
+  "name_en": "Assassin Spirit"
+ },
+ "ASSASSIN_DASH": {
+  "name": "Coupe rapide",
+  "name_en": "Swift Cut"
+ },
+ "AUTOFIRE2": {
+  "name": "Tir automatique",
+  "name_en": "Auto Fire"
+ },
+ "AVALON_BEAM": {
+  "name": "Rayon avalonien",
+  "name_en": "Avalonian Beam"
+ },
+ "AXEBOOST": {
+  "name": "Montée d'adrénaline",
+  "name_en": "Adrenaline Boost"
+ },
+ "AXESMASH": {
+  "name": "Tronçonnage mortel",
+  "name_en": "Deadly Chop"
+ },
+ "AXETHROW": {
+  "name": "Bandit sanguinaire",
+  "name_en": "Blood Bandit"
+ },
+ "AXEWHIRLWIND2": {
+  "name": "Tourbillon",
+  "name_en": "Whirlwind"
+ },
+ "AXE_CHARGE": {
+  "name": "Ivresse de la bataille",
+  "name_en": "Battle Rush"
+ },
+ "BACKHAND_KNOCKBACK": {
+  "name": "Revers de la main",
+  "name_en": "Backhand Strike"
+ },
+ "BACK_SLASH": {
+  "name": "Final impitoyable",
+  "name_en": "Merciless Finish"
+ },
+ "BATTLEFRENZY": {
+  "name": "Frénésie du combat",
+  "name_en": "Battle Frenzy"
+ },
+ "BERSERK_SPRINT": {
+  "name": "Sprint Vengeur",
+  "name_en": "Vengeful Sprint"
+ },
+ "BLACKHOLE": {
+  "name": "Trou noir",
+  "name_en": "Black Hole"
+ },
+ "BLADE_AREA": {
+  "name": "Flot sans-âme",
+  "name_en": "Soulless Stream"
+ },
+ "BLADE_AURA": {
+  "name": "Lames déferlantes",
+  "name_en": "Raging Blades"
+ },
+ "BLAZING_GEYSER": {
+  "name": "Geyser flamboyant",
+  "name_en": "Blazing Geyser"
+ },
+ "BLESSED_MACES": {
+  "name": "Aurore bénie",
+  "name_en": "Blessed Aurora"
+ },
+ "BLINDSPOT": {
+  "name": "Angle mort",
+  "name_en": "Blind Spot"
+ },
+ "BLINK": {
+  "name": "Clignement",
+  "name_en": "Blink"
+ },
+ "BLOCK": {
+  "name": "Défense",
+  "name_en": "Block"
+ },
+ "BLOODLUST": {
+  "name": "Soif de sang",
+  "name_en": "Bloodlust"
+ },
+ "BLOODTHIRSTYBLADE": {
+  "name": "Lame soif-de-sang",
+  "name_en": "Bloodthirsty Blade"
+ },
+ "BLOOD_BLADE": {
+  "name": "Rituel de sang",
+  "name_en": "Blood Ritual"
+ },
+ "BOLTSHOT": {
+  "name": "Carreau explosif",
+  "name_en": "Explosive Bolt"
+ },
+ "BOULDER_TOSS": {
+  "name": "Rocher infernal",
+  "name_en": "Infernal Boulder"
+ },
+ "BRAMBLESEED": {
+  "name": "Graine de ronce",
+  "name_en": "Brambleseed"
+ },
+ "BRIEROFLIFE": {
+  "name": "Armure vivante",
+  "name_en": "Living Armor"
+ },
+ "BURNAURA": {
+  "name": "Auto-inflammation",
+  "name_en": "Self Ignition"
+ },
+ "BURNINGARROWS": {
+  "name": "Flèches explosives",
+  "name_en": "Explosive Arrows"
+ },
+ "CALTROPS": {
+  "name": "Chausse-trappe",
+  "name_en": "Caltrops"
+ },
+ "CARTWHEEL": {
+  "name": "Roue",
+  "name_en": "Cartwheel"
+ },
+ "CASTBUBBLE": {
+  "name": "Émission d'énergie",
+  "name_en": "Energy Emission"
+ },
+ "CC_BLOCK": {
+  "name": "Prémonition",
+  "name_en": "Premonition"
+ },
+ "CELESTIAL_SPHERE": {
+  "name": "Sphère céleste",
+  "name_en": "Celestial Sphere"
+ },
+ "CHAINDASH": {
+  "name": "Série d'entailles",
+  "name_en": "Chain Slash"
+ },
+ "CHANNELED_RUN": {
+  "name": "Course intense",
+  "name_en": "Focused Run"
+ },
+ "CHARGESLOWAE": {
+  "name": "Charge ralentissante",
+  "name_en": "Slowing Charge"
+ },
+ "CHARGE_IN": {
+  "name": "Charge dévastatrice",
+  "name_en": "Crush Charge"
+ },
+ "CHARGE_ROOT": {
+  "name": "Charge piégée",
+  "name_en": "Snare Charge"
+ },
+ "CHARGE_SHIELD": {
+  "name": "Charge avec bouclier",
+  "name_en": "Shield Charge"
+ },
+ "CHARGINGBLADE": {
+  "name": "Focalisation intérieure",
+  "name_en": "Inner Focus"
+ },
+ "CIRCLEOFLIFE": {
+  "name": "Cycle de la vie",
+  "name_en": "Circle of Life"
+ },
+ "CLAYMORECHARGE": {
+  "name": "Charge",
+  "name_en": "Charge"
+ },
+ "CLAYMORESLASH": {
+  "name": "Frappe intrépide",
+  "name_en": "Fearless Strike"
+ },
+ "CLEANSEHEAL": {
+  "name": "Soin purifiant",
+  "name_en": "Cleanse Heal"
+ },
+ "CLEANSESPEED2": {
+  "name": "Purification motivante",
+  "name_en": "Motivating Cleanse"
+ },
+ "CLEANSE_DASH": {
+  "name": "Libération",
+  "name_en": "Break Free"
+ },
+ "CLEAVE": {
+  "name": "Fendoir héroïque",
+  "name_en": "Heroic Cleave"
+ },
+ "COMBATSTAFF_SLASH": {
+  "name": "Lame fatale",
+  "name_en": "Fatal Blade"
+ },
+ "CONCUSSIVEBLOW_MULTI_1": {
+  "name": "Combo déstabilisant",
+  "name_en": "Concussive Combo"
+ },
+ "CONEPUNCH2": {
+  "name": "Course Effrénée",
+  "name_en": "Unstoppable Rush"
+ },
+ "CREATE_OPENING": {
+  "name": "Créer une ouverture",
+  "name_en": "Create Opening"
+ },
+ "CROSSBOW_ARMORPIERCER": {
+  "name": "Carreau traversant",
+  "name_en": "Sweeping Bolt"
+ },
+ "CROSSBOW_CONE_ULTIMATE": {
+  "name": "Barrage vicieux",
+  "name_en": "Vicious Barrage"
+ },
+ "CROSSBOW_DIVINE_SHOT": {
+  "name": "Engin divin",
+  "name_en": "Divine Engine"
+ },
+ "CROSSSTEP_ROUNDHOUSE": {
+  "name": "Jeu de jambes",
+  "name_en": "Fleet Footwork"
+ },
+ "CRYSTALWAVE": {
+  "name": "Hyperstatique",
+  "name_en": "Hyperstatic"
+ },
+ "CRYSTALXBOW": {
+  "name": "Tirs Lumineux",
+  "name_en": "Flickershots"
+ },
+ "CRYSTAL_DAGGER_BLADE_RING": {
+  "name": "Anneau de la Mort",
+  "name_en": "Ring of Death"
+ },
+ "CRYSTAL_SCYTHE_DASH_ZONE": {
+  "name": "Assaut implacable",
+  "name_en": "Relentless Assault"
+ },
+ "CURSEBLADE": {
+  "name": "Faucille maudite",
+  "name_en": "Cursed Sickle"
+ },
+ "CURSEDBEAM": {
+  "name": "Rayon damné",
+  "name_en": "Cursed Beam"
+ },
+ "CURSEDHANDS_STACKUP": {
+  "name": "Rancune",
+  "name_en": "Grudge"
+ },
+ "CURSEDOT": {
+  "name": "Malédiction infâme",
+  "name_en": "Vile Curse"
+ },
+ "CURSED_SPLAT": {
+  "name": "Goudron Maudit",
+  "name_en": "Cursed Tar"
+ },
+ "CURSED_WALL": {
+  "name": "Âme angoissée",
+  "name_en": "Anguished Soul"
+ },
+ "CURSENOVA": {
+  "name": "Profanation",
+  "name_en": "Desecrate"
+ },
+ "CURSEULTIMATE": {
+  "name": "Cataclysme",
+  "name_en": "Cataclysm"
+ },
+ "CURSE_SKELETON_BARF_FDHR": {
+  "name": "Porte-peste",
+  "name_en": "Plaguebringer"
+ },
+ "DARKMATTER": {
+  "name": "Matière noire",
+  "name_en": "Dark Matter"
+ },
+ "DASHDMG": {
+  "name": "Charge téméraire",
+  "name_en": "Reckless Charge"
+ },
+ "DASHKICK": {
+  "name": "Saut du dragon",
+  "name_en": "Dragon Leap"
+ },
+ "DASH_KNOCKBACK": {
+  "name": "Envolée fracassante",
+  "name_en": "Soaring Swipe"
+ },
+ "DEADLYSHOT": {
+  "name": "Tir mortel",
+  "name_en": "Deadly Shot"
+ },
+ "DEATHCURSE2": {
+  "name": "Malédiction létale",
+  "name_en": "Death Curse"
+ },
+ "DEATHMARK": {
+  "name": "Marque de sacrifice",
+  "name_en": "Mark of Sacrifice"
+ },
+ "DEEPCUTS": {
+  "name": "Entailles interdites",
+  "name_en": "Forbidden Stab"
+ },
+ "DEFENSERUN": {
+  "name": "Volonté de fer",
+  "name_en": "Iron Will"
+ },
+ "DEFENSIVESLAM": {
+  "name": "Frappe défensive",
+  "name_en": "Defensive Slam"
+ },
+ "DEFLECTINGSTANCE": {
+  "name": "Tournoiement déflecteur",
+  "name_en": "Deflecting Spin"
+ },
+ "DELAYED_TELEPORT": {
+  "name": "Téléportation retardée",
+  "name_en": "Delayed Teleport"
+ },
+ "DEMONWALK": {
+  "name": "Sol putride",
+  "name_en": "Rotten Ground"
+ },
+ "DISEMBOWEL": {
+  "name": "Éviscération",
+  "name_en": "Disembowel"
+ },
+ "DISRUPTIONIMMUNITY": {
+  "name": "Immunité au déplacement",
+  "name_en": "Displacement Immunity"
+ },
+ "DIVEPUNCH_RISE": {
+  "name": "Frappe du faucon",
+  "name_en": "Falcon Smash"
+ },
+ "DIVINE_JUMP": {
+  "name": "Intervention divine",
+  "name_en": "Divine Intervention"
+ },
+ "DMG_BLINK": {
+  "name": "Clignement de rage",
+  "name_en": "Raging Blink"
+ },
+ "DODGE": {
+  "name": "Esquive",
+  "name_en": "Dodge"
+ },
+ "DUALAXE_CRAWLER": {
+  "name": "Coupure de rasoir",
+  "name_en": "Razor Cut"
+ },
+ "DUAL_NATURE": {
+  "name": "Nature Double",
+  "name_en": "Dual Nature"
+ },
+ "DUAL_RAPIDFIRE": {
+  "name": "Apogée mortelle",
+  "name_en": "Deathward Climax"
+ },
+ "DYNAMIC_CURSE": {
+  "name": "Ombre intérieure",
+  "name_en": "Inner Shadow"
+ },
+ "DYNAMIC_DEFENSE": {
+  "name": "Défense dynamique",
+  "name_en": "Dynamic Defense"
+ },
+ "ELECTRICSHOCK": {
+  "name": "Décharge électrique",
+  "name_en": "Electric Discharge"
+ },
+ "EMERGENCY_SHIELD": {
+  "name": "Bouclier d'urgence",
+  "name_en": "Emergency Shield"
+ },
+ "EMPOWERBEAM": {
+  "name": "Rayon de puissance",
+  "name_en": "Empowering Beam"
+ },
+ "ENERGYFIELD": {
+  "name": "Cercle d'inspiration",
+  "name_en": "Circle of Inspiration"
+ },
+ "ENERGYSHIELD2": {
+  "name": "Égide d'Énergie",
+  "name_en": "Aegis of Energy"
+ },
+ "ENERGY_BARRIER": {
+  "name": "Bouclier Énergisant",
+  "name_en": "Energizing Shield"
+ },
+ "ENFEEBLEAURA": {
+  "name": "Aura affaiblissante",
+  "name_en": "Enfeeble Aura"
+ },
+ "ENFEEBLEBLADES": {
+  "name": "Lames affaiblissantes",
+  "name_en": "Enfeeble Blades"
+ },
+ "ENIGMA_BLADE": {
+  "name": "Lame d'énigme",
+  "name_en": "Enigma Blade"
+ },
+ "ENRAGE": {
+  "name": "Furie",
+  "name_en": "Fury"
+ },
+ "EXECUTEDAGGER": {
+  "name": "Égorgement",
+  "name_en": "Slit Throat"
+ },
+ "EXPLODING_SHOT": {
+  "name": "Tir explosif",
+  "name_en": "Exploding Shot"
+ },
+ "FEAR_AURA": {
+  "name": "Aura de peur",
+  "name_en": "Fear Aura"
+ },
+ "FIREARTILLERY": {
+  "name": "Feu d'artillerie",
+  "name_en": "Fire Artillery"
+ },
+ "FIRECONE": {
+  "name": "Vague de feu",
+  "name_en": "Fire Wave"
+ },
+ "FIREPHOENIX": {
+  "name": "Phoenix flamboyant",
+  "name_en": "Flaming Phoenix"
+ },
+ "FIRESTAFFBOLT2": {
+  "name": "Carreau de feu",
+  "name_en": "Fire Bolt"
+ },
+ "FIRESTAFFBOLT_AOE": {
+  "name": "Champ brûlant",
+  "name_en": "Burning Field"
+ },
+ "FIRESTAFFIGNITE2_SPREAD": {
+  "name": "Explosion de flammes",
+  "name_en": "Flame Blast"
+ },
+ "FIREWALL": {
+  "name": "Mur de flammes",
+  "name_en": "Wall of Flames"
+ },
+ "FLAMEDASH": {
+  "name": "Combustion Spontanée",
+  "name_en": "Spontaneous Combustion"
+ },
+ "FLAMEPILLAR": {
+  "name": "Colonne de feu",
+  "name_en": "Flame Pillar"
+ },
+ "FLAMESHIELD": {
+  "name": "Bouclier de l'enfer",
+  "name_en": "Inferno Shield"
+ },
+ "FLAMETORNADO": {
+  "name": "Tornade de flammes",
+  "name_en": "Flame Tornado"
+ },
+ "FLARE": {
+  "name": "Éclat de Feu",
+  "name_en": "Flare"
+ },
+ "FORCESHIELD": {
+  "name": "Bouclier de force",
+  "name_en": "Force Shield"
+ },
+ "FORESTOFSPEARS": {
+  "name": "Forêt de lances",
+  "name_en": "Forest of Spears"
+ },
+ "FRAZZLE2": {
+  "name": "Épuisement",
+  "name_en": "Frazzle"
+ },
+ "FREEZINGWIND": {
+  "name": "Vent glacial",
+  "name_en": "Freezing Wind"
+ },
+ "FROSTBEAM": {
+  "name": "Rayon de givre",
+  "name_en": "Frost Beam"
+ },
+ "FROSTBOMB_CASTSLOW": {
+  "name": "Bombe de givre",
+  "name_en": "Frost Bomb"
+ },
+ "FROSTNOVA": {
+  "name": "Nova de givre",
+  "name_en": "Frost Nova"
+ },
+ "FROSTSHIELD": {
+  "name": "Bouclier de givre",
+  "name_en": "Frost Shield"
+ },
+ "FROSTWALK": {
+  "name": "Pas de givre",
+  "name_en": "Frost Walk"
+ },
+ "FROST_BITE": {
+  "name": "Angelure",
+  "name_en": "Frostbite"
+ },
+ "FROST_LANCE": {
+  "name": "Lance de givre",
+  "name_en": "Frost Lance"
+ },
+ "FROST_TARGETED_CHANNEL": {
+  "name": "Volée arctique",
+  "name_en": "Arctic Volley"
+ },
+ "FROST_ULTIMATE": {
+  "name": "Cristal de glace",
+  "name_en": "Ice Crystal"
+ },
+ "FROZEN_CRYSTAL": {
+  "name": "Prison gelée",
+  "name_en": "Glacial Prison"
+ },
+ "GENEROUSHEAL": {
+  "name": "Soin généreux",
+  "name_en": "Generous Heal"
+ },
+ "GEYSER": {
+  "name": "Puissant geyser",
+  "name_en": "Power Geyser"
+ },
+ "GHOSTSTRIKE": {
+  "name": "Frappe fantomatique",
+  "name_en": "Ghost Strike"
+ },
+ "GIANTSTEPS": {
+  "name": "Pas de géant",
+  "name_en": "Giant Steps"
+ },
+ "GLACIALFIELD": {
+  "name": "Enfer de gel",
+  "name_en": "Frozen Hell"
+ },
+ "GLASS_MOVESPEED": {
+  "name": "Précipitation risquée",
+  "name_en": "Defenseless Rush"
+ },
+ "GROUNDARROW": {
+  "name": "Rayon de lumière",
+  "name_en": "Ray of Light"
+ },
+ "GROUNDBREAKER2": {
+  "name": "Brise-terre",
+  "name_en": "Groundbreaker"
+ },
+ "GROUNDDASH": {
+  "name": "Course folle",
+  "name_en": "Dash"
+ },
+ "GROUNDMINE": {
+  "name": "Mine explosive",
+  "name_en": "Explosive Mine"
+ },
+ "GROUNDSHAKER": {
+  "name": "Grand éboulement",
+  "name_en": "Ground Shaker"
+ },
+ "GROUNDSPEAR": {
+  "name": "Empaleur",
+  "name_en": "Impaler"
+ },
+ "GROWING_PUNCH": {
+  "name": "Broyeur terrestre",
+  "name_en": "Earth Crusher"
+ },
+ "GROWING_RAGE": {
+  "name": "Rage grandissante",
+  "name_en": "Growing Rage"
+ },
+ "GUARDRUNE": {
+  "name": "Rune de garde",
+  "name_en": "Guard Rune"
+ },
+ "HAIL_MULTI_1": {
+  "name": "Grêle",
+  "name_en": "Hail"
+ },
+ "HALBERDSMASH": {
+  "name": "Enracinement",
+  "name_en": "Rooting Smash"
+ },
+ "HAMMERTACKLE": {
+  "name": "Plaquage",
+  "name_en": "Tackle"
+ },
+ "HAMMERWHIRLWIND2": {
+  "name": "Sol brisé",
+  "name_en": "Earth Shatter"
+ },
+ "HAMMER_SHOVE": {
+  "name": "Swing puissant",
+  "name_en": "Powerful Swing"
+ },
+ "HAMMER_TREMOR": {
+  "name": "Tremblement sismique",
+  "name_en": "Seismic Tremor"
+ },
+ "HAMSTRINGSWORD": {
+  "name": "Claquage",
+  "name_en": "Hamstring"
+ },
+ "HASTE": {
+  "name": "Hâte",
+  "name_en": "Haste"
+ },
+ "HAWK_SHOT_MULTI1": {
+  "name": "Faucon luminescent",
+  "name_en": "Lucent Hawk"
+ },
+ "HEALINGBEAM": {
+  "name": "Rayon béni",
+  "name_en": "Holy Beam"
+ },
+ "HELL_ARROW": {
+  "name": "Flèche du démon",
+  "name_en": "Demon Arrow"
+ },
+ "HELMET_FIREBREATH": {
+  "name": "Souffle de feu",
+  "name_en": "Firebreath"
+ },
+ "HEROICSTRIKE2": {
+  "name": "Frappe héroïque",
+  "name_en": "Heroic Strike"
+ },
+ "HOLYDESPERATEPRAYER2": {
+  "name": "Prière désespérée",
+  "name_en": "Desperate Prayer"
+ },
+ "HOLYEXPLOSION": {
+  "name": "Explosion Sacrée",
+  "name_en": "Holy Explosion"
+ },
+ "HOLYFLASH": {
+  "name": "Flash sacré",
+  "name_en": "Holy Flash"
+ },
+ "HOLYHOT": {
+  "name": "Bénédiction divine",
+  "name_en": "Holy Blessing"
+ },
+ "HOLYORB": {
+  "name": "Orbe béni",
+  "name_en": "Holy Orb"
+ },
+ "HOLYSHIELD": {
+  "name": "Protection divine",
+  "name_en": "Divine Protection"
+ },
+ "HOLYTOUCH": {
+  "name": "Toucher sacré",
+  "name_en": "Holy Touch"
+ },
+ "HOLY_DISPEL": {
+  "name": "Sanctification",
+  "name_en": "Sanctify"
+ },
+ "HOLY_ULTIMATE": {
+  "name": "Salut",
+  "name_en": "Salvation"
+ },
+ "HOVER_SPRINT": {
+  "name": "Flotter",
+  "name_en": "Hover"
+ },
+ "HOWL": {
+  "name": "Hurlement",
+  "name_en": "Howl"
+ },
+ "HUMAN_TORCH": {
+  "name": "Combustion",
+  "name_en": "Combustion"
+ },
+ "HYPER_FOCUS": {
+  "name": "Hyper concentration",
+  "name_en": "Hyper Focus"
+ },
+ "ICEBLOCK2": {
+  "name": "Bloc de glace",
+  "name_en": "Ice Block"
+ },
+ "ICEROCK_EXPLODE": {
+  "name": "Avalanche",
+  "name_en": "Avalanche"
+ },
+ "ICESHARD": {
+  "name": "Éclat de glace",
+  "name_en": "Ice Shard"
+ },
+ "ICESTORM2": {
+  "name": "Tempête glacée",
+  "name_en": "Ice Storm"
+ },
+ "ICE_SCULPTURE": {
+  "name": "Obélisque glacial",
+  "name_en": "Glacial Obelisk"
+ },
+ "IMMORTAL": {
+  "name": "Immortel",
+  "name_en": "Immortal"
+ },
+ "IMMUNEAREA": {
+  "name": "Ailes de Feu",
+  "name_en": "Wings of Fire"
+ },
+ "IMPULSE_PUNCH": {
+  "name": "Effondrement gravitationnel",
+  "name_en": "Gravitational Collapse"
+ },
+ "INNERBLEEDING": {
+  "name": "Hémorragie interne",
+  "name_en": "Internal Bleeding"
+ },
+ "INNER_CORRUPTION": {
+  "name": "Corruption intérieure",
+  "name_en": "Inner Corruption"
+ },
+ "INTERRUPT2": {
+  "name": "Interruption",
+  "name_en": "Interrupt"
+ },
+ "INVISIBLE_WALK": {
+  "name": "Course spectrale",
+  "name_en": "Spectral Run"
+ },
+ "INVULNERABILITY": {
+  "name": "Rayon protecteur",
+  "name_en": "Protective Beam"
+ },
+ "IRONBREAKER": {
+  "name": "Brise-fer",
+  "name_en": "Iron Breaker"
+ },
+ "JUMP": {
+  "name": "Saut d'esquive",
+  "name_en": "Evasive Jump"
+ },
+ "JUMPSHOT2": {
+  "name": "Tir de givre",
+  "name_en": "Frost Shot"
+ },
+ "KNOCKBACKSHOT2": {
+  "name": "Tir propulseur",
+  "name_en": "Knockback Shot"
+ },
+ "KNOCKOUT": {
+  "name": "Assommer",
+  "name_en": "Knockout"
+ },
+ "KNUCKLECOMBO": {
+  "name": "Combo dévastateur",
+  "name_en": "Devastating Combo"
+ },
+ "KNUCKLE_COUNTER": {
+  "name": "Contre",
+  "name_en": "Counter"
+ },
+ "LANCE_CHARGE": {
+  "name": "Percée",
+  "name_en": "Breakthrough"
+ },
+ "LAUNCHER": {
+  "name": "Frappe atmosphérique",
+  "name_en": "Rising Blow"
+ },
+ "LEGBREAKER": {
+  "name": "Estropier",
+  "name_en": "Cripple"
+ },
+ "LETHAL_CLEAVER": {
+  "name": "Après-coup",
+  "name_en": "Aftershock"
+ },
+ "LEVITATE": {
+  "name": "Lévitation",
+  "name_en": "Levitate"
+ },
+ "LIFESAVIOR": {
+  "name": "Esprit éternel",
+  "name_en": "Everlasting Spirit"
+ },
+ "LIFESTEALAURA": {
+  "name": "Aura de vol de vie",
+  "name_en": "Life Steal Aura"
+ },
+ "LIGHTNING_ARROW": {
+  "name": "Tempête déchaînée",
+  "name_en": "Raging Storm"
+ },
+ "MACELEAP": {
+  "name": "Grande enjambée",
+  "name_en": "Deep Leap"
+ },
+ "MACE_CRYSTAL_FRAGMENT_STORM": {
+  "name": "Œil de la Tempête",
+  "name_en": "Eye of the Storm"
+ },
+ "MAGICCIRCLE": {
+  "name": "Rune magique",
+  "name_en": "Magic Rune"
+ },
+ "MAGICSHOCK": {
+  "name": "Secousse magique",
+  "name_en": "Magic Shock"
+ },
+ "MAGMASPHERE": {
+  "name": "Sphère de magma",
+  "name_en": "Magma Sphere"
+ },
+ "MAJESTIC_SMASH": {
+  "name": "Frappe majestueuse",
+  "name_en": "Majestic Smash"
+ },
+ "MANADRAIN": {
+  "name": "Source d'énergie",
+  "name_en": "Energy Source"
+ },
+ "MAXHEALTHBUFF": {
+  "name": "Géant",
+  "name_en": "Giant"
+ },
+ "METEOR": {
+  "name": "Météore",
+  "name_en": "Meteor"
+ },
+ "MIGHTYBLOW": {
+  "name": "Coup puissant",
+  "name_en": "Mighty Blow"
+ },
+ "MIGHTYSWING": {
+  "name": "Frappe en croissant",
+  "name_en": "Crescent Slash"
+ },
+ "MIMIC": {
+  "name": "Réplique",
+  "name_en": "Mimic"
+ },
+ "MIST_WALKER": {
+  "name": "Nuage de brume",
+  "name_en": "Mist Cloud"
+ },
+ "MULTISHOT2": {
+  "name": "Tirs multiples",
+  "name_en": "Multishot"
+ },
+ "NASTY_WOUNDS": {
+  "name": "Blessures purulentes",
+  "name_en": "Nasty Wounds"
+ },
+ "NATURERESILIENCE": {
+  "name": "Protection de la nature",
+  "name_en": "Protection of Nature"
+ },
+ "NATURE_ULTIMATE_SINGLE": {
+  "name": "Graine spirituelle",
+  "name_en": "Spiritual Seed"
+ },
+ "OUTOFCOMBATHEAL": {
+  "name": "Guérison des blessures",
+  "name_en": "Mend Wounds"
+ },
+ "OVERSPRINT": {
+  "name": "Précipitation",
+  "name_en": "Rush"
+ },
+ "PARRY": {
+  "name": "Parade armée",
+  "name_en": "Parry Strike"
+ },
+ "PASSIVE_AASPEEDCHANCE_BOW": {
+  "name": "Vitesse d'auto-attaque",
+  "name_en": "Auto-Attack Speed"
+ },
+ "PASSIVE_AASPEEDCHANCE_DAGGER": {
+  "name": "Vitesse d'auto-attaque",
+  "name_en": "Auto-Attack Speed"
+ },
+ "PASSIVE_AASPEEDCHANCE_SPEAR": {
+  "name": "Vitesse d'auto-attaque",
+  "name_en": "Auto-Attack Speed"
+ },
+ "PASSIVE_ARMORCHANCE_AXE": {
+  "name": "Défense augmentée",
+  "name_en": "Increased Defense"
+ },
+ "PASSIVE_ARMORCHANCE_SWORD": {
+  "name": "Défense augmentée",
+  "name_en": "Increased Defense"
+ },
+ "PASSIVE_ARMOR_BALANCE": {
+  "name": "Esprit équilibré",
+  "name_en": "Balanced Mind"
+ },
+ "PASSIVE_ARMOR_CASTER_ARCANESTAFF": {
+  "name": "Sérénité",
+  "name_en": "Calmness"
+ },
+ "PASSIVE_ARMOR_CASTER_NATURESTAFF": {
+  "name": "Sérénité",
+  "name_en": "Calmness"
+ },
+ "PASSIVE_ARMOR_CCDURATION": {
+  "name": "Autorité",
+  "name_en": "Authority"
+ },
+ "PASSIVE_ARMOR_CD_REDUCTION": {
+  "name": "Réflexion rapide",
+  "name_en": "Quick Thinker"
+ },
+ "PASSIVE_ARMOR_INCREASED_AASPEED": {
+  "name": "Promptitude",
+  "name_en": "Swiftness"
+ },
+ "PASSIVE_ARMOR_INCREASED_CASTSPEED": {
+  "name": "Concentration",
+  "name_en": "Concentration"
+ },
+ "PASSIVE_ARMOR_INCREASED_CCR": {
+  "name": "Ténacité",
+  "name_en": "Tenacity"
+ },
+ "PASSIVE_ARMOR_INCREASED_DAMAGE": {
+  "name": "Agression",
+  "name_en": "Aggression"
+ },
+ "PASSIVE_ARMOR_MR_AR": {
+  "name": "Robustesse",
+  "name_en": "Toughness"
+ },
+ "PASSIVE_ARMOR_PIERCE_STACK": {
+  "name": "Flèches perçantes",
+  "name_en": "Piercing Arrows"
+ },
+ "PASSIVE_ARMOR_REDUCED_ENERGYCOST": {
+  "name": "Efficacité",
+  "name_en": "Efficiency"
+ },
+ "PASSIVE_ATTACKBUFF_ARCANESTAFF": {
+  "name": "Puissance persistante",
+  "name_en": "Lingering Power"
+ },
+ "PASSIVE_BALANCE": {
+  "name": "Esprit équilibré",
+  "name_en": "Balanced Mind"
+ },
+ "PASSIVE_BLEEDCHANCE": {
+  "name": "Entailles profondes",
+  "name_en": "Deep Cuts"
+ },
+ "PASSIVE_BURN": {
+  "name": "Brûlure",
+  "name_en": "Burn"
+ },
+ "PASSIVE_CASTINGSPEED_CHANCE_FIRESTAFF": {
+  "name": "Incantation agressive",
+  "name_en": "Aggressive Caster"
+ },
+ "PASSIVE_CASTINGSPEED_CHANCE_FROSTSTAFF": {
+  "name": "Incantation agressive",
+  "name_en": "Aggressive Caster"
+ },
+ "PASSIVE_CASTSPEED": {
+  "name": "Concentration",
+  "name_en": "Concentration"
+ },
+ "PASSIVE_CCDURATION": {
+  "name": "Autorité",
+  "name_en": "Authority"
+ },
+ "PASSIVE_CCDURATION_CHANCE_HAMMER": {
+  "name": "Combat effroyable",
+  "name_en": "Dreadladen Fighting"
+ },
+ "PASSIVE_CCDURATION_CHANCE_MACE": {
+  "name": "Combat effroyable",
+  "name_en": "Dreadladen Fighting"
+ },
+ "PASSIVE_CCDURATION_CHANCE_QUARTERSTAFF": {
+  "name": "Combat effroyable",
+  "name_en": "Dreadladen Fighting"
+ },
+ "PASSIVE_CD_REDUCTION": {
+  "name": "Réflexion rapide",
+  "name_en": "Quick Thinker"
+ },
+ "PASSIVE_CD_RESET_Q": {
+  "name": "Bien préparé",
+  "name_en": "Well-Prepared"
+ },
+ "PASSIVE_CURSE": {
+  "name": "Fléau",
+  "name_en": "Bane"
+ },
+ "PASSIVE_ENERGYCHANCE_ARCANESTAFF": {
+  "name": "Énergique",
+  "name_en": "Energetic"
+ },
+ "PASSIVE_ENERGYCHANCE_BOW": {
+  "name": "Énergique",
+  "name_en": "Energetic"
+ },
+ "PASSIVE_ENERGYCHANCE_CROSSBOW": {
+  "name": "Énergique",
+  "name_en": "Energetic"
+ },
+ "PASSIVE_ENERGYCHANCE_CURSEDSTAFF": {
+  "name": "Énergique",
+  "name_en": "Energetic"
+ },
+ "PASSIVE_ENERGYCHANCE_FIRESTAFF": {
+  "name": "Énergique",
+  "name_en": "Energetic"
+ },
+ "PASSIVE_ENERGYCHANCE_FROSTSTAFF": {
+  "name": "Énergique",
+  "name_en": "Energetic"
+ },
+ "PASSIVE_ENERGYCHANCE_HAMMER": {
+  "name": "Énergique",
+  "name_en": "Energetic"
+ },
+ "PASSIVE_ENERGYCHANCE_HOLYSTAFF": {
+  "name": "Énergique",
+  "name_en": "Energetic"
+ },
+ "PASSIVE_ENERGYCHANCE_MACE": {
+  "name": "Énergique",
+  "name_en": "Energetic"
+ },
+ "PASSIVE_ENERGYCHANCE_NATURESTAFF": {
+  "name": "Énergique",
+  "name_en": "Energetic"
+ },
+ "PASSIVE_ENERGYCHANCE_QUARTERSTAFF": {
+  "name": "Énergique",
+  "name_en": "Energetic"
+ },
+ "PASSIVE_FROST": {
+  "name": "Givre",
+  "name_en": "Frost"
+ },
+ "PASSIVE_HEALPOWERCHANCE": {
+  "name": "Charité d'adrénaline",
+  "name_en": "Adrenaline Driven Charity"
+ },
+ "PASSIVE_HEALTHCHANCE_AXE": {
+  "name": "Sangsue de vie",
+  "name_en": "Life Leech"
+ },
+ "PASSIVE_HEALTHCHANCE_DAGGER": {
+  "name": "Sangsue de vie",
+  "name_en": "Life Leech"
+ },
+ "PASSIVE_HEALTHCHANCE_HAMMER": {
+  "name": "Sangsue de vie",
+  "name_en": "Life Leech"
+ },
+ "PASSIVE_HEALTHCHANCE_MACE": {
+  "name": "Sangsue de vie",
+  "name_en": "Life Leech"
+ },
+ "PASSIVE_HEALTHCHANCE_QUARTERSTAFF": {
+  "name": "Sangsue de vie",
+  "name_en": "Life Leech"
+ },
+ "PASSIVE_HEALTHCHANCE_SPEAR": {
+  "name": "Sangsue de vie",
+  "name_en": "Life Leech"
+ },
+ "PASSIVE_HEROICSTACK": {
+  "name": "Combat héroïque",
+  "name_en": "Heroic Fighting"
+ },
+ "PASSIVE_HOLY_ASCENDED": {
+  "name": "Ascension",
+  "name_en": "Ascended"
+ },
+ "PASSIVE_INCREASED_AASPEED": {
+  "name": "Promptitude",
+  "name_en": "Swiftness"
+ },
+ "PASSIVE_INCREASED_CCR": {
+  "name": "Ténacité",
+  "name_en": "Tenacity"
+ },
+ "PASSIVE_INCREASED_DAMAGE": {
+  "name": "Agression",
+  "name_en": "Aggression"
+ },
+ "PASSIVE_KNOCKBACKCHANCE": {
+  "name": "Foudre vigoureuse",
+  "name_en": "Forceful Bolts"
+ },
+ "PASSIVE_KNOCKBACK_CASTER_HOLYSTAFF": {
+  "name": "Puissance magique",
+  "name_en": "Magic Force"
+ },
+ "PASSIVE_KNUCKLE_BRAWLER": {
+  "name": "Fureur fatale",
+  "name_en": "Fatal Fury"
+ },
+ "PASSIVE_KNUCKLE_BRAWLER_SPEED": {
+  "name": "Fureur fatale",
+  "name_en": "Fatal Fury"
+ },
+ "PASSIVE_KNUCKLE_COMBOBREAKER": {
+  "name": "Difficile à attraper",
+  "name_en": "Hard to Catch"
+ },
+ "PASSIVE_KNUCKLE_RAGE": {
+  "name": "Rage",
+  "name_en": "Rage"
+ },
+ "PASSIVE_KNUCKLE_RUSHDOWN": {
+  "name": "Rattrapage",
+  "name_en": "Rushdown"
+ },
+ "PASSIVE_MAXLOAD_SHOES": {
+  "name": "Messager",
+  "name_en": "Courier"
+ },
+ "PASSIVE_MOVESPEED_CHANCE_CURSEDSTAFF": {
+  "name": "Délit de fuite",
+  "name_en": "Hit and Run"
+ },
+ "PASSIVE_MOVESPEED_CHANCE_NATURESTAFF": {
+  "name": "Délit de fuite",
+  "name_en": "Hit and Run"
+ },
+ "PASSIVE_MR_AR": {
+  "name": "Robustesse",
+  "name_en": "Toughness"
+ },
+ "PASSIVE_PLATEARMOR_HEALTH_REDUCTION": {
+  "name": "Brise-esprit",
+  "name_en": "Spirit Crush"
+ },
+ "PASSIVE_PLATEARMOR_THREATGENERATION": {
+  "name": "Instinct protecteur",
+  "name_en": "Protective Instinct"
+ },
+ "PASSIVE_REDUCED_ENERGYCOST": {
+  "name": "Efficacité",
+  "name_en": "Efficiency"
+ },
+ "PASSIVE_REDUCE_DMG_SWORD": {
+  "name": "Affaiblissement",
+  "name_en": "Weakening"
+ },
+ "PASSIVE_SHAPESHIFT_ATTACK_BUFF": {
+  "name": "Bête altérée",
+  "name_en": "Altered Beast"
+ },
+ "PASSIVE_SHAPESHIFT_GATHER_CHARGES": {
+  "name": "Puissance innée",
+  "name_en": "Innate Power"
+ },
+ "PASSIVE_SHAPESHIFT_Q_CAST_DAMAGE_REDUCE": {
+  "name": "Présence intimidante",
+  "name_en": "Intimidating Presence"
+ },
+ "PASSIVE_SHAPESHIFT_W_CAST_SPEED_BUFF": {
+  "name": "Briseurs de règles",
+  "name_en": "Rule Bender"
+ },
+ "PASSIVE_SILENCECHANCE": {
+  "name": "Silence",
+  "name_en": "Hush"
+ },
+ "PASSIVE_SLOWPOISON": {
+  "name": "Poison lent",
+  "name_en": "Slow Poison"
+ },
+ "PASSIVE_SPELLPOWER_CASTER_CROSSBOW": {
+  "name": "Fureur",
+  "name_en": "Furious"
+ },
+ "PASSIVE_SPELLPOWER_CASTER_CURSEDSTAFF": {
+  "name": "Fureur",
+  "name_en": "Furious"
+ },
+ "PASSIVE_SPELLPOWER_CASTER_FIRESTAFF": {
+  "name": "Fureur",
+  "name_en": "Furious"
+ },
+ "PASSIVE_SPELLPOWER_CASTER_FROSTSTAFF": {
+  "name": "Fureur",
+  "name_en": "Furious"
+ },
+ "PASSIVE_SPELLPOWER_CHANCE_AXE": {
+  "name": "Ruée violente",
+  "name_en": "Aggressive Rush"
+ },
+ "PASSIVE_SPELLPOWER_CHANCE_DAGGER": {
+  "name": "Ruée violente",
+  "name_en": "Aggressive Rush"
+ },
+ "PASSIVE_SPELLPOWER_CHANCE_SPEAR": {
+  "name": "Ruée violente",
+  "name_en": "Aggressive Rush"
+ },
+ "PASSIVE_STUNCHANCE": {
+  "name": "Frappe étourdissante",
+  "name_en": "Stunning Strike"
+ },
+ "PASSIVE_STUNCHANCE_QUARTERSTAFF": {
+  "name": "Frappe étourdissante",
+  "name_en": "Stunning Strike"
+ },
+ "PBAOE_KNOCKBACK": {
+  "name": "Champ de force",
+  "name_en": "Force Field"
+ },
+ "PBAOE_PULL": {
+  "name": "Compresseur d'air",
+  "name_en": "Air Compressor"
+ },
+ "PERPETUALENERGY": {
+  "name": "Énergie perpétuelle",
+  "name_en": "Perpetual Energy"
+ },
+ "POISONARROW": {
+  "name": "Flèche empoisonnée",
+  "name_en": "Poisoned Arrow"
+ },
+ "PRIMALSLAM": {
+  "name": "Force de la nature",
+  "name_en": "Force of Nature"
+ },
+ "PULSINGHEAL": {
+  "name": "Pulsation sacrée",
+  "name_en": "Sacred Pulse"
+ },
+ "PUMMELING_STRIKES": {
+  "name": "Cent poings marteleurs",
+  "name_en": "Hundred Striking Fists"
+ },
+ "PURGE_HELMET": {
+  "name": "Purge",
+  "name_en": "Purge"
+ },
+ "PURGINGSHIELD2": {
+  "name": "Bouclier purificateur",
+  "name_en": "Purging Shield"
+ },
+ "PURIFYING_SMOKE": {
+  "name": "Fumée purifiante",
+  "name_en": "Purifying Smoke"
+ },
+ "PYROBLAST_SKILLSHOT": {
+  "name": "Déflagration",
+  "name_en": "Pyroblast"
+ },
+ "QDASH": {
+  "name": "Volée mortelle",
+  "name_en": "Deadly Swipe"
+ },
+ "QSTAFF_COMBO": {
+  "name": "Danse du vent",
+  "name_en": "Gale Dance"
+ },
+ "QSWHIRLWIND": {
+  "name": "Ouragan",
+  "name_en": "Hurricane"
+ },
+ "QS_CRYSTAL_COMBO": {
+  "name": "Double fantôme",
+  "name_en": "Phantom Twin"
+ },
+ "QS_SLOWROPE": {
+  "name": "Rochers mystiques",
+  "name_en": "Mystic Rocks"
+ },
+ "QS_WHIRLWIND2": {
+  "name": "Swing vigoureux",
+  "name_en": "Forceful Swing"
+ },
+ "RAM_CHARGE": {
+  "name": "Piétinement",
+  "name_en": "Ground Pound"
+ },
+ "RAPIERSTAB": {
+  "name": "Entailles brusques",
+  "name_en": "Lunging Stabs"
+ },
+ "REANIMATE": {
+  "name": "Revitaliser",
+  "name_en": "Revitalize"
+ },
+ "REFLECTAREA": {
+  "name": "Protection des monstres",
+  "name_en": "Protection of the Fiends"
+ },
+ "REFLECT_CHANNEL": {
+  "name": "Rétribution",
+  "name_en": "Requite"
+ },
+ "REJUVENATING_BREEZE": {
+  "name": "Brise rajeunissante",
+  "name_en": "Rejuvenating Breeze"
+ },
+ "REJUVENATION": {
+  "name": "Rajeunissement",
+  "name_en": "Rejuvenation"
+ },
+ "REJUVMUSHROOM_GRENADE": {
+  "name": "Fleur rajeunissante",
+  "name_en": "Rejuvenating Flower"
+ },
+ "RENDINGCOMBO": {
+  "name": "Rage déchirante",
+  "name_en": "Rending Rage"
+ },
+ "RENDINGSPIN": {
+  "name": "Tournoiement déchirant",
+  "name_en": "Rending Spin"
+ },
+ "RENDINGSTRIKE": {
+  "name": "Frappe déchirante",
+  "name_en": "Rending Strike"
+ },
+ "RENDINGSWING": {
+  "name": "Déchirer",
+  "name_en": "Tear Apart"
+ },
+ "RESURRECTION": {
+  "name": "Renaissance",
+  "name_en": "Reawaken"
+ },
+ "RETALIATE2": {
+  "name": "Riposte",
+  "name_en": "Retaliate"
+ },
+ "ROOTFIELD": {
+  "name": "Gravité",
+  "name_en": "Gravitas"
+ },
+ "ROTTENVINES": {
+  "name": "Nature dominante",
+  "name_en": "Elevated Nature"
+ },
+ "ROYAL_BANNER": {
+  "name": "Bannière royale",
+  "name_en": "Royal Banner"
+ },
+ "ROYAL_MARCH": {
+  "name": "Marche royale",
+  "name_en": "Royal March"
+ },
+ "SACRED_GROUND": {
+  "name": "Terre consacrée",
+  "name_en": "Sacred Ground"
+ },
+ "SACRIFICE_HEAL": {
+  "name": "Sacrifice",
+  "name_en": "Sacrifice"
+ },
+ "SCYTHESWING": {
+  "name": "Faux sanglante",
+  "name_en": "Bloody Reap"
+ },
+ "SEARING_FLAME": {
+  "name": "Flammes brûlantes",
+  "name_en": "Searing Flame"
+ },
+ "SELF_CLEANSE": {
+  "name": "Purification",
+  "name_en": "Cleanse"
+ },
+ "SEPARATING_SLAM": {
+  "name": "Séparateur",
+  "name_en": "Separator"
+ },
+ "SHAPESHIFT_AVALONIAN_EAGLE": {
+  "name": "Transformation en Oiseau de l'aube",
+  "name_en": "Dawnbird Transformation"
+ },
+ "SHAPESHIFT_BEAR": {
+  "name": "Transformation en Esprit d'ours",
+  "name_en": "Spirit Bear Transformation"
+ },
+ "SHAPESHIFT_CRYSTAL_COBRA": {
+  "name": "Transformation en Cobra de Cristal",
+  "name_en": "Crystal Cobra Transformation"
+ },
+ "SHAPESHIFT_ENT": {
+  "name": "Transformation en Sylvain",
+  "name_en": "Sylvian Transformation"
+ },
+ "SHAPESHIFT_IMP": {
+  "name": "Transformation en Diablotin du feu infernal",
+  "name_en": "Hellfire Imp Transformation"
+ },
+ "SHAPESHIFT_PANTHER": {
+  "name": "Transformation en Panthère de l'ombre",
+  "name_en": "Shadow Panther Transformation"
+ },
+ "SHAPESHIFT_ROCK_ELEMENTAL": {
+  "name": "Transformation en Golem de pierre runique",
+  "name_en": "Runestone Golem Transformation"
+ },
+ "SHAPESHIFT_WEREWOLF": {
+  "name": "Transformation en Loup-garou",
+  "name_en": "Werewolf Transformation"
+ },
+ "SHAPE_Q_CAST": {
+  "name": "Projectile instable",
+  "name_en": "Unstable Projectile"
+ },
+ "SHAPE_Q_CONE_MELEE": {
+  "name": "Choc d'impulsion",
+  "name_en": "Pulse Shock"
+ },
+ "SHAPE_Q_DAMAGE_AND_SHIELD": {
+  "name": "Matière adaptative",
+  "name_en": "Adapting Matter"
+ },
+ "SHAPE_Q_SKILLSHOT": {
+  "name": "Fissure dans la réalité",
+  "name_en": "Reality Fissure"
+ },
+ "SHAPE_W_AREA_PULL": {
+  "name": "Dérive spatiale",
+  "name_en": "Positional Drift"
+ },
+ "SHAPE_W_DAMAGE_AOE": {
+  "name": "Distorsion",
+  "name_en": "Distortion"
+ },
+ "SHAPE_W_POLYMORPH": {
+  "name": "Polymorphe",
+  "name_en": "Polymorph"
+ },
+ "SHAPE_W_TETHERBEAM": {
+  "name": "Attacher",
+  "name_en": "Tether Shift"
+ },
+ "SHATTER_Q": {
+  "name": "Afflux gelé",
+  "name_en": "Frozen Surge"
+ },
+ "SHIELDFRIENDLY": {
+  "name": "Protection ésotérique",
+  "name_en": "Arcane Protection"
+ },
+ "SHOCKWAVE": {
+  "name": "Corbeau de Morgana",
+  "name_en": "Morgana Raven"
+ },
+ "SHOCKWAVE_PUNCH": {
+  "name": "Onde de choc",
+  "name_en": "Shockwave"
+ },
+ "SHOULDERTACKLE": {
+  "name": "Écrasement au coude",
+  "name_en": "Elbow Smash"
+ },
+ "SHOVEL": {
+  "name": "Lancer",
+  "name_en": "Fling"
+ },
+ "SHRIEKMACE": {
+  "name": "Cri de guerre",
+  "name_en": "Battle Howl"
+ },
+ "SHRINKINGSMASH": {
+  "name": "Malédiction réductrice",
+  "name_en": "Shrinking Curse"
+ },
+ "SILENCINGBOLT": {
+  "name": "Éliminateur de bruits",
+  "name_en": "Noise Eraser"
+ },
+ "SKILLSHOT_FIREBALL": {
+  "name": "Flamme furieuse",
+  "name_en": "Raging Flare"
+ },
+ "SKILLSHOT_PULL": {
+  "name": "Harpon",
+  "name_en": "Harpoon"
+ },
+ "SKILLSHOT_STUN": {
+  "name": "Flèche magique",
+  "name_en": "Magic Arrow"
+ },
+ "SKILLSHOT_TELEPORT": {
+  "name": "Lisière ombragée",
+  "name_en": "Shadow Edge"
+ },
+ "SKULLCURSE": {
+  "name": "Hurlements terrifiants",
+  "name_en": "Haunting Screams"
+ },
+ "SMELLOFBLOOD": {
+  "name": "Agonie mortelle",
+  "name_en": "Mortal Agony"
+ },
+ "SMITE_AOE": {
+  "name": "Châtiment",
+  "name_en": "Smite"
+ },
+ "SMOKEBOMB": {
+  "name": "Fumigène",
+  "name_en": "Smokebomb"
+ },
+ "SNIPESHOT_CROSSBOW": {
+  "name": "Tir de précision",
+  "name_en": "Snipe Shot"
+ },
+ "SOULSHAKER": {
+  "name": "Agitateur d'âme",
+  "name_en": "Soul Shaker"
+ },
+ "SOUL_LINK": {
+  "name": "Liage d'âme",
+  "name_en": "Soul Link"
+ },
+ "SPEARTHROW": {
+  "name": "Lancer de lance",
+  "name_en": "Spear Throw"
+ },
+ "SPEAR_AOE_FINISHER": {
+  "name": "Le fil de la lame",
+  "name_en": "Razor's Edge"
+ },
+ "SPEAR_LUNGE": {
+  "name": "Frappe brusque",
+  "name_en": "Lunging Strike"
+ },
+ "SPEEDARCHER_KITE": {
+  "name": "Carquois enchanté",
+  "name_en": "Enchanted Quiver"
+ },
+ "SPEEDCASTER": {
+  "name": "Incantation rapide",
+  "name_en": "Speed Caster"
+ },
+ "SPEEDSHOT2": {
+  "name": "Tir de vitesse",
+  "name_en": "Speed Shot"
+ },
+ "SPELLRUSH": {
+  "name": "Éclat obsédant",
+  "name_en": "Obsessive Burst"
+ },
+ "SPIDER_THREAD": {
+  "name": "Fil d'araignée",
+  "name_en": "Spider's Thread"
+ },
+ "SPINATTACK": {
+  "name": "Lames tournoyantes",
+  "name_en": "Spinning Blades"
+ },
+ "SPINNING_SMASH": {
+  "name": "Massacre",
+  "name_en": "Onslaught"
+ },
+ "SPIRITANIMAL": {
+  "name": "Animal spirituel",
+  "name_en": "Spirit Animal"
+ },
+ "SPIRITSPEAR": {
+  "name": "Lance d'esprit",
+  "name_en": "Spirit Spear"
+ },
+ "SPLITTINGSLASH": {
+  "name": "Frappe fissurante",
+  "name_en": "Splitting Slash"
+ },
+ "SPRINTEOT": {
+  "name": "Sprint énergétique",
+  "name_en": "Energetic Sprint"
+ },
+ "SPRINTHOT": {
+  "name": "Sprint rajeunissant",
+  "name_en": "Rejuvenating Sprint"
+ },
+ "SPRINT_CD_REDUCTION": {
+  "name": "Sprint rafraîchissant",
+  "name_en": "Refreshing Sprint"
+ },
+ "STARFALL_DOT": {
+  "name": "Chute d'étoiles",
+  "name_en": "Starfall"
+ },
+ "STONESKIN": {
+  "name": "Peau de pierre",
+  "name_en": "Stone Skin"
+ },
+ "STORMSHIELD": {
+  "name": "Champ électrique",
+  "name_en": "Electric Field"
+ },
+ "STUNRUN": {
+  "name": "Course assommante",
+  "name_en": "Stun Run"
+ },
+ "SUMMONER_CD_REDUCTION": {
+  "name": "Méditation",
+  "name_en": "Meditation"
+ },
+ "SUNDERARMOR2": {
+  "name": "Brise-armure",
+  "name_en": "Sunder Armor"
+ },
+ "SUNDERSHOT": {
+  "name": "Brise-tir",
+  "name_en": "Sunder Shot"
+ },
+ "SWAP": {
+  "name": "Échange de position",
+  "name_en": "Position Swap"
+ },
+ "SWORD_BERSERK_RUN_RE": {
+  "name": "Brise-limites",
+  "name_en": "Limitbreaker"
+ },
+ "SWORD_SPIN": {
+  "name": "Cyclone à lames",
+  "name_en": "Blade Cyclone"
+ },
+ "TAINTED_STEEL": {
+  "name": "Acier de corruption",
+  "name_en": "Corrupting Steel"
+ },
+ "TAR_RING": {
+  "name": "Anneau d'inertie",
+  "name_en": "Inertia Ring"
+ },
+ "TAUNT": {
+  "name": "Provocation",
+  "name_en": "Taunt"
+ },
+ "THORNSAREA": {
+  "name": "Croissance d'épines",
+  "name_en": "Thorn Growth"
+ },
+ "THREATENINGSMASH": {
+  "name": "Frappe menaçante",
+  "name_en": "Threatening Smash"
+ },
+ "THREATENINGSTRIKE_HAMMER": {
+  "name": "Frappe menaçante",
+  "name_en": "Threatening Strike"
+ },
+ "THROWINGBLADES": {
+  "name": "Lames de lancer",
+  "name_en": "Throwing Blades"
+ },
+ "TIME_FREEZE": {
+  "name": "Ralentissement du temps",
+  "name_en": "Time Freeze"
+ },
+ "TORNADO": {
+  "name": "Tornade",
+  "name_en": "Tornado"
+ },
+ "TRANSLUCENT": {
+  "name": "Forme éthérée",
+  "name_en": "Ethereal Form"
+ },
+ "TRIDENTTHROW": {
+  "name": "Trident spectral",
+  "name_en": "Spectral Trident"
+ },
+ "TRIPLECOMBO_DIVEKICK": {
+  "name": "Combinaison purifiante",
+  "name_en": "Purifying Combination"
+ },
+ "TRIPLE_KICK": {
+  "name": "Triple tacle",
+  "name_en": "Triple Kick"
+ },
+ "UNDEADARROWS": {
+  "name": "Flèches des Morts-vivants",
+  "name_en": "Undead Arrows"
+ },
+ "UNDEADHAND": {
+  "name": "Étreinte des Morts-vivants",
+  "name_en": "Grasp of the Undead"
+ },
+ "VACUUMSLASH": {
+  "name": "Vendetta",
+  "name_en": "Vendetta"
+ },
+ "VAULT_ATTACK": {
+  "name": "Saut voûté",
+  "name_en": "Vault Leap"
+ },
+ "VOID": {
+  "name": "Le Vide",
+  "name_en": "The Void"
+ },
+ "WANDERLUST": {
+  "name": "Envie d'ailleurs",
+  "name_en": "Wanderlust"
+ },
+ "WEAPON_SILENCE": {
+  "name": "Silence",
+  "name_en": "Hush"
+ },
+ "WEAPON_SPRINT": {
+  "name": "Élan Brûlant",
+  "name_en": "Burning Momentum"
+ },
+ "WELLOFLIFE2": {
+  "name": "Puits de vie",
+  "name_en": "Well Of Life"
+ },
+ "WHIRLING_STAFF": {
+  "name": "Frappes tourbillonnantes",
+  "name_en": "Whirling Strikes"
+ },
+ "WILD_MAGIC": {
+  "name": "Magie sauvage",
+  "name_en": "Wild Magic"
+ },
+ "WINDWALL": {
+  "name": "Bourrasque",
+  "name_en": "Wind Wall"
+ }
+}

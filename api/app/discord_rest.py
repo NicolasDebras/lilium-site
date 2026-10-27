@@ -5,6 +5,7 @@ elle vérifie l'appartenance et les rôles via GET /guilds/{g}/members/{u}.
 Résultats gardés en cache mémoire (60 s par défaut) pour ne pas se faire
 rate-limiter à chaque requête du site.
 """
+import asyncio
 import time
 from collections.abc import Awaitable, Callable
 
@@ -67,3 +68,36 @@ class DiscordRest:
 
     async def get_guild(self, guild_id: int) -> dict | None:
         return await self._cached_get(f"/guilds/{guild_id}")
+
+    # ── Envoi de MP (ajustement d'un payout depuis le panel Admin) ───────────
+    async def _http_post(self, path: str, payload: dict) -> tuple[int, dict | None]:
+        headers = {"Authorization": f"Bot {self._token}"}
+        try:
+            async with aiohttp.ClientSession(timeout=TIMEOUT) as session:
+                async with session.post(API + path, headers=headers, json=payload) as resp:
+                    body = await resp.json() if resp.content_type == "application/json" else None
+                    return resp.status, body
+        except (TimeoutError, aiohttp.ClientError) as e:
+            raise DiscordUnavailable(str(e) or type(e).__name__) from e
+
+    async def _post(self, path: str, payload: dict, poster=None) -> tuple[int, dict | None]:
+        """POST ; sur 429, attend le `retry_after` de Discord (5 s max) et réessaie une fois."""
+        post = poster or self._http_post
+        status, body = await post(path, payload)
+        if status == 429:
+            await asyncio.sleep(min(5.0, float((body or {}).get("retry_after") or 1)))
+            status, body = await post(path, payload)
+        return status, body
+
+    async def send_dm(self, user_id: int | str, content: str, poster=None) -> bool:
+        """MP au joueur (avec le token du bot) ; False si ses MP sont fermés ou si Discord refuse.
+        Mentions désactivées : le texte contient des noms de joueurs et de compos."""
+        try:
+            status, channel = await self._post("/users/@me/channels", {"recipient_id": str(user_id)}, poster)
+            if status != 200 or not channel or "id" not in channel:
+                return False
+            status, _ = await self._post(f"/channels/{channel['id']}/messages",
+                                         {"content": content[:2000], "allowed_mentions": {"parse": []}}, poster)
+            return status == 200
+        except DiscordUnavailable:
+            return False
