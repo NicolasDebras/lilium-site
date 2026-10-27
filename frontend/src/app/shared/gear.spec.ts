@@ -32,3 +32,26 @@ describe('describeSwaps', () => {
     expect(describeSwaps({}, get)).toEqual([]);
   });
 });
+
+describe('Gear — sort de bottes imposé', () => {
+  it('bottes au choix (ou vides) + sort imposé : icône du sort dans la case Bottes', async () => {
+    const { TestBed } = await import('@angular/core/testing');
+    const { provideHttpClient } = await import('@angular/common/http');
+    const { Gear } = await import('./gear');
+    TestBed.configureTestingModule({ imports: [Gear], providers: [provideHttpClient()] });
+    const fixture = TestBed.createComponent(Gear);
+    fixture.componentRef.setInput('items', { shoes: ['*'] });
+    fixture.componentRef.setInput('spells', { '@shoes': { a: 'SPRINT_CD_REDUCTION' } });
+    fixture.componentRef.setInput('layout', 'doll');
+    fixture.detectChanges();
+    const el = fixture.nativeElement as HTMLElement;
+    expect(el.querySelector('img.spell')?.getAttribute('src'))
+      .toBe('https://render.albiononline.com/v1/spell/SPRINT_CD_REDUCTION.png?size=64');
+    fixture.componentRef.setInput('items', {});              // case vide : le sort reste affiché
+    fixture.detectChanges();
+    expect(el.querySelector('img.spell')).not.toBeNull();
+    fixture.componentRef.setInput('items', { shoes: ['SHOES_PLATE_SET1'] });   // bottes précises : plus de sort
+    fixture.detectChanges();
+    expect(el.querySelector('img.spell')).toBeNull();
+  });
+});

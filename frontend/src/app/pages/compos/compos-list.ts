@@ -113,7 +113,7 @@ export function shareLabel(share: number): string {
                     <span class="times num">×{{ r.count }}@if (c.custom_shares && r.share != null && r.share !== 1) {<span class="share" [title]="t().compos.shareTitle"> · 💰 {{ shareLabel(r.share) }}</span>}</span>
                     @if (buildOf(r); as b) {
                       <span class="build-name">{{ b.name }}</span>
-                      <app-gear [items]="b.items" size="small" />
+                      <app-gear [items]="b.items" [spells]="b.spells" size="small" />
                     } @else {
                       <span class="muted build-name">{{ r.weapon || t().compos.freeRole }}</span>
                     }

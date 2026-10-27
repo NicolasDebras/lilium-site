@@ -45,7 +45,7 @@ import { roleColor } from '../../shared/roles';
 
       <div class="layout">
         <div class="card gear-card">
-          <app-gear [items]="b.items" layout="doll" />
+          <app-gear [items]="b.items" [spells]="b.spells" layout="doll" />
           @if (gearNames(); as names) {
             <p class="muted names">{{ names }}</p>
           }

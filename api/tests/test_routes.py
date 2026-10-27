@@ -432,3 +432,14 @@ def test_build_rejects_foreign_spell(login):
     assert bad.status_code == 422
     missing = c.post(f"/api/guilds/{GUILD}/builds", json={**BUILD, "items": items, "spells": {"MAIN_SWORD": {"q": "X"}}})
     assert missing.status_code == 422
+
+
+def test_catalogs_revalidate_with_etag(login):
+    c = login(MEMBER_ID)
+    for path in ("/api/items", "/api/spells"):
+        first = c.get(path)
+        assert first.headers["cache-control"] == "private, no-cache"
+        etag = first.headers["etag"]
+        again = c.get(path, headers={"If-None-Match": etag})
+        assert again.status_code == 304 and again.content == b""
+        assert c.get(path, headers={"If-None-Match": '"autre"'}).status_code == 200

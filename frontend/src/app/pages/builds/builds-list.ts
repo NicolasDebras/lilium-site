@@ -87,7 +87,7 @@ interface BuildEntry {
             <h2><a class="title-link" [routerLink]="['/g', guildId(), 'builds', b.id]">{{ b.name }}</a></h2>
             @if (e.gearNames) {
               <div class="body">
-                <app-gear [items]="b.items" layout="doll" size="small" [showSwaps]="false" />
+                <app-gear [items]="b.items" [spells]="b.spells" layout="doll" size="small" [showSwaps]="false" />
                 <p class="gear-names muted">{{ e.gearNames }}</p>
               </div>
             }

@@ -2,8 +2,8 @@ import { NgTemplateOutlet } from '@angular/common';
 import { Component, computed, inject, input } from '@angular/core';
 
 import { I18nService, dict } from '../core/i18n/i18n';
-import { ItemsService, itemIconUrl, itemName, useFallbackIcon } from '../core/items.service';
-import { BuildItems, FREE_CHOICE, Item, SLOTS, Slot } from '../core/models';
+import { ItemsService, itemIconUrl, itemName, spellIconUrl, spellName, useFallbackIcon } from '../core/items.service';
+import { BuildItems, BuildSpells, FREE_CHOICE, Item, SHOES_ANY, SLOTS, Slot } from '../core/models';
 import { tierLabel, tierText } from '../core/tiers';
 import { TierBadge } from './tier-badge';
 
@@ -12,6 +12,8 @@ export interface GearSlot {
   label: string;
   items: Item[];
   free: boolean;
+  /** Bottes au choix avec un sort imposé (actif, sinon passif) : dessiné à la place de « ? ». */
+  spell?: string;
 }
 
 /** Disposition de l'inventaire du jeu (null = case vide), lue ligne par ligne. */
@@ -27,9 +29,13 @@ export function describeGear(items: BuildItems | undefined, get: (id: string) =>
   return SLOTS.flatMap((slot) => describeSlot(items, slot, get) ?? []);
 }
 
-function describeSlot(items: BuildItems | undefined, slot: Slot, get: (id: string) => Item | undefined): GearSlot | null {
+function describeSlot(items: BuildItems | undefined, slot: Slot, get: (id: string) => Item | undefined,
+                      spells?: BuildSpells): GearSlot | null {
   const choices = items?.[slot] ?? [];
   const free = choices[0] === FREE_CHOICE;
+  const required = slot === 'shoes' && (free || !choices.length) ? spells?.[SHOES_ANY] : undefined;
+  const spell = required?.a || required?.p;
+  if (spell) return { slot, label: dict().slots[slot], items: [], free: true, spell };
   const found = free ? [] : choices.map(get).filter((i): i is Item => !!i);
   return free || found.length ? { slot, label: dict().slots[slot], items: found, free } : null;
 }
@@ -141,7 +147,9 @@ export class GearSwaps {
     </div>
 
     <ng-template #content let-g>
-      @if (g.free) {
+      @if (g.spell) {
+        <img class="spell" [src]="spellIcon(g.spell)" alt="" loading="lazy" (error)="fallback($event)" />
+      } @else if (g.free) {
         <span class="free">?</span>
       } @else {
         <img [src]="icon(g.items[0])" [alt]="name(g.items[0])" loading="lazy" (error)="fallback($event)" />
@@ -164,6 +172,7 @@ export class GearSwaps {
             border: 1px solid var(--border-soft); display: grid; place-items: center; }
     .small .cell { width: 32px; height: 32px; border-radius: 7px; }
     img { width: 100%; height: 100%; }
+    img.spell { width: 82%; height: 82%; border-radius: 50%; }
     .free { color: var(--lilac); font-weight: 700; font-size: 1.1rem; }
     .more { position: absolute; right: -4px; bottom: -4px; background: var(--lilac); color: var(--on-lilac);
             font-size: .65rem; font-weight: 700; border-radius: 999px; padding: 0 5px; line-height: 1.5; }
@@ -185,24 +194,32 @@ export class Gear {
   readonly size = input<'normal' | 'small'>('normal');
   readonly layout = input<'row' | 'doll'>('row');
   readonly showSwaps = input(true);
+  /** Sorts du build : seul le sort de bottes imposé (bottes au choix) est dessiné, dans la case Bottes. */
+  readonly spells = input<BuildSpells | undefined>();
 
-  readonly gear = computed(() => describeGear(this.items(), (id) => this.catalog.get(id)));
+  readonly gear = computed(() =>
+    SLOTS.flatMap((slot) => describeSlot(this.items(), slot, (id) => this.catalog.get(id), this.spells()) ?? []));
   readonly doll = computed(() =>
     PAPER_DOLL.map((slot) =>
       slot === null
         ? null
-        : { label: this.t().slots[slot], gear: describeSlot(this.items(), slot, (id) => this.catalog.get(id)) },
+        : { label: this.t().slots[slot], gear: describeSlot(this.items(), slot, (id) => this.catalog.get(id), this.spells()) },
     ),
   );
 
   protected title(g: GearSlot): string {
-    return gearTitle(g);
+    if (!g.spell) return gearTitle(g);
+    return this.t().gear.title(g.label, `${this.t().builds.shoesAny} · ${spellName(g.spell, this.catalog.spells()?.names)}`);
   }
 
   protected readonly t = inject(I18nService).t;
 
   protected icon(item: Item): string {
     return itemIconUrl(item.icon);
+  }
+
+  protected spellIcon(spell: string): string {
+    return spellIconUrl(spell);
   }
 
   protected name(item: Item): string {

@@ -139,7 +139,7 @@ function toModel({ total: _t, custom: _c, ...compo }: Compo): CompoModel {
               @if (buildOf(row); as b) {
                 <div class="detail">
                   <span class="badge">{{ emojiMap()[b.role] }} {{ b.role }}</span>
-                  <app-gear [items]="b.items" size="small" />
+                  <app-gear [items]="b.items" [spells]="b.spells" size="small" />
                 </div>
               } @else if (row.free) {
                 <div class="detail free-row">
