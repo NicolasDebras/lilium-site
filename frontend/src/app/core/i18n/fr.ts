@@ -497,6 +497,10 @@ export const fr = {
     applied: (sent: number) => `Payout corrigé · ${sent} MP ${plural(sent, 'envoyé', 'envoyés')}.`,
     dmFailed: (names: string) => `MP impossibles (MP fermés) : ${names}`,
     globalHint: 'Appliqué d’abord, puis les montants modifiés à la main l’emportent.',
+    share: (n: number, inferred: boolean) => `${inferred ? '≈ ' : ''}×${String(n).replace('.', ',')}`,
+    scoot: 'Scoot',
+    shareHint: 'Parts de paie à /finacti (multiplicateur du rôle)',
+    shareInferred: 'Parts déduites du montant (payout antérieur à leur enregistrement par le bot)',
   },
   admin: {
     subtitle: "Vue d'ensemble de la guilde et de sa BAL.",

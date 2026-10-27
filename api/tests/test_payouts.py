@@ -133,3 +133,25 @@ def test_adjust_payout_refusals(login, payouts):
     stranger = c.post(f"{url}/50/adjust", json={"changes": [{"uid": "999", "amount": 5}]})
     assert stranger.status_code == 422 and "999" in stranger.json()["detail"]                            # pas membre
     assert not getattr(payouts, "adjust_rows", [])
+
+
+def test_original_shares_from_bot_or_inferred():
+    from app.payouts import original_shares
+    logged = [{"uid": "1", "delta": 2_000, "role": "TANK", "share": 2.0},
+              {"uid": "2", "delta": 1_000, "role": "DPS", "share": 1.0},
+              {"uid": "3", "delta": 500, "role": "SCOOT"}]
+    assert original_shares(logged) == {"1": {"role": "TANK", "share": 2.0, "inferred": False},
+                                       "2": {"role": "DPS", "share": 1.0, "inferred": False},
+                                       "3": {"role": "SCOOT", "share": None, "inferred": False}}
+    old = [{"uid": "1", "delta": 1_000}, {"uid": "2", "delta": 1_000}, {"uid": "3", "delta": 1_500}]
+    assert original_shares(old)["3"] == {"role": "", "share": 1.5, "inferred": True}
+    assert original_shares(old)["1"]["share"] == 1.0
+    assert original_shares([]) == {}
+
+
+def test_payout_view_players_carry_shares():
+    row = {"id": 1, "ts": datetime(2026, 10, 27, tzinfo=UTC), "action": "finacti",
+           "entries": [{"uid": "1", "name": "A", "delta": 200, "role": "TANK", "share": 2.0}]}
+    view = payout_view(row, [[{"uid": "9", "name": "Ajouté", "delta": 50}]])
+    assert view["players"][0] == {"uid": "1", "name": "A", "amount": 200, "role": "TANK", "share": 2.0, "inferred": False}
+    assert view["players"][1]["share"] is None and view["players"][1]["role"] == ""   # ajouté depuis le site

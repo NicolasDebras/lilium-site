@@ -17,7 +17,8 @@ async function settle(fixture: { whenStable(): Promise<unknown>; detectChanges()
 const PAYOUT: Payout = {
   id: 50, ts: '2026-10-27T21:00+01:00', action: 'finacti', template: 'ZvZ', by_user: 'Caller', total: 3_000_000,
   adjusted: false,
-  players: [{ uid: '1', name: 'Alpha', amount: 1_000_000 }, { uid: '2', name: 'Bravo', amount: 2_000_000 }],
+  players: [{ uid: '1', name: 'Alpha', amount: 1_000_000, role: 'DPS', share: 1 },
+            { uid: '2', name: 'Bravo', amount: 2_000_000, role: 'TANK', share: 2 }],
 };
 
 describe('payouts : calculs', () => {
@@ -129,5 +130,30 @@ describe('PayoutsEditor (Admin → payouts de la semaine)', () => {
     cmp['addQuery'].set('123456789012345678');
     fixture.detectChanges();
     expect(cmp['suggestions']()).toEqual([{ uid: '123456789012345678', name: '123456789012345678' }]);
+  });
+});
+
+describe('PayoutsEditor — parts', () => {
+  beforeAll(() => registerLocaleData(localeFr));
+
+  it('affiche le rôle et les parts de chaque joueur (déduites : « ≈ », Scoot, ajouté : rien)', async () => {
+    TestBed.configureTestingModule({ imports: [PayoutsEditor], providers: [provideHttpClient(), provideHttpClientTesting()] });
+    const fixture = TestBed.createComponent(PayoutsEditor);
+    fixture.componentRef.setInput('guildId', '111');
+    fixture.detectChanges();
+    const players = [...PAYOUT.players, { uid: '3', name: 'Charlie', amount: 1_500_000, role: '', share: 1.5, inferred: true },
+                     { uid: '4', name: 'Scout', amount: 500_000, role: 'SCOOT', share: null }];
+    TestBed.inject(HttpTestingController).expectOne((q) => q.url === '/api/guilds/111/admin/payouts')
+      .flush({ week: 0, start: '', payouts: [{ ...PAYOUT, players }] });
+    await settle(fixture);
+    const el = fixture.nativeElement as HTMLElement;
+    el.querySelector<HTMLButtonElement>('.payout .head')!.click();
+    fixture.componentInstance['addAmount'].set('100');
+    fixture.componentInstance.addPlayer('6', 'Nouveau');
+    fixture.detectChanges();
+    const shares = [...el.querySelectorAll('tbody tr')].map((tr) => tr.querySelector('.share')?.textContent ?? '');
+    expect(shares).toEqual(['×1', '×2', '≈ ×1,5', 'Scoot', '']);
+    expect(el.querySelectorAll('tbody tr')[1].querySelector('.role')?.textContent).toBe('TANK');
+    expect(el.querySelectorAll('tbody tr')[1].querySelector('.share')?.classList).toContain('multi');
   });
 });

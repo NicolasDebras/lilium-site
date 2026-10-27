@@ -6,6 +6,7 @@ depuis le site : ajouter ou retirer un joueur, changer le montant d'un joueur, o
 chaque correction est une ligne `ajustbal` liée au payout par `ref_id`. Le montant « effectif »
 d'un joueur = son delta d'origine + ses ajustements.
 """
+from collections import Counter
 from datetime import datetime, time, timedelta, UTC
 
 from app.bal_stats import PARIS
@@ -81,10 +82,34 @@ def adjustment_deltas(current: dict[str, int], new: dict[str, int]) -> dict[str,
     return {u: new[u] - current.get(u, 0) for u in new if new[u] != current.get(u, 0)}
 
 
+def original_shares(entries: list[dict]) -> dict[str, dict]:
+    """{uid: {"role", "share", "inferred"}} du payout d'origine. Le bot écrit le rôle et les parts
+    de chaque joueur depuis la 2026.10.27 ; avant, les parts sont déduites (inferred) du rapport au
+    montant le plus fréquent (= 1 part), arrondi au centième. Scoot : montant fixe, sans parts."""
+    deltas = [int(e.get("delta") or 0) for e in entries if int(e.get("delta") or 0) > 0]
+    base = Counter(deltas).most_common(1)[0][0] if deltas else 0
+    out: dict[str, dict] = {}
+    for e in entries:
+        uid = str(e.get("uid") or "")
+        if not uid:
+            continue
+        role = e.get("role") or ""
+        if role == "SCOOT":
+            out[uid] = {"role": role, "share": None, "inferred": False}
+        elif e.get("share") is not None:
+            out[uid] = {"role": role, "share": float(e["share"]), "inferred": False}
+        elif base:
+            out[uid] = {"role": role, "share": round(int(e.get("delta") or 0) / base, 2), "inferred": True}
+    return out
+
+
 def payout_view(row: dict, adjustments: list[list[dict]]) -> dict:
-    """Payout tel qu'affiché dans le panel : joueurs encore payés (montant > 0) et total effectif."""
+    """Payout tel qu'affiché dans le panel : joueurs encore payés (montant > 0) avec leur rôle et leurs
+    parts d'origine (absents pour un joueur ajouté depuis le site), et total effectif."""
     players = effective_amounts(row["entries"], adjustments)
-    paid = [{"uid": u, **p} for u, p in players.items() if p["amount"] > 0]
+    shares = original_shares(row["entries"])
+    empty = {"role": "", "share": None, "inferred": False}
+    paid = [{"uid": u, **p, **shares.get(u, empty)} for u, p in players.items() if p["amount"] > 0]
     return {
         "id": row["id"],
         "ts": row["ts"].isoformat(timespec="minutes"),

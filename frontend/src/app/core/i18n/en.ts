@@ -525,6 +525,10 @@ export const en: typeof fr = {
     applied: (sent: number) => `Payout corrected · ${sent} DM${sent === 1 ? '' : 's'} sent.`,
     dmFailed: (names: string) => `DMs not delivered (closed DMs): ${names}`,
     globalHint: 'Applied first, then amounts edited by hand take precedence.',
+    share: (n: number, inferred: boolean) => `${inferred ? '≈ ' : ''}×${n}`,
+    scoot: 'Scout',
+    shareHint: 'Pay shares at /finacti (role multiplier)',
+    shareInferred: 'Shares inferred from the amount (payout made before the bot recorded them)',
   },
   admin: {
     subtitle: 'Overview of the guild and its balances.',

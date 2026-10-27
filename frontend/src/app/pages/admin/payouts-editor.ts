@@ -103,6 +103,10 @@ export function adjustBody(edits: Record<string, number>, global: PayoutGlobal |
                           <tr [class.removed]="row.after === 0">
                             <td>
                               {{ row.name }}
+                              @if (row.role) { <small class="role">{{ row.role }}</small> }
+                              @if (shareLabel(row); as share) {
+                                <span class="share" [class.multi]="row.share !== 1" [title]="shareTitle(row)">{{ share }}</span>
+                              }
                               @if (row.after === 0) { <small class="muted">· {{ t().payouts.removed }}</small> }
                             </td>
                             <td class="num">
@@ -216,6 +220,10 @@ export function adjustBody(edits: Record<string, number>, global: PayoutGlobal |
     .diff { display: block; font-size: .72rem; color: var(--success, #7bd88f); }
     .diff.down { color: var(--danger, #ff7b7b); }
     tr.removed td { color: var(--text-faint); }
+    .role { margin-left: 6px; font-size: .72rem; font-weight: 600; color: var(--text-muted); }
+    .share { margin-left: 6px; font-size: .72rem; font-weight: 700; padding: 1px 7px; border-radius: 999px;
+             background: var(--surface-2); color: var(--text-muted); border: 1px solid var(--border); }
+    .share.multi { background: var(--lilac-soft); color: var(--lilac); border-color: var(--lilac-strong); }
     h3 { margin: 0 0 6px; font-size: .9rem; }
     .add-row { display: flex; flex-wrap: wrap; gap: 8px; }
     .add-row .input[type='search'] { flex: 1 1 200px; }
@@ -271,9 +279,14 @@ export class PayoutsEditor {
   /** Lignes du tableau : joueurs du payout puis joueurs ajoutés, montant avant / après. */
   protected readonly rows = computed(() => {
     const names: Record<string, string> = { ...this.addedNames() };
-    for (const p of this.selected()?.players ?? []) names[p.uid] = p.name;
+    const players = new Map((this.selected()?.players ?? []).map((p) => [p.uid, p]));
+    for (const p of players.values()) names[p.uid] = p.name;
     const current = this.current();
-    return Object.entries(this.next()).map(([uid, after]) => ({ uid, name: names[uid] ?? uid, before: current[uid] ?? 0, after }));
+    return Object.entries(this.next()).map(([uid, after]) => {
+      const p = players.get(uid);
+      return { uid, name: names[uid] ?? uid, before: current[uid] ?? 0, after,
+               role: p?.role ?? '', share: p?.share ?? null, inferred: !!p?.inferred };
+    });
   });
   protected readonly changes = computed(() => this.rows().filter((r) => r.after !== r.before));
   protected readonly currentTotal = computed(() => Object.values(this.current()).reduce((a, b) => a + b, 0));
@@ -300,6 +313,17 @@ export class PayoutsEditor {
 
   protected when(ts: string): string {
     return opWhen(ts);
+  }
+
+  /** « ×2 », « ×0,5 », « ≈ ×1,5 » (déduit), « Scoot » ; rien pour un joueur ajouté depuis le site. */
+  protected shareLabel(row: { role: string; share: number | null; inferred: boolean }): string {
+    if (row.role === 'SCOOT') return this.t().payouts.scoot;
+    if (row.share == null) return '';
+    return this.t().payouts.share(row.share, row.inferred);
+  }
+
+  protected shareTitle(row: { inferred: boolean }): string {
+    return row.inferred ? this.t().payouts.shareInferred : this.t().payouts.shareHint;
   }
 
   protected signed(n: number): string {

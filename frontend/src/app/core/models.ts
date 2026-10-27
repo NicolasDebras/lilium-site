@@ -204,6 +204,12 @@ export interface PayoutPlayer {
   uid: string;
   name: string;
   amount: number;
+  /** Rôle et parts au payout d'origine (rôle vide / parts null : joueur ajouté depuis le site). */
+  role?: string;
+  /** Parts de paie (2 = double part) ; null pour un Scoot (montant fixe) ou un joueur ajouté. */
+  share?: number | null;
+  /** Parts déduites du montant (payout fait avant que le bot les enregistre). */
+  inferred?: boolean;
 }
 
 export interface Payout {
