@@ -102,3 +102,24 @@ def test_duplicate_respects_quota(login, monkeypatch):
     build_id = _create(login)
     monkeypatch.setattr(builds, "MAX_BUILDS", 1)
     assert login(STAFF_ID).post(f"/api/guilds/{GUILD}/builds/{build_id}/duplicate").status_code == 409
+
+
+def test_png_with_failed_icons_is_not_cached(monkeypatch):
+    """Icône en échec (CDN lent) : image servie mais pas gardée, le prochain affichage redemande."""
+    class Flaky:
+        def __init__(self):
+            self.cache, self.calls = {}, 0
+
+        async def fetch(self, ids):
+            self.calls += 1
+            if self.calls > 1:                      # 2ᵉ essai : le CDN répond
+                self.cache.update(dict.fromkeys(ids))
+            return dict.fromkeys(ids)
+
+    flaky = Flaky()
+    monkeypatch.setattr(images, "fetcher", flaky)
+    build = {"name": "B", "items": {"mainhand": ["MAIN_SWORD"]}, "spells": {"MAIN_SWORD": {"q": "CLEAVE"}}}
+    first = asyncio.run(images.build_png(build))
+    second = asyncio.run(images.build_png(build))
+    assert second is not first and flaky.calls == 2            # rien en cache après l'échec
+    assert asyncio.run(images.build_png(build)) is second       # complet : gardé

@@ -57,9 +57,10 @@ def rebuild_template(snap: dict, name: str, id_map: dict[str, int], target_build
     for key in ("pf1", "pf2"):
         rows = []
         for row in compo[key]:
+            alts = [id_map[str(a)] for a in row.get("alt_build_ids") or [] if str(a) in id_map]
             old = row.get("build_id")
             new = id_map.get(str(old)) if old is not None else None
-            rows.append({**row, "build_id": new})
+            rows.append({**row, "build_id": new, "alt_build_ids": alts if new is not None else []})
         compo[key] = rows
     return build_template_entry(compo, target_builds_by_id)
 

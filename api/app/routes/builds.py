@@ -98,7 +98,7 @@ async def get_build(guild_id: int, build_id: int, request: Request, user: dict =
 async def build_image(guild_id: int, build_id: int, request: Request, user: dict = Depends(require_member)):
     """La même image que celle envoyée en MP par /massup."""
     build = await _build_or_404(request.app.state.db, guild_id, build_id)
-    return Response(await build_png(build), media_type="image/png", headers={"Cache-Control": "private, max-age=60"})
+    return Response(await build_png(build), media_type="image/png", headers={"Cache-Control": "private, no-cache"})
 
 
 async def _create(db, guild_id: int, data: dict, user: dict) -> int:
@@ -141,8 +141,9 @@ async def update_build(guild_id: int, build_id: int, body: BuildIn, request: Req
 
     await db.update_build(guild_id, build_id, data)
     if data["name"] != old_name:
+        names = {b["id"]: b["name"] for b in await db.get_builds(guild_id)}
         for name in used_by:
-            await db.save_custom_template(guild_id, name, rename_build(templates[name], build_id, data["name"]))
+            await db.save_custom_template(guild_id, name, rename_build(templates[name], build_id, data["name"], names))
     return {"id": build_id}
 
 

@@ -121,17 +121,17 @@ def test_template_to_compo_roundtrip_with_builds():
             "pf2": [{"build_id": 20, "count": 5}]}
     compo = template_to_compo("ZvZ", build_template_entry(body, BUILDS), custom=True)
     assert compo["pf1"] == [
-        {"role": "TANK", "slot_key": "TANK", "count": 2, "weapon": "Tank Masse", "build_id": 12, "share": 1},
-        {"role": "CALLER", "slot_key": "CALLER", "count": 1, "weapon": "Libre", "build_id": None, "share": 1},
+        {"role": "TANK", "slot_key": "TANK", "count": 2, "weapon": "Tank Masse", "build_id": 12, "alt_build_ids": [], "share": 1},
+        {"role": "CALLER", "slot_key": "CALLER", "count": 1, "weapon": "Libre", "build_id": None, "alt_build_ids": [], "share": 1},
     ]
-    assert compo["pf2"] == [{"role": "DPS", "slot_key": "DPS", "count": 5, "weapon": "DPS Arc", "build_id": 20, "share": 1}]
+    assert compo["pf2"] == [{"role": "DPS", "slot_key": "DPS", "count": 5, "weapon": "DPS Arc", "build_id": 20, "alt_build_ids": [], "share": 1}]
     assert compo["total"] == 8
     assert compo["custom"] is True
 
 
 def test_template_to_compo_handles_bot_format_without_weapons():
     compo = template_to_compo("Donjon", {"pf_1": {"TANK": 1, "DPS": 3}}, custom=False)
-    assert compo["pf1"][1] == {"role": "DPS", "slot_key": "DPS", "count": 3, "weapon": "", "build_id": None, "share": 1}
+    assert compo["pf1"][1] == {"role": "DPS", "slot_key": "DPS", "count": 3, "weapon": "", "build_id": None, "alt_build_ids": [], "share": 1}
     assert compo["pf2"] == [] and compo["description"] == ""
 
 

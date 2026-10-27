@@ -2,6 +2,7 @@ import { Component, inject, input } from '@angular/core';
 
 import { I18nService } from '../core/i18n/i18n';
 import { ToastService } from '../core/toast.service';
+import { LoadingImage } from './loading-image';
 
 /** Nom de fichier sûr : « Raid AVA #2 » → « raid-ava-2 ». */
 export function fileSlug(name: string): string {
@@ -12,9 +13,10 @@ export function fileSlug(name: string): string {
 /** Image générée par l'API (build ou compo) + « Télécharger » et « Copier » (à coller dans Discord). */
 @Component({
   selector: 'app-image-share',
+  imports: [LoadingImage],
   template: `
     <figure class="share">
-      <img [src]="src()" [alt]="alt()" loading="lazy" />
+      <app-loading-image [src]="src()" [alt]="alt()" />
       <figcaption class="row">
         <a class="btn btn-sm" [href]="src()" [download]="fileName() + '.png'">{{ t().imageShare.download }}</a>
         <button type="button" class="btn btn-sm" (click)="copy()">{{ t().imageShare.copy }}</button>
@@ -23,7 +25,6 @@ export function fileSlug(name: string): string {
   `,
   styles: `
     .share { margin: 0; display: grid; gap: 10px; }
-    img { width: 100%; border-radius: var(--radius-sm); background: var(--surface-2); min-height: 120px; }
     .row { gap: 8px; flex-wrap: wrap; }
   `,
 })

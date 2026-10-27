@@ -44,7 +44,7 @@ describe('BuildDetailPage (build partageable)', () => {
     const { el } = await render('member');
     expect(el.querySelector('h1')?.textContent).toBe('Tank Masse');
     expect([...el.querySelectorAll('.used .badge')].map((b) => b.textContent)).toEqual(['ZvZ', 'Statik']);
-    expect(el.querySelector('img.preview')?.getAttribute('src')).toBe('/api/guilds/111/builds/7/image.png');
+    expect(el.querySelector('.preview img')?.getAttribute('src')).toBe('/api/guilds/111/builds/7/image.png');
     expect(el.querySelector('a[download]')?.getAttribute('download')).toBe('build-Tank-Masse.png');
   });
 

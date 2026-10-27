@@ -224,7 +224,7 @@ La liste des **builds** a une barre de recherche instantanée (nom, rôle, préc
 
 **Page d'un build** (`/g/{gid}/builds/{id}`, lien à coller dans Discord — il faut être connecté et membre du serveur) : équipement en grand, précisions, compos qui l'utilisent, **image PNG** identique au MP de `/massup` (télécharger / copier), et pour le staff **Dupliquer** (crée « Nom (copie) » puis ouvre son formulaire).
 
-**Images générées par l'API** (`app/images.py`) : mêmes images que le bot, dessinées par la lib AlbionCreateImageBuild (voir « Rendu des images »), avec sa police et ses icônes embarquées (CDN Albion en secours). Rendu dans un thread, 2 à la fois au plus, 200 dernières images gardées en mémoire (clé = contenu exact).
+**Images générées par l'API** (`app/images.py`) : mêmes images que le bot, dessinées par la lib AlbionCreateImageBuild (voir « Rendu des images »), avec sa police et ses icônes embarquées (CDN Albion en secours). Rendu dans un thread, 2 à la fois au plus, 200 dernières images gardées en mémoire (clé = contenu exact) — **sauf** une image dont une icône a échoué (CDN lent ou qui refuse : « ? ») : elle est servie mais pas gardée, et le prochain affichage redemande les icônes manquantes. Réponses `no-cache` (revalidées) ; sur le site, loader « Génération de l'image… » pendant le chargement (`shared/loading-image.ts`).
 
 Un build choisit son équipement parmi les **vrais objets du jeu**, avec leur image, dans une disposition identique à l'inventaire in-game :
 tête, cape / arme, armure, main gauche / potion, bottes, bouffe. Le sélecteur propose une recherche (FR, EN ou famille, accents ignorés) et des filtres par famille (Épées, Bâtons sacrés, Plaque, Nourriture, Potions…).

@@ -82,7 +82,7 @@ async def _png_response(db, guild_id: int, name: str, entry: dict) -> Response:
     png = await compo_png(name, entry, builds_by_id)
     if png is None:
         raise HTTPException(status_code=404, detail=tr("no_build_image"))
-    return Response(png, media_type="image/png", headers={"Cache-Control": "private, max-age=60"})
+    return Response(png, media_type="image/png", headers={"Cache-Control": "private, no-cache"})
 
 
 @router.get("/{name}/image.png")

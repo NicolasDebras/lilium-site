@@ -132,6 +132,8 @@ export const en: typeof fr = {
   },
   toasts: { close: 'Close' },
   imageShare: {
+    loading: 'Generating the image…',
+    loadFailed: 'Image unavailable for now: reload the page.',
     download: 'Download',
     copy: 'Copy image',
     copied: 'Image copied: paste it in Discord.',

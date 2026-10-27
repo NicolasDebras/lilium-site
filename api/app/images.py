@@ -12,7 +12,7 @@ from collections import OrderedDict
 
 from albion_create_image_build import (  # noqa: F401 — WIDTH, COMPO_WIDTH, local_icon : utilisés par les tests
     COMPO_MAX_ROWS, COMPO_WIDTH, WIDTH, IconFetcher, default_fetcher, item_ids, local_icon, normalize_items,
-    normalize_spells, render_build_image, render_compo_image, spell_ids,
+    normalize_spells, render_build_image, render_compo_image, shoes_spell_id, spell_ids,
 )
 
 from app.shared.lilium_compo import compo_rows
@@ -33,6 +33,9 @@ def _cache_key(kind: str, payload) -> str:
 
 
 async def _cached(key: str, make) -> bytes | None:
+    """`make()` → (png, complet). Une image dessinée avec des icônes en échec (CDN lent ou qui refuse,
+    « ? » à la place) n'est PAS gardée : le prochain affichage redemande les icônes manquantes (celles
+    déjà reçues sont dans le cache du fetcher) au lieu de servir l'image ratée jusqu'au redémarrage."""
     global _render_sem
     if key in _png_cache:
         _png_cache.move_to_end(key)
@@ -40,15 +43,23 @@ async def _cached(key: str, make) -> bytes | None:
     if _render_sem is None:
         _render_sem = asyncio.Semaphore(RENDER_CONCURRENCY)
     async with _render_sem:
-        png = await make()
+        png, complete = await make()
+    if not complete:
+        return png
     _png_cache[key] = png
     while len(_png_cache) > PNG_CACHE_MAX:
         _png_cache.popitem(last=False)
     return png
 
 
-async def _icons(ids: list[str]) -> dict[str, bytes | None]:
-    return await (fetcher or default_fetcher()).fetch(ids)
+async def _icons(ids: list[str]) -> tuple[dict[str, bytes | None], bool]:
+    """(icônes, complet) : complet = chaque icône a une réponse sûre du CDN (reçue, ou absente : 404),
+    aucune n'a échoué sur un délai ou une erreur passagère."""
+    f = fetcher or default_fetcher()
+    icons = await f.fetch(ids)
+    cache = getattr(f, "cache", None)
+    complete = cache is None or all(i in cache for i in ids)
+    return icons, complete
 
 
 def _build_payload(build: dict) -> dict:
@@ -62,8 +73,8 @@ async def build_png(build: dict) -> bytes:
     payload = _build_payload(build)
 
     async def make() -> bytes:
-        icons = await _icons(item_ids(payload["items"]) + spell_ids(payload["items"], payload["spells"]))
-        return await asyncio.to_thread(render_build_image, payload, icons)
+        icons, complete = await _icons(item_ids(payload["items"]) + spell_ids(payload["items"], payload["spells"]))
+        return await asyncio.to_thread(render_build_image, payload, icons), complete
 
     return await _cached(_cache_key("build", payload), make)
 
@@ -78,8 +89,9 @@ async def compo_png(name: str, template_data: dict, builds_by_id: dict[int, dict
     async def make() -> bytes:
         ids: list[str] = []
         for *_, build in rows:
-            ids.extend(i for i in item_ids(build["items"]) if i not in ids)
-        icons = await _icons(ids)
-        return await asyncio.to_thread(render_compo_image, rows, icons)
+            row_ids = item_ids(build["items"]) + shoes_spell_id(build["items"], build["spells"])
+            ids.extend(i for i in row_ids if i not in ids)
+        icons, complete = await _icons(ids)
+        return await asyncio.to_thread(render_compo_image, rows, icons), complete
 
     return await _cached(_cache_key("compo", rows), make)

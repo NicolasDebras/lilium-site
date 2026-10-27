@@ -12,13 +12,14 @@ import { SHOES_ANY, SPELL_KEYS, Slot, hasLevel } from '../../core/models';
 import { ToastService } from '../../core/toast.service';
 import { Gear, choiceName, describeGear, describeSwaps } from '../../shared/gear';
 import { Icon } from '../../shared/icon';
+import { LoadingImage } from '../../shared/loading-image';
 import { roleColor } from '../../shared/roles';
 
 /** Page d'un build, en lecture seule, à partager sur Discord : équipement en grand,
  *  image identique au MP de /massup (télécharger / copier), compos qui l'utilisent, dupliquer. */
 @Component({
   selector: 'app-build-detail',
-  imports: [Gear, Icon, RouterLink],
+  imports: [Gear, Icon, LoadingImage, RouterLink],
   template: `
     <a class="back muted" [routerLink]="['/g', guildId(), 'builds']"><app-icon name="chevron" [size]="14" class="flip" /> {{ t().builds.allBuilds }}</a>
 
@@ -87,7 +88,7 @@ import { roleColor } from '../../shared/roles';
 
         <div class="card image-card">
           <h3>{{ t().builds.imageTitle }} <span class="muted">{{ t().builds.imageHint }}</span></h3>
-          <img [src]="imageUrl()" [alt]="t().builds.imageAlt(b.name)" class="preview" loading="lazy" />
+          <app-loading-image class="preview" [src]="imageUrl()" [alt]="t().builds.imageAlt(b.name)" />
           <div class="row">
             <a class="btn btn-sm" [href]="imageUrl()" [download]="fileName()">{{ t().imageShare.download }}</a>
             <button type="button" class="btn btn-sm" (click)="copyImage()">{{ t().imageShare.copy }}</button>
@@ -121,7 +122,7 @@ import { roleColor } from '../../shared/roles';
     .used ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
     .used p { margin: 0; }
     .image-card { display: grid; gap: 12px; }
-    .preview { width: 100%; max-width: 460px; border-radius: var(--radius-sm); background: var(--surface-2); min-height: 200px; }
+    .preview { width: 100%; max-width: 460px; min-height: 200px; }
     .skeleton { min-height: 320px; }
     @media (max-width: 860px) {
       .layout { grid-template-columns: minmax(0, 1fr); }

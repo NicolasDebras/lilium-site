@@ -106,6 +106,8 @@ export const fr = {
   },
   toasts: { close: 'Fermer' },
   imageShare: {
+    loading: 'Génération de l’image…',
+    loadFailed: 'Image indisponible pour l’instant : recharge la page.',
     download: 'Télécharger',
     copy: "Copier l'image",
     copied: 'Image copiée : colle-la dans Discord.',
