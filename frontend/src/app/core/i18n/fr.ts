@@ -500,6 +500,8 @@ export const fr = {
   },
   admin: {
     subtitle: "Vue d'ensemble de la guilde et de sa BAL.",
+    tabsLabel: 'Rubriques de la page Admin',
+    tabs: { bal: 'BAL', payouts: 'Payouts', players: 'Joueurs', activity: 'Activité', errors: 'Erreurs du bot' },
     profiles: 'profils (/register)',
     builds: 'builds',
     compos: 'compos',

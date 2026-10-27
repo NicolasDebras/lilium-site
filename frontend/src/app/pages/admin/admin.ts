@@ -1,5 +1,5 @@
 import { DecimalPipe } from '@angular/common';
-import { Component, computed, inject, input, signal } from '@angular/core';
+import { Component, computed, inject, input, linkedSignal, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 
 import { ApiService } from '../../core/api.service';
@@ -16,6 +16,13 @@ import { ActivityStatsPanel } from './activity-stats';
 import { BalPlayers } from './bal-players';
 import { BotErrors } from './bot-errors';
 import { PayoutsEditor } from './payouts-editor';
+
+/** Onglets de la page Admin ; `?tab=` dans l'URL ouvre directement l'un d'eux. */
+export const ADMIN_TABS = ['bal', 'payouts', 'players', 'activity', 'errors'] as const;
+export type AdminTab = (typeof ADMIN_TABS)[number];
+const TAB_ICONS: Record<AdminTab, IconName> = {
+  bal: 'coins', payouts: 'edit', players: 'users', activity: 'trend', errors: 'info',
+};
 
 interface Tile {
   label: string;
@@ -56,6 +63,17 @@ interface Tile {
     }
 
     @if (!error()) {
+    <nav class="tabs" role="tablist" [attr.aria-label]="t().admin.tabsLabel">
+      @for (tab of tabs; track tab) {
+        <button type="button" role="tab" class="tab" [class.on]="activeTab() === tab" [attr.aria-selected]="activeTab() === tab"
+                (click)="activeTab.set(tab)">
+          <app-icon [name]="tabIcon(tab)" [size]="15" /> {{ t().admin.tabs[tab] }}
+        </button>
+      }
+    </nav>
+
+    @switch (activeTab()) {
+    @case ('bal') {
     <section class="bal" aria-labelledby="bal-title">
       <div class="section-head">
         <div>
@@ -160,11 +178,12 @@ interface Tile {
         </div>
       }
     </section>
-
-    <app-payouts-editor [guildId]="guildId()" />
-    <app-activity-stats [guildId]="guildId()" />
-    <app-bal-players [guildId]="guildId()" />
-    <app-bot-errors [guildId]="guildId()" />
+    }
+    @case ('payouts') { <app-payouts-editor class="panel" [guildId]="guildId()" /> }
+    @case ('players') { <app-bal-players class="panel" [guildId]="guildId()" /> }
+    @case ('activity') { <app-activity-stats class="panel" [guildId]="guildId()" /> }
+    @case ('errors') { <app-bot-errors class="panel" [guildId]="guildId()" /> }
+    }
     }
   `,
   styles: `
@@ -175,7 +194,15 @@ interface Tile {
     .stat app-icon { color: var(--lilac); }
     .value { font-size: 1.05rem; font-weight: 700; }
 
-    .bal { margin-top: 8px; }
+    /* Onglets : une rubrique à la fois (chacune ne charge ses données qu'à l'ouverture) */
+    .tabs { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 20px; padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-soft); }
+    .tab { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--border); background: transparent;
+           color: var(--text-muted); border-radius: 999px; padding: 6px 14px; font: inherit; font-size: .88rem; cursor: pointer; }
+    .tab:hover { border-color: var(--lilac-strong); color: var(--text); }
+    .tab.on { background: var(--lilac-soft); color: var(--lilac); border-color: var(--lilac-strong); font-weight: 600; }
+    .panel { display: block; }
+    .bal { margin-top: 0; }
     .section-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
     .section-head h2 { margin: 0; font-size: 1.35rem; }
     .range { margin: 6px 0 0; font-size: .85rem; display: flex; align-items: center; gap: 6px; }
@@ -226,6 +253,15 @@ export class AdminPage {
   protected readonly t = this.i18n.t;
   protected readonly locale = this.i18n.locale;
   readonly guildId = input.required<string>();
+  /** Onglet demandé dans l'URL (?tab=payouts…) ; sinon le tableau de bord BAL. */
+  readonly tab = input<string>();
+  protected readonly tabs = ADMIN_TABS;
+  protected readonly activeTab = linkedSignal<AdminTab>(() =>
+    (ADMIN_TABS as readonly string[]).includes(this.tab() ?? '') ? (this.tab() as AdminTab) : 'bal');
+
+  protected tabIcon(tab: AdminTab): IconName {
+    return TAB_ICONS[tab];
+  }
 
   private readonly overviewRes = rxResource({ params: () => this.guildId(), stream: ({ params }) => this.api.adminOverview(params) });
   protected readonly overview = computed(() => (this.overviewRes.hasValue() ? this.overviewRes.value() : null));

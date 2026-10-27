@@ -528,6 +528,8 @@ export const en: typeof fr = {
   },
   admin: {
     subtitle: 'Overview of the guild and its balances.',
+    tabsLabel: 'Admin page sections',
+    tabs: { bal: 'Balance', payouts: 'Payouts', players: 'Players', activity: 'Activity', errors: 'Bot errors' },
     profiles: 'profiles (/register)',
     builds: 'builds',
     compos: 'comps',

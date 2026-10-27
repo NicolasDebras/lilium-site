@@ -130,7 +130,8 @@ interface BuildEntry {
     .role-chip.on { background: var(--role-color); color: #fff; }
     .tall { min-height: 280px; }
 
-    .build { display: grid; gap: 10px; align-content: start; overflow: hidden; padding-top: 22px; }
+    /* Colonne : le pied (auteur, actions) est poussé en bas, au même niveau sur toutes les cartes d'une ligne */
+    .build { display: flex; flex-direction: column; gap: 10px; overflow: hidden; padding-top: 22px; }
     .build::before { content: ''; position: absolute; inset: 0 0 auto; height: 3px;
                      background: linear-gradient(90deg, var(--role-color), transparent); }
     .build h2 { margin: 0; font-size: 1.15rem; }
@@ -141,7 +142,7 @@ interface BuildEntry {
     .weapon { margin: 0; display: flex; gap: 6px; align-items: baseline; font-size: .88rem; }
     .weapon app-icon { color: var(--lilac); }
     .foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px;
-            margin-top: 4px; padding-top: 12px; border-top: 1px solid var(--border-soft); }
+            margin-top: auto; padding-top: 12px; border-top: 1px solid var(--border-soft); }
     .by { font-size: .78rem; }
     .actions { gap: 6px; }
     @media (max-width: 420px) { .body { flex-direction: column; } }

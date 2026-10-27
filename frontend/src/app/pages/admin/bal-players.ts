@@ -68,7 +68,7 @@ import { BalOperations } from '../bal/bal-operations';
     </section>
   `,
   styles: `
-    .players { margin-top: 32px; }
+    .players { margin-top: 0; }
     .section-head { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
     .section-head h2 { margin: 0; }
     .section-head p { margin: 4px 0 0; }

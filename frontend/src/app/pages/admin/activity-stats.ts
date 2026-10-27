@@ -79,7 +79,7 @@ import { PeriodPicker } from '../../shared/period-picker';
     </section>
   `,
   styles: `
-    .activity { margin-top: 32px; }
+    .activity { margin-top: 0; }
     .section-head { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
     .section-head h2 { margin: 0; }
     .range { margin: 4px 0 0; display: flex; align-items: center; gap: 6px; font-size: .85rem; }

@@ -160,6 +160,8 @@ Toutes sous `/api`. `{gid}` = id du serveur Discord.
 
 **Page Admin → BAL par joueur** : recherche par pseudo ou id Discord (accents et majuscules ignorés), liste des joueurs avec leur solde, clic → historique complet du joueur (même vue que « Ma BAL », filtre et export CSV), et **export CSV de toute la BAL de la guilde** sur la période choisie (colonnes date, opération, compo, joueur, uid, montant, par).
 
+**Page Admin en onglets** : chiffres clés en haut, puis une rubrique à la fois — **BAL** (tableau de bord), **Payouts**, **Joueurs** (BAL par joueur), **Activité**, **Erreurs du bot** ; chaque rubrique ne charge ses données qu'à l'ouverture, et `?tab=payouts|players|activity|errors` ouvre directement la bonne.
+
 **Page Admin → Payouts de la semaine** : payouts (`finacti` / `paybal` du bal_log) de la semaine en cours ou de la précédente (lundi 00:00, heure de Paris). On peut corriger un payout de plusieurs façons :
 - ajouter un joueur (recherche dans la BAL ou ID Discord, vérifié sur le serveur) ;
 - retirer un joueur (montant 0) ;

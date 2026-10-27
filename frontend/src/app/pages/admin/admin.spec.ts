@@ -172,3 +172,28 @@ describe('AdminPage', () => {
     expect(el.querySelector('.alert')?.textContent).toContain('/webadmin');
   });
 });
+
+describe('AdminPage — onglets', () => {
+  beforeAll(() => registerLocaleData(localeFr));
+
+  it('BAL par défaut, un clic ouvre une autre rubrique (chargée à l’ouverture), ?tab= choisit l’onglet', async () => {
+    TestBed.configureTestingModule({ imports: [AdminPage], providers: [provideHttpClient(), provideHttpClientTesting()] });
+    const fixture = TestBed.createComponent(AdminPage);
+    fixture.componentRef.setInput('guildId', '111');
+    fixture.detectChanges();
+    const http = TestBed.inject(HttpTestingController);
+    const el = fixture.nativeElement as HTMLElement;
+    const tabs = () => [...el.querySelectorAll<HTMLButtonElement>('.tabs .tab')];
+    expect(tabs().map((b) => b.textContent?.trim())).toEqual(['BAL', 'Payouts', 'Joueurs', 'Activité', 'Erreurs du bot']);
+    expect(tabs()[0].getAttribute('aria-selected')).toBe('true');
+    http.expectNone((q) => q.url === '/api/guilds/111/admin/payouts');       // pas chargé tant que fermé
+    tabs()[1].click();
+    fixture.detectChanges();
+    expect(el.querySelector('app-payouts-editor')).not.toBeNull();
+    expect(el.querySelector('section.bal')).toBeNull();
+    http.expectOne((q) => q.url === '/api/guilds/111/admin/payouts');
+    fixture.componentRef.setInput('tab', 'errors');
+    fixture.detectChanges();
+    expect(el.querySelector('app-bot-errors')).not.toBeNull();
+  });
+});
