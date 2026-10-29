@@ -104,7 +104,7 @@ class Database:
                 for r in rows]
 
     async def apply_payout_adjustment(self, guild_id: int, ref_id: int, template: str, by_user: str,
-                                      changes: list[tuple[str, str, int]]) -> list[dict]:
+                                      changes: list[tuple[str, str, int]], by_id: int | None = None) -> list[dict]:
         """Applique [(uid, nom, delta)] aux soldes (jamais sous 0) et écrit la ligne `ajustbal` liée au
         payout, le tout dans une transaction. Renvoie les entrées réellement appliquées
         [{uid, name, delta, total, before}] (`before` = solde avant, pour le MP)."""
@@ -124,9 +124,9 @@ class Database:
                                     "before": int(before)})
                 entries = [{k: e[k] for k in ("uid", "name", "delta", "total")} for e in applied]
                 await conn.execute("""
-                    INSERT INTO bal_log (ts, action, by_user, entries, template, guild_id, ref_id)
-                    VALUES (NOW(), 'ajustbal', $1, $2::jsonb, $3, $4, $5)
-                """, by_user, json.dumps(entries), template, guild_id, ref_id)
+                    INSERT INTO bal_log (ts, action, by_user, entries, template, guild_id, ref_id, by_user_id)
+                    VALUES (NOW(), 'ajustbal', $1, $2::jsonb, $3, $4, $5, $6)
+                """, by_user, json.dumps(entries), template, guild_id, ref_id, by_id)
         return applied
 
     # ── Builds ───────────────────────────────────────────────────────────────
@@ -218,10 +218,14 @@ class Database:
             """, guild_id)
         return {k: int(v) for k, v in dict(row).items()}
 
+    # by_id : id Discord de l'auteur (NULL avant que le bot l'enregistre) ; by_ig : son pseudo IG (/register)
     _BAL_EVENTS_SQL = """
         SELECT l.id, l.ts, l.action, COALESCE(l.template, '') AS template, l.by_user,
+               l.by_user_id::text AS by_id, NULLIF(p.ig_name, '') AS by_ig,
                elem->>'uid' AS uid, elem->>'name' AS name, (elem->>'delta')::bigint AS delta
-        FROM bal_log l, jsonb_array_elements(l.entries) AS elem
+        FROM bal_log l
+        CROSS JOIN LATERAL jsonb_array_elements(l.entries) AS elem
+        LEFT JOIN player_profiles p ON p.guild_id = l.guild_id AND p.user_id = l.by_user_id::text
         WHERE l.guild_id = $1 AND l.ts >= $2 {extra}
         ORDER BY l.ts
     """

@@ -3,7 +3,7 @@ from datetime import date, datetime, UTC
 import pytest
 
 from app.bal_stats import (
-    NO_TEMPLATE, PARIS, TOP_PLAYERS, compute_bal_stats, fetch_since, my_bal_history, period_bounds,
+    NO_TEMPLATE, PARIS, TOP_PLAYERS, caller_groups, compute_bal_stats, fetch_since, my_bal_history, period_bounds,
     previous_bounds,
 )
 
@@ -121,6 +121,34 @@ def test_templates_and_callers_ranked_by_silver():
         {"name": "Chef", "silver": 800, "activities": 1},
         {"name": "Cal", "silver": 100, "activities": 1},
     ]
+
+
+def call(id, by, by_id=None, by_ig=None, delta=100, day=20):
+    return {**ev(id, day, "finacti", delta, by=by), "by_id": by_id, "by_ig": by_ig}
+
+
+def test_callers_grouped_by_discord_id_not_by_nickname():
+    """Même id Discord sous deux pseudos (tag de guilde ajouté) : une seule ligne, dernier pseudo."""
+    groups = caller_groups([call(1, "Lilium122", "42"), call(2, "[VIC] Lilium122", "42", day=21)])
+    assert [(g["name"], g["silver"], len(g["ids"])) for g in groups.values()] == [("Lilium122", 200, 2)]
+
+
+def test_callers_legacy_rows_without_id_join_by_nickname_without_tag():
+    """Lignes d'avant l'id : rattachées à l'id qui porte le même pseudo (tag et casse ignorés),
+    sinon regroupées entre elles par pseudo sans tag."""
+    groups = caller_groups([
+        call(1, "[Mon] Coskko"), call(2, "coskko"), call(3, "Coskko", "7", day=22),
+        call(4, "[VIC] Ariia I"), call(5, "Ariia I"),
+    ])
+    rows = sorted((g["name"], g["silver"], len(g["ids"])) for g in groups.values())
+    assert rows == [("Ariia I", 200, 2), ("Coskko", 300, 3)]
+
+
+def test_callers_show_registered_ig_name_and_keep_homonyms_apart():
+    groups = caller_groups([call(1, "Bob", "1", by_ig="BobIG"), call(2, "Bob", "2")])
+    assert sorted(g["name"] for g in groups.values()) == ["Bob", "BobIG"]
+    s = compute_bal_stats([call(1, "Bob", "1"), call(2, "[X] Bob", "2", day=21)], BALANCES, "30d", NOW)
+    assert [c["name"] for c in s["top_callers"]] == ["Bob", "Bob"]   # deux personnes, deux lignes
 
 
 def test_top_earners_of_the_period():

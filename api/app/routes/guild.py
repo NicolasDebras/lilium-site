@@ -232,7 +232,8 @@ async def admin_adjust_payout(guild_id: int, log_id: int, body: PayoutAdjustIn, 
             names[uid] = _member_name(member, uid)
 
     applied = await db.apply_payout_adjustment(
-        guild_id, log_id, row["template"], user["username"], [(uid, names[uid], d) for uid, d in deltas.items()]
+        guild_id, log_id, row["template"], user["username"], [(uid, names[uid], d) for uid, d in deltas.items()],
+        by_id=int(user["id"]),
     )
     sent, failed = 0, []
     for e in applied:            # en série : le token est partagé avec le bot (rate limit)
