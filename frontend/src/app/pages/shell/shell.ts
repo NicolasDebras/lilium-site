@@ -115,6 +115,8 @@ export const NAV_LINKS: NavLink[] = [
     <app-toasts />
   `,
   styles: `
+    /* nommé pour les transitions de pages : seul le contenu glisse, la barre reste fixe */
+    main { view-transition-name: page; }
     .nav { position: sticky; top: 0; z-index: 20; border-bottom: 1px solid var(--border-soft); }
     .nav-inner { max-width: 1180px; margin: 0 auto; padding: 10px var(--gutter);
                  display: flex; align-items: center; gap: 24px; }
