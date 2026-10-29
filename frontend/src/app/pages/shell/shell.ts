@@ -9,6 +9,7 @@ import { hasLevel } from '../../core/models';
 import { Icon, IconName } from '../../shared/icon';
 import { LangSwitch } from '../../shared/lang-switch';
 import { Logo } from '../../shared/logo';
+import { NavIcon } from '../../shared/nav-icon';
 import { Toasts } from '../../shared/toasts';
 
 interface NavLink {
@@ -29,7 +30,7 @@ export const NAV_LINKS: NavLink[] = [
 @Component({
   selector: 'app-shell',
   host: { '(document:click)': 'closeMenus()', '(document:keydown.escape)': 'closeMenus()' },
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, Icon, LangSwitch, Logo, Toasts],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, Icon, LangSwitch, Logo, NavIcon, Toasts],
   template: `
     <header class="nav glass">
       <div class="nav-inner">
@@ -39,7 +40,7 @@ export const NAV_LINKS: NavLink[] = [
           <nav class="links" [class.open]="menuOpen()" (click)="menuOpen.set(false)">
             @for (l of links(); track l.path) {
               <a [routerLink]="['/g', g.id, l.path]" routerLinkActive="active">
-                <app-icon [name]="l.icon" [size]="17" />
+                <app-nav-icon [name]="l.icon" />
                 <span>{{ t().shell.nav[l.path] }}</span>
               </a>
             }
@@ -129,7 +130,7 @@ export const NAV_LINKS: NavLink[] = [
     .links a::after { content: ''; position: absolute; left: 14px; right: 14px; bottom: -11px; height: 2px;
                       border-radius: 2px; background: var(--gradient); transform: scaleX(0); transition: transform .25s var(--ease); }
     .links a.active { color: var(--text); }
-    .links a.active app-icon { color: var(--lilac); }
+    .links a.active app-nav-icon { color: var(--lilac); }
     .links a.active::after { transform: scaleX(1); }
 
     .right { display: flex; align-items: center; gap: 10px; margin-left: auto; }
