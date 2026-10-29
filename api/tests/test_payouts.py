@@ -109,6 +109,7 @@ def test_adjust_payout_updates_bal_logs_and_dms(login, payouts, fake_discord):
     assert payouts.bal[(GUILD, MEMBER_ID)] == 2_000_000 and payouts.bal[(GUILD, STAFF_ID)] == 0
     assert payouts.bal[(GUILD, 6)] == 400_000
     assert payouts.adjust_rows[0]["ref_id"] == 50 and payouts.adjust_rows[0]["by_user"] == "Admin"
+    assert payouts.adjust_rows[0]["by_id"] == ADMIN_ID   # id Discord de l'auteur (top callers)
     assert out["dm_sent"] == 2 and out["dm_failed"] == ["Staff"]
     dm = dict(fake_discord.dms)[str(MEMBER_ID)]
     assert "1 000 000 → **1 500 000** (+500 000)" in dm and "**Admin**" in dm

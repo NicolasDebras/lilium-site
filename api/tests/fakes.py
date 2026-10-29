@@ -87,7 +87,7 @@ class FakeDB:
         return [{**r, "adjustments": [a["entries"] for a in adj if a["guild_id"] == guild_id and a["ref_id"] == r["id"]]}
                 for r in sorted(rows, key=lambda r: r["ts"], reverse=True)]
 
-    async def apply_payout_adjustment(self, guild_id, ref_id, template, by_user, changes):
+    async def apply_payout_adjustment(self, guild_id, ref_id, template, by_user, changes, by_id=None):
         applied = []
         for uid, name, delta in changes:
             before = self.bal.get((guild_id, int(uid)), 0)
@@ -95,7 +95,7 @@ class FakeDB:
             self.bal[(guild_id, int(uid))] = after
             applied.append({"uid": uid, "name": name, "delta": after - before, "total": after, "before": before})
         self.adjust_rows = getattr(self, "adjust_rows", []) + [{
-            "guild_id": guild_id, "ref_id": ref_id, "template": template, "by_user": by_user,
+            "guild_id": guild_id, "ref_id": ref_id, "template": template, "by_user": by_user, "by_id": by_id,
             "entries": [{k: e[k] for k in ("uid", "name", "delta", "total")} for e in applied]}]
         return applied
 

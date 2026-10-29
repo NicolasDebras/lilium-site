@@ -6,6 +6,7 @@ Le bot écrit dans bal_log à chaque /finacti, /paybal, /addbal, /retirebal, /tr
 """
 import csv
 import io
+import re
 import unicodedata
 from datetime import date, datetime, time, timedelta
 from zoneinfo import ZoneInfo
@@ -117,6 +118,34 @@ def _totals(events: list[dict]) -> dict:
     return {"credited": credited, "withdrawn": withdrawn, "activities": len(activities)}
 
 
+_TAG_PREFIX = re.compile(r"^(\s*[\[(][^\])]{1,12}[\])]\s*)+")
+
+
+def _base_name(name: str) -> str:
+    """Pseudo Discord sans le tag de guilde en tête (« [VIC] Lilium122 » → « Lilium122 »)."""
+    return _TAG_PREFIX.sub("", name or "").strip() or (name or "").strip()
+
+
+def caller_groups(events: list[dict]) -> dict[str, dict]:
+    """Regroupe les fins d'activité par caller : par id Discord (`by_id`, enregistré par le bot) ;
+    les anciennes lignes sans id sont rattachées à l'id qui a porté le même pseudo (tag de guilde
+    ignoré, casse ignorée), sinon regroupées par ce pseudo. Nom affiché : pseudo IG (/register),
+    sinon dernier pseudo Discord connu, sans le tag. `events` triés par date."""
+    id_of: dict[str, str] = {}
+    for e in events:
+        if e.get("by_id"):
+            id_of[_base_name(e.get("by_user") or "").casefold()] = e["by_id"]
+    groups: dict[str, dict] = {}
+    for e in events:
+        base = _base_name(e.get("by_user") or "") or "?"
+        key = e.get("by_id") or id_of.get(base.casefold()) or "name:" + base.casefold()
+        g = groups.setdefault(key, {"name": base, "silver": 0, "ids": set()})
+        g["silver"] += int(e["delta"])
+        g["ids"].add(e["id"])
+        g["name"] = e.get("by_ig") or (base if e.get("by_id") or key.startswith("name:") else g["name"])
+    return groups
+
+
 def _in(events: list[dict], first: date, last: date) -> list[dict]:
     return [e for e in events if first <= _local_day(e["ts"]) <= last]
 
@@ -137,15 +166,11 @@ def compute_bal_stats(events: list[dict], balances: list[dict], period: str, now
 
     # ── Par compo, par caller, par joueur, jour × heure ──────────────────────
     by_template: dict[str, dict] = {}
-    callers: dict[str, dict] = {}
     heat_ids: dict[tuple[int, int], set] = {}
     for e in activity_events:
         t = by_template.setdefault(e["template"] or NO_TEMPLATE, {"silver": 0, "ids": set()})
         t["silver"] += int(e["delta"])
         t["ids"].add(e["id"])
-        c = callers.setdefault(e.get("by_user") or "?", {"silver": 0, "ids": set()})
-        c["silver"] += int(e["delta"])
-        c["ids"].add(e["id"])
         local = e["ts"].astimezone(PARIS)
         heat_ids.setdefault((local.weekday(), local.hour), set()).add(e["id"])
 
@@ -180,7 +205,11 @@ def compute_bal_stats(events: list[dict], balances: list[dict], period: str, now
         "due": _curve(total_due, current, first, today),
         "top_players": [{"name": b["name"], "amount": int(b["amount"])} for b in balances[:TOP_PLAYERS]],
         "top_earners": sorted(earners.values(), key=lambda p: (-p["amount"], p["name"]))[:TOP_PLAYERS],
-        "top_callers": ranked(callers, "name", TOP_CALLERS),
+        "top_callers": sorted(
+            ({"name": g["name"], "silver": g["silver"], "activities": len(g["ids"])}
+             for g in caller_groups(activity_events).values()),
+            key=lambda r: (-r["silver"], r["name"]),
+        )[:TOP_CALLERS],
         "by_template": ranked(by_template, "template", TOP_TEMPLATES),
         "heatmap": heatmap,
     }
