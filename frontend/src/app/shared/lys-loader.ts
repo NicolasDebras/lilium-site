@@ -21,11 +21,11 @@ import { Component, input } from '@angular/core';
   `,
   styles: `
     :host { position: relative; display: inline-block; width: var(--size); height: var(--size); flex: none; }
-    svg { position: absolute; }
-    .ring { inset: 0; width: 100%; height: 100%; stroke: var(--lilac-deep); animation: spin 8s linear infinite; }
+    svg { position: absolute; display: block; }  /* top/left + taille explicite : Safari ignore « inset » seul sur un SVG */
+    .ring { top: 0; left: 0; width: 100%; height: 100%; stroke: var(--lilac-deep); animation: spin 8s linear infinite; }
     .ticks { stroke: var(--lilac); stroke-width: 1.5; }
     .gems { fill: var(--lilac-strong); stroke: none; }
-    .lys { inset: 24%; width: 52%; height: 52%; filter: drop-shadow(0 0 8px var(--lilac-glow)); }
+    .lys { top: 24%; left: 24%; width: 52%; height: 52%; filter: drop-shadow(0 0 8px var(--lilac-glow)); }
     /* trace (contour) → remplissage → pulsation, en boucle */
     .lys path { fill: var(--lilac); fill-opacity: 0; stroke: var(--lilac); stroke-width: .7;
                 stroke-dasharray: 60; stroke-dashoffset: 60; animation: draw 2.4s var(--ease) infinite; }

@@ -19,9 +19,12 @@
               font-family: 'Inter', system-ui, sans-serif; transition: opacity .45s, visibility .45s; }
     #splash.done { opacity: 0; visibility: hidden; }
     #splash .seal { position: relative; width: 132px; height: 132px; }
-    #splash .ring { position: absolute; inset: 0; animation: splash-spin 14s linear infinite; }
-    #splash .ring.inner { inset: 14px; animation-direction: reverse; animation-duration: 9s; }
-    #splash .lys { position: absolute; inset: 30px; filter: drop-shadow(0 0 16px rgba(167, 123, 243, .55)); }
+    /* SVG positionnés avec top/left + largeur/hauteur explicites : avec « inset » seul, Safari leur
+       garde leur taille par défaut (300×150) et le lys/les anneaux sortent du centre. */
+    #splash svg { position: absolute; display: block; }
+    #splash .ring { top: 0; left: 0; width: 132px; height: 132px; animation: splash-spin 14s linear infinite; }
+    #splash .ring.inner { top: 14px; left: 14px; width: 104px; height: 104px; animation-direction: reverse; animation-duration: 9s; }
+    #splash .lys { top: 30px; left: 30px; width: 72px; height: 72px; filter: drop-shadow(0 0 16px rgba(167, 123, 243, .55)); }
     #splash .lys path { stroke: #c8a2ff; stroke-width: .6; stroke-dasharray: 60; stroke-dashoffset: 60; fill-opacity: 0;
                         animation: splash-draw 1.1s cubic-bezier(.2, .7, .2, 1) forwards, splash-fill .6s .8s forwards,
                                    splash-pulse 2.4s 1.4s ease-in-out infinite; }
@@ -51,15 +54,15 @@
   <div id="splash" role="status" aria-label="Lilium">
     <div class="seal" aria-hidden="true">
       <!-- Anneaux de runes (médiéval) autour du lys Lilium -->
-      <svg class="ring" viewBox="0 0 132 132" fill="none" stroke="#7254bd">
+      <svg class="ring" width="132" height="132" viewBox="0 0 132 132" fill="none" stroke="#7254bd">
         <circle cx="66" cy="66" r="63" stroke-opacity=".5" stroke-dasharray="2 5" />
         <path d="M66 1v8M66 123v8M1 66h8M123 66h8" stroke="#c8a2ff" stroke-width="1.5" />
         <path d="m66 12 4 4-4 4-4-4zM66 112l4 4-4 4-4-4zM12 66l4-4 4 4-4 4zM112 66l4-4 4 4-4 4z" fill="#a77bf3" stroke="none" />
       </svg>
-      <svg class="ring inner" viewBox="0 0 104 104" fill="none" stroke="#a77bf3" stroke-opacity=".35">
+      <svg class="ring inner" width="104" height="104" viewBox="0 0 104 104" fill="none" stroke="#a77bf3" stroke-opacity=".35">
         <circle cx="52" cy="52" r="50" stroke-dasharray="18 6 2 6" />
       </svg>
-      <svg class="lys" viewBox="0 0 32 32">
+      <svg class="lys" width="72" height="72" viewBox="0 0 32 32">
         <defs>
           <linearGradient id="splash-grad" x1="0" y1="0" x2="1" y2="1">
             <stop offset="0" stop-color="#e6d3ff" /><stop offset=".55" stop-color="#a77bf3" /><stop offset="1" stop-color="#7254bd" />
