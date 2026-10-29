@@ -6,6 +6,7 @@ format des templates du bot (table custom_templates, même format que /addtempla
      "pf_2": {rôle: nb}, "weapon_pf2": {rôle: hint}, "builds_pf2": {rôle: build_id}}
     (les clés *_pf2 seulement si la PF2 n'est pas vide)
     + "role_multipliers": {clé: parts} (clés PF2 préfixées « PF2: ») si les parts sont personnalisées
+    + pf_1["LEACHER PVP"] = nb et "zero_pay_roles": ["LEACHER PVP"] si la compo accepte des leachers
 
 Une ligne peut pointer vers un build (le rôle et le hint viennent alors du
 build : un seul build par rôle et par party, le joueur choisit son rôle et le
@@ -24,6 +25,7 @@ PARTIES = (
 # Le bot affiche une ligne par place : un nombre géant le ferait générer des millions de lignes.
 MAX_COUNT = 50
 MAX_SHARE = 10   # parts de paie max d'une ligne (/finacti : role_multipliers)
+LEACHER_ROLE = "LEACHER PVP"   # même clé que le bot (roles_templates.py, massup.py)
 
 
 class InvalidCompo(ValueError):
@@ -174,7 +176,24 @@ def build_template_entry(body: dict, builds_by_id: dict[int, dict] | None = None
     # retombe pas sur la part du rôle de base PF1 (le bot cherche la clé exacte, puis le rôle).
     if with_shares:
         entry["role_multipliers"] = multipliers
+    # Leachers : places en PF1, non payés à /finacti (zero_pay_roles, lu par le bot)
+    if body.get("accept_leachers"):
+        count = _leacher_count(body.get("leacher_count"))
+        entry["pf_1"][LEACHER_ROLE] = count
+        entry["zero_pay_roles"] = [LEACHER_ROLE]
+        if with_shares:
+            multipliers.pop(LEACHER_ROLE, None)
     return entry
+
+
+def _leacher_count(value) -> int:
+    try:
+        count = int(value)
+    except (TypeError, ValueError):
+        count = 0
+    if not 1 <= count <= MAX_COUNT:
+        raise InvalidCompo(tr("bad_leacher_count", max=MAX_COUNT))
+    return count
 
 
 def _row_share(multipliers: dict, key: str, pf2: bool) -> float:
@@ -193,18 +212,23 @@ def template_to_compo(name: str, data: dict, *, custom: bool) -> dict:
     }
     multipliers = data.get("role_multipliers") or {}
     compo["custom_shares"] = bool(multipliers)
+    leachers = (data.get("pf_1") or {}).get(LEACHER_ROLE)
+    compo["accept_leachers"] = bool(leachers)
+    compo["leacher_count"] = leachers or 1
     for site_key, count_key, weapon_key, builds_key, _ in PARTIES:
         weapons = data.get(weapon_key) or {}
         builds = data.get(builds_key) or {}
         rows = []
         for key, count in (data.get(count_key) or {}).items():
+            if site_key == "pf1" and key == LEACHER_ROLE:
+                continue   # affiché par le switch « leachers », pas comme une ligne
             ids = stored_ids(builds.get(key))
             # role = rôle de base (formulaire) ; slot_key = clé réelle (« TANK · Main tank »), pour l'affichage
             rows.append({"role": base_role(key), "slot_key": key, "count": count, "weapon": weapons.get(key, ""),
                          "build_id": ids[0] if ids else None, "alt_build_ids": ids[1:],
                          "share": _row_share(multipliers, key, site_key == "pf2")})
         compo[site_key] = sorted(rows, key=lambda r: role_rank(r["role"]))
-    compo["total"] = sum(r["count"] for r in compo["pf1"] + compo["pf2"])
+    compo["total"] = sum(r["count"] for r in compo["pf1"] + compo["pf2"]) + (leachers or 0)
     return compo
 
 

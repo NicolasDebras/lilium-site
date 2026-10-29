@@ -35,6 +35,9 @@ class CompoIn(BaseModel):
     type_acti: Literal["PVP", "PVE"] = "PVP"
     image: str = Field(default="", max_length=500)
     custom_shares: bool = False
+    # Places « LEACHER PVP » en PF1, non payées à /finacti
+    accept_leachers: bool = False
+    leacher_count: int | None = None
     pf1: list[SlotRow] = Field(default=[], max_length=MAX_ROWS)
     pf2: list[SlotRow] = Field(default=[], max_length=MAX_ROWS)
 

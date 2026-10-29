@@ -204,6 +204,38 @@ def test_compo_without_multipliers_has_default_shares():
     assert compo["pf1"][0]["share"] == 1
 
 
+# ── Leachers ─────────────────────────────────────────────────────────────────
+
+def test_leachers_stored_as_zero_pay_pf1_slot():
+    entry = build_template_entry({"accept_leachers": True, "leacher_count": 3, "custom_shares": True,
+                                  "pf1": [{"role": "TANK", "count": 1}]})
+    assert entry["pf_1"] == {"TANK": 1, "LEACHER PVP": 3}
+    assert entry["zero_pay_roles"] == ["LEACHER PVP"]
+    assert "LEACHER PVP" not in entry["role_multipliers"]
+
+
+def test_leachers_ignored_when_switch_off():
+    entry = build_template_entry({"leacher_count": 3, "pf1": [{"role": "TANK", "count": 1}]})
+    assert entry["pf_1"] == {"TANK": 1}
+    assert "zero_pay_roles" not in entry
+
+
+def test_leacher_count_out_of_range_rejected():
+    for bad in (0, 51, None, "x"):
+        with pytest.raises(InvalidCompo):
+            build_template_entry({"accept_leachers": True, "leacher_count": bad, "pf1": [{"role": "TANK", "count": 1}]})
+
+
+def test_leachers_roundtrip_to_compo():
+    entry = build_template_entry({"accept_leachers": True, "leacher_count": 2, "pf1": [{"role": "TANK", "count": 1}]})
+    compo = template_to_compo("C", entry, custom=True)
+    assert compo["accept_leachers"] is True and compo["leacher_count"] == 2
+    assert [r["role"] for r in compo["pf1"]] == ["TANK"]       # pas de ligne « LEACHER PVP »
+    assert compo["total"] == 3
+    off = template_to_compo("C", build_template_entry({"pf1": [{"role": "TANK", "count": 1}]}), custom=True)
+    assert off["accept_leachers"] is False and off["leacher_count"] == 1
+
+
 def test_compo_share_falls_back_to_base_role_like_the_bot():
     # Template écrit à la main (/addtemplate) : multiplicateur par rôle de base
     data = {"pf_1": {"SCOUT": 1, "TANK · Off": 1}, "role_multipliers": {"SCOUT": 1.5, "TANK": 2}}

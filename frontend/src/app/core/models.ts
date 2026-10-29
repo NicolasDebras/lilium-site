@@ -119,6 +119,9 @@ export interface Compo {
   image: string;
   /** Parts de paie personnalisées par ligne (sinon 1 part chacun). */
   custom_shares?: boolean;
+  /** Places « LEACHER PVP » en PF1 (non payées à /finacti), au nombre de `leacher_count`. */
+  accept_leachers?: boolean;
+  leacher_count?: number | null;
   pf1: SlotRow[];
   pf2: SlotRow[];
   total: number;

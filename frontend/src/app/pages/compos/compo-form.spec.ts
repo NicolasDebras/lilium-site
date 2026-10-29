@@ -183,7 +183,7 @@ describe('CompoForm', () => {
   it('parts de paie : la case affiche la colonne « Parts » (1 par défaut) et les envoie', async () => {
     const { fixture, cmp, http, el } = await render();
     expect(el.querySelector('.slot input.share')).toBeNull();
-    el.querySelector<HTMLInputElement>('.check input[type="checkbox"]')!.click();
+    el.querySelector<HTMLInputElement>('.check.shares input[type="checkbox"]')!.click();
     fixture.detectChanges();
     expect(cmp['model']().custom_shares).toBe(true);
     const share = el.querySelector<HTMLInputElement>('.slot input.share')!;
@@ -208,6 +208,39 @@ describe('CompoForm', () => {
     const { cmp } = await render();
     cmp['model'].update((m) => ({ ...m, name: 'ZvZ', custom_shares: true, pf1: [{ ...m.pf1[0], share: 11 }] }));
     expect(cmp['form']().invalid()).toBe(true);
+  });
+
+  it('pas de champ image ; le switch leachers affiche le nombre, compté dans les totaux et envoyé', async () => {
+    const { fixture, cmp, http, el } = await render();
+    expect(el.querySelector('#image')).toBeNull();
+    expect(el.querySelector('#leacher-count')).toBeNull();
+    el.querySelector<HTMLInputElement>('.check.leachers input[type="checkbox"]')!.click();
+    fixture.detectChanges();
+    expect(cmp['model']().accept_leachers).toBe(true);
+    const count = el.querySelector<HTMLInputElement>('#leacher-count')!;
+    expect(count.value).toBe('1');
+    count.value = '4';
+    count.dispatchEvent(new Event('input'));
+    cmp.setSource('pf1', 0, '12');
+    fixture.detectChanges();
+    expect(el.querySelector('legend')?.textContent).toContain('5 joueurs');
+
+    cmp['model'].update((m) => ({ ...m, name: 'ZvZ' }));
+    const done = cmp.save();
+    const req = http.expectOne('/api/guilds/111/compos');
+    expect(req.request.body).toMatchObject({ accept_leachers: true, leacher_count: 4 });
+    req.flush({ name: 'ZvZ' });
+    await done;
+  });
+
+  it('leachers activés sans nombre : formulaire invalide', async () => {
+    const { cmp } = await render();
+    cmp['model'].update((m) => ({ ...m, name: 'ZvZ', accept_leachers: true, leacher_count: null }));
+    expect(cmp['form']().invalid()).toBe(true);
+    cmp['model'].update((m) => ({ ...m, leacher_count: 51 }));
+    expect(cmp['form']().invalid()).toBe(true);
+    cmp['model'].update((m) => ({ ...m, accept_leachers: false, leacher_count: null }));
+    expect(cmp['form']().invalid()).toBe(false);
   });
 
   it('en édition : relit les builds des lignes puis fait un PUT', async () => {

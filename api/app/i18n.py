@@ -84,7 +84,9 @@ MESSAGES: dict[str, dict[str, str]] = {
                     "en": "“{name}” is twice in {label}: increase the player count of its line instead."},
     "bad_name": {"fr": "Nom invalide : 1 à 100 caractères, sans / \\ ? # % ni caractère spécial invisible.",
                  "en": "Invalid name: 1 to 100 characters, without / \\ ? # % or invisible special characters."},
-    "bad_image": {"fr": "L'image doit être un lien https:// (ou rester vide).",
+    "bad_leacher_count": {"fr": "Nombre de leachers : entre 1 et {max}.",
+                          "en": "Number of leachers: between 1 and {max}."},
+    "bad_image": {"fr":"L'image doit être un lien https:// (ou rester vide).",
                   "en": "The image must be an https:// link (or stay empty)."},
     # Bibliothèque de modèles
     "import_too_many_builds": {"fr": "Il faudrait créer {count} build(s) : {max} maximum par serveur.",

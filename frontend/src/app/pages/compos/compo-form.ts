@@ -25,26 +25,36 @@ const FREE = 'free';
 /** Ligne du formulaire : `free` (côté écran seulement) = l'utilisateur a choisi « sans build ». */
 type Row = SlotRow & { free?: boolean; share: number | null };
 
-type CompoModel = Omit<CompoInput, 'custom_shares' | 'pf1' | 'pf2'> & { custom_shares: boolean; pf1: Row[]; pf2: Row[] };
+type CompoModel = Omit<CompoInput, 'custom_shares' | 'accept_leachers' | 'leacher_count' | 'pf1' | 'pf2'> & {
+  custom_shares: boolean; accept_leachers: boolean; leacher_count: number | null; pf1: Row[]; pf2: Row[];
+};
 
 /** Parts de paie max d'une ligne (même borne que l'API). */
 export const MAX_SHARE = 10;
 /** Builds au choix en plus du principal sur une ligne (même borne que l'API : 25 au total, limite d'un menu Discord). */
 export const MAX_ALT_BUILDS = 24;
+/** Rôle des places de leachers (même clé que l'API et le bot). */
+const LEACHER_ROLE = 'LEACHER PVP';
 
 function emptyRow(): Row {
   return { build_id: null, alt_build_ids: [], role: '', count: 1, weapon: '', share: 1 };
 }
 
 function emptyCompo(): CompoModel {
-  return { name: '', description: '', type_acti: 'PVP', image: '', custom_shares: false, pf1: [emptyRow()], pf2: [] };
+  return {
+    name: '', description: '', type_acti: 'PVP', image: '', custom_shares: false,
+    accept_leachers: false, leacher_count: 1, pf1: [emptyRow()], pf2: [],
+  };
 }
 
 /** Compo de l'API → valeurs du formulaire (une ligne sans build est une ligne « sans build » choisie). */
 function toModel({ total: _t, custom: _c, ...compo }: Compo): CompoModel {
   const withMode = (rows: SlotRow[]): Row[] =>
     rows.map(({ slot_key: _k, ...r }) => ({ ...r, alt_build_ids: r.alt_build_ids ?? [], share: r.share ?? 1, free: r.build_id == null }));
-  return { ...compo, custom_shares: !!compo.custom_shares, pf1: withMode(compo.pf1), pf2: withMode(compo.pf2) };
+  return {
+    ...compo, custom_shares: !!compo.custom_shares, accept_leachers: !!compo.accept_leachers,
+    leacher_count: compo.leacher_count ?? 1, pf1: withMode(compo.pf1), pf2: withMode(compo.pf2),
+  };
 }
 
 @Component({
@@ -83,12 +93,22 @@ function toModel({ total: _t, custom: _c, ...compo }: Compo): CompoModel {
         <textarea id="description" class="textarea" [formField]="form.description"></textarea>
       </div>
 
-      <div class="field">
-        <label for="image">{{ t().compos.imageUrl }}</label>
-        <input id="image" class="input" type="url" [formField]="form.image" />
+      <div class="check leachers" [class.on]="model().accept_leachers">
+        <label class="check-main">
+          <span class="check-icon" aria-hidden="true">🎒</span>
+          <span class="check-text">
+            <strong>{{ t().compos.acceptLeachers }}</strong>
+            <span class="muted">{{ t().compos.acceptLeachersHelp }}</span>
+          </span>
+          <input type="checkbox" role="switch" [formField]="form.accept_leachers" />
+        </label>
+        @if (model().accept_leachers) {
+          <input id="leacher-count" class="input count" type="number" [attr.aria-label]="t().compos.leacherCount"
+                 [formField]="form.leacher_count" />
+        }
       </div>
 
-      <label class="check" [class.on]="model().custom_shares">
+      <label class="check shares" [class.on]="model().custom_shares">
         <span class="check-icon" aria-hidden="true">💰</span>
         <span class="check-text">
           <strong>{{ t().compos.customShares }}</strong>
@@ -236,14 +256,17 @@ function toModel({ total: _t, custom: _c, ...compo }: Compo): CompoModel {
     .check.on .check-icon { background: var(--lilac-soft); }
     .check-text { display: grid; gap: 2px; flex: 1; min-width: 0; }
     .check-text .muted { font-size: .85rem; }
-    .check input { appearance: none; flex: none; position: relative; width: 42px; height: 24px; margin: 0;
+    /* Option « leachers » : même carte, le nombre s'affiche à droite de l'interrupteur */
+    .check-main { display: flex; align-items: center; gap: 14px; flex: 1; min-width: 0; cursor: pointer; }
+    .leachers .count { flex: none; width: 80px; }
+    .check input[type="checkbox"] { appearance: none; flex: none; position: relative; width: 42px; height: 24px; margin: 0;
                    border-radius: 999px; background: var(--surface-2); border: 1px solid var(--border);
                    cursor: pointer; transition: background .15s, border-color .15s; }
-    .check input::after { content: ''; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px;
+    .check input[type="checkbox"]::after { content: ''; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px;
                           border-radius: 50%; background: var(--text-muted); transition: transform .15s, background .15s; }
-    .check input:checked { background: var(--lilac-strong); border-color: var(--lilac-strong); }
-    .check input:checked::after { transform: translateX(18px); background: var(--on-lilac); }
-    .check input:focus-visible { outline: 2px solid var(--lilac); outline-offset: 2px; }
+    .check input[type="checkbox"]:checked { background: var(--lilac-strong); border-color: var(--lilac-strong); }
+    .check input[type="checkbox"]:checked::after { transform: translateX(18px); background: var(--on-lilac); }
+    .check input[type="checkbox"]:focus-visible { outline: 2px solid var(--lilac); outline-offset: 2px; }
     .detail { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
     .alts { padding-left: 10px; border-left: 2px solid var(--lilac-soft); }
     .alt { display: inline-flex; align-items: center; gap: 6px; font-size: .85rem; }
@@ -294,6 +317,10 @@ export class CompoForm {
     maxLength(p.name, 100);
     maxLength(p.description, 2000);
     maxLength(p.image, 500);
+    min(p.leacher_count, 1);
+    max(p.leacher_count, 50);
+    validate(p.leacher_count, ({ value, valueOf }) =>
+      (valueOf(p.accept_leachers) && value() == null ? requiredError() : undefined));
     for (const party of [p.pf1, p.pf2]) {
       applyEach(party, (row) => {
         min(row.count, 1);
@@ -319,9 +346,11 @@ export class CompoForm {
 
   private readonly buildsById = computed(() => new Map(this.builds().map((b) => [b.id, b])));
   /** Aperçu de la composition (PF1 + PF2, lignes avec un rôle). */
-  protected readonly previewRows = computed(() => [...this.model().pf1, ...this.model().pf2]
-    .filter((r) => r.role)
-    .map((r) => ({ role: r.role, count: Number(r.count) || 0 })));
+  protected readonly previewRows = computed(() => {
+    const m = this.model();
+    const rows = [...m.pf1, ...m.pf2].filter((r) => r.role).map((r) => ({ role: r.role, count: Number(r.count) || 0 }));
+    return m.accept_leachers ? [...rows, { role: LEACHER_ROLE, count: Number(m.leacher_count) || 0 }] : rows;
+  });
   /** Joueurs par party, en ignorant les lignes sans rôle. */
   protected readonly totals = computed((): Record<Party, number> => ({ pf1: this.total('pf1'), pf2: this.total('pf2') }));
   protected readonly emojiMap = computed(() => Object.fromEntries(this.roles().map((r) => [r.name, r.emoji])));
@@ -404,7 +433,9 @@ export class CompoForm {
   }
 
   total(party: Party): number {
-    return this.model()[party].reduce((sum, r) => sum + (r.role ? Number(r.count) || 0 : 0), 0);
+    const m = this.model();
+    const leachers = party === 'pf1' && m.accept_leachers ? Number(m.leacher_count) || 0 : 0;
+    return m[party].reduce((sum, r) => sum + (r.role ? Number(r.count) || 0 : 0), leachers);
   }
 
   /** Corps envoyé à l'API (sans l'état d'interface « free »). */
