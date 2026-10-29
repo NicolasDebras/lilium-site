@@ -39,7 +39,7 @@ describe('Shell', () => {
     const member = await render('member');
     const labels = [...member.el.querySelectorAll('.links a')].map((a) => a.textContent?.trim());
     expect(labels).toEqual(['Builds', 'Compos', 'Modèles', 'Ma BAL']);
-    expect(member.el.querySelectorAll('.links a app-icon').length).toBe(4);
+    expect(member.el.querySelectorAll('.links a app-nav-icon').length).toBe(4);
   });
 
   it('Marché : dans le menu du compte, sous la langue', async () => {
