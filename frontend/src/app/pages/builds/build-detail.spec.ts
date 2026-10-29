@@ -40,9 +40,28 @@ describe('BuildDetailPage (build partageable)', () => {
     return { fixture, http, el: fixture.nativeElement as HTMLElement };
   }
 
+  it('en attendant le build : squelette à la forme de la page (inventaire 3×3) et lys', () => {
+    TestBed.configureTestingModule({
+      imports: [BuildDetailPage],
+      providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([]),
+                  { provide: AuthService, useValue: { levelFor: () => 'member' } }],
+    });
+    const fixture = TestBed.createComponent(BuildDetailPage);
+    fixture.componentRef.setInput('guildId', '111');
+    fixture.componentRef.setInput('buildId', '7');
+    fixture.detectChanges();
+    const el = fixture.nativeElement as HTMLElement;
+    expect(el.querySelector('.sk')?.getAttribute('aria-label')).toBe('Chargement…');
+    expect(el.querySelectorAll('.sk-cell')).toHaveLength(9);
+    expect(el.querySelectorAll('.sk-cell.blank')).toHaveLength(1);
+    expect(el.querySelector('.sk app-lys-loader')).not.toBeNull();
+    expect(el.querySelector('h1')).toBeNull();
+  });
+
   it('affiche le build, ses compos et son image (téléchargeable)', async () => {
     const { el } = await render('member');
     expect(el.querySelector('h1')?.textContent).toBe('Tank Masse');
+    expect(el.querySelector('.sk')).toBeNull();
     expect([...el.querySelectorAll('.used .badge')].map((b) => b.textContent)).toEqual(['ZvZ', 'Statik']);
     expect(el.querySelector('.preview img')?.getAttribute('src')).toBe('/api/guilds/111/builds/7/image.png');
     expect(el.querySelector('a[download]')?.getAttribute('download')).toBe('build-Tank-Masse.png');

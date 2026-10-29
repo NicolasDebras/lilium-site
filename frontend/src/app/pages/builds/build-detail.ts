@@ -10,16 +10,17 @@ import { I18nService } from '../../core/i18n/i18n';
 import { ItemsService, itemName, spellIconUrl, spellName, useFallbackIcon } from '../../core/items.service';
 import { SHOES_ANY, SPELL_KEYS, Slot, hasLevel } from '../../core/models';
 import { ToastService } from '../../core/toast.service';
-import { Gear, choiceName, describeGear, describeSwaps } from '../../shared/gear';
+import { Gear, PAPER_DOLL, choiceName, describeGear, describeSwaps } from '../../shared/gear';
 import { Icon } from '../../shared/icon';
 import { LoadingImage } from '../../shared/loading-image';
+import { LysLoader } from '../../shared/lys-loader';
 import { roleColor } from '../../shared/roles';
 
 /** Page d'un build, en lecture seule, à partager sur Discord : équipement en grand,
  *  image identique au MP de /massup (télécharger / copier), compos qui l'utilisent, dupliquer. */
 @Component({
   selector: 'app-build-detail',
-  imports: [Gear, Icon, LoadingImage, RouterLink],
+  imports: [Gear, Icon, LoadingImage, LysLoader, RouterLink],
   template: `
     <a class="back muted" [routerLink]="['/g', guildId(), 'builds']"><app-icon name="chevron" [size]="14" class="flip" /> {{ t().builds.allBuilds }}</a>
 
@@ -96,7 +97,29 @@ import { roleColor } from '../../shared/roles';
         </div>
       </div>
     } @else {
-      <div class="skeleton"></div>
+      <!-- Squelette à la forme de la page : en-tête, inventaire 3×3, image -->
+      <div class="sk" role="status" [attr.aria-label]="t().common.loading">
+        <div class="sk-head">
+          <span class="sk-bar w-tags"></span>
+          <span class="sk-bar w-title"></span>
+          <span class="sk-bar w-sub"></span>
+        </div>
+        <div class="layout">
+          <div class="card sk-gear">
+            <div class="sk-doll">
+              @for (c of skDoll; track $index) {
+                <span class="sk-cell" [class.blank]="!c" [style.animation-delay.ms]="$index * 70"></span>
+              }
+            </div>
+            <span class="sk-bar w-sub"></span>
+            <span class="sk-bar w-half"></span>
+          </div>
+          <div class="card sk-image">
+            <span class="sk-bar w-half"></span>
+            <div class="sk-forge"><app-lys-loader [size]="64" /></div>
+          </div>
+        </div>
+      </div>
     }
   `,
   styles: `
@@ -123,7 +146,22 @@ import { roleColor } from '../../shared/roles';
     .used p { margin: 0; }
     .image-card { display: grid; gap: 12px; }
     .preview { width: 100%; max-width: 460px; min-height: 200px; }
-    .skeleton { min-height: 320px; }
+    .sk-head { display: grid; gap: 10px; margin-bottom: 24px; }
+    .sk-bar { display: block; height: 12px; border-radius: 6px; background: var(--surface-2);
+              animation: sk-pulse 1.6s ease-in-out infinite; }
+    .w-tags { width: 120px; height: 20px; border-radius: 999px; }
+    .w-title { width: min(340px, 70%); height: 30px; }
+    .w-sub { width: 180px; }
+    .w-half { width: 50%; }
+    .sk-gear, .sk-image { display: grid; gap: 14px; align-content: start; }
+    .sk-doll { display: grid; grid-template-columns: repeat(3, 56px); gap: 6px; padding: 10px; width: max-content;
+               border-radius: 14px; background: var(--bg-2); border: 1px solid var(--border); }
+    .sk-cell { width: 56px; height: 56px; border-radius: 10px; border: 1px solid var(--border);
+               background: linear-gradient(180deg, var(--surface-3), var(--surface-2)); animation: sk-pulse 1.6s ease-in-out infinite; }
+    .sk-cell.blank { background: transparent; border-color: transparent; animation: none; }
+    .sk-forge { display: grid; place-items: center; min-height: 240px; max-width: 460px; border-radius: var(--radius-sm);
+                background: radial-gradient(240px 160px at 50% 50%, var(--lilac-soft), transparent 70%), var(--surface-2); }
+    @keyframes sk-pulse { 50% { opacity: .45; } }
     @media (max-width: 860px) {
       .layout { grid-template-columns: minmax(0, 1fr); }
     }
@@ -137,6 +175,8 @@ export class BuildDetailPage {
   private readonly router = inject(Router);
   protected readonly t = inject(I18nService).t;
   readonly guildId = input.required<string>();
+  /** Cases du squelette de chargement (vide = case sans objet, comme l'inventaire). */
+  protected readonly skDoll = PAPER_DOLL;
   readonly buildId = input.required<string>();
 
   private readonly detail = rxResource({
