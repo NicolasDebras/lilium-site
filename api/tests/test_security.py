@@ -4,7 +4,7 @@ from fastapi.testclient import TestClient
 
 from app.main import create_app
 from app.permissions import access_level
-from app.security import content_security_policy, inline_script_hashes, origin_allowed
+from app.security import RateLimiter, client_ip, content_security_policy, inline_script_hashes, origin_allowed, rate_rule
 from tests.fakes import ADMIN_ID, GUILD, STAFF_ID, STRANGER_ID, FakeDB, FakeDiscord, FakeOAuth, make_settings
 
 BUILD = {"name": "Tank", "role": "TANK", "type_acti": "PVP", "weapon": "", "notes": "", "image": ""}
@@ -153,3 +153,71 @@ def test_build_image_url_is_ignored_and_never_served(login, image):
     assert r.status_code == 201
     build = client.get(f"/api/guilds/{GUILD}/builds/{r.json()['id']}").json()
     assert "image" not in build and "notes" not in build
+
+
+# ── Limite de débit ──────────────────────────────────────────────────────────
+
+def test_rate_rule():
+    assert rate_rule("GET", "/api/auth/login") == "auth"
+    assert rate_rule("GET", f"/api/guilds/{GUILD}/builds/1/image.png") == "render"
+    assert rate_rule("GET", "/api/public/compos/3/image.png") == "render"
+    assert rate_rule("POST", f"/api/guilds/{GUILD}/compos/preview-image") == "render"
+    assert rate_rule("GET", f"/api/guilds/{GUILD}/compos/preview-image") == "api"   # nom de compo, pas l'aperçu
+    assert rate_rule("GET", "/api/me") == "api"
+    assert rate_rule("GET", "/main-QXSL2V3G.js") is None   # front statique : non limité
+    assert rate_rule("GET", "/g/1/builds") is None
+
+
+def test_client_ip_uses_the_entry_added_by_the_proxy():
+    # le client peut écrire X-Forwarded-For : seule la dernière entrée (ajoutée par le proxy) compte
+    assert client_ip({"x-forwarded-for": "1.1.1.1, 9.9.9.9"}, "10.0.0.1") == "9.9.9.9"
+    assert client_ip({"x-forwarded-for": " 9.9.9.9 "}, "10.0.0.1") == "9.9.9.9"
+    assert client_ip({}, "10.0.0.1") == "10.0.0.1"
+    assert client_ip({"x-forwarded-for": ""}, None) == "?"
+
+
+def test_rate_limiter_window():
+    now = [0.0]
+    limiter = RateLimiter({"api": (2, 60)}, clock=lambda: now[0])
+    assert limiter.hit("api", "u:1") == 0
+    assert limiter.hit("api", "u:1") == 0
+    now[0] = 15.2
+    assert limiter.hit("api", "u:1") == 45          # Retry-After : fin de la fenêtre
+    assert limiter.hit("api", "u:2") == 0           # chaque clé a son compteur
+    now[0] = 60.0
+    assert limiter.hit("api", "u:1") == 0           # nouvelle fenêtre
+
+
+def test_rate_limiter_memory_is_bounded():
+    now = [0.0]
+    limiter = RateLimiter({"api": (5, 60)}, clock=lambda: now[0], max_keys=3)
+    for key in ("a", "b", "c"):
+        limiter.hit("api", key)
+    now[0] = 61.0                                   # fenêtres terminées : oubliées à la prochaine clé
+    limiter.hit("api", "d")
+    assert len(limiter._windows) == 1
+
+
+def test_too_many_requests_returns_429_per_user(login, client):
+    client.app.state.rate_limiter = RateLimiter({"auth": (20, 60), "render": (60, 60), "api": (2, 60)})
+    c = login(STAFF_ID)
+    assert c.get("/api/me").status_code == 200
+    assert c.get("/api/me").status_code == 200
+    r = c.get("/api/me", headers={"Accept-Language": "en"})
+    assert r.status_code == 429
+    assert 1 <= int(r.headers["retry-after"]) <= 60
+    assert r.json()["detail"] == "Too many requests: try again in a moment."
+    assert r.headers["x-content-type-options"] == "nosniff"   # en-têtes de sécurité aussi sur le refus
+    # un autre utilisateur, même machine : son propre compteur
+    assert login(ADMIN_ID).get("/api/me").status_code == 200
+
+
+def test_anonymous_requests_are_limited_by_proxy_ip(client):
+    client.app.state.rate_limiter = RateLimiter({"auth": (1, 60), "render": (60, 60), "api": (600, 60)})
+    assert client.get("/api/auth/login", follow_redirects=False,
+                      headers={"X-Forwarded-For": "6.6.6.6, 1.2.3.4"}).status_code == 307
+    # changer la première entrée (écrite par le client) ne contourne pas la limite
+    assert client.get("/api/auth/login", follow_redirects=False,
+                      headers={"X-Forwarded-For": "7.7.7.7, 1.2.3.4"}).status_code == 429
+    assert client.get("/api/auth/login", follow_redirects=False,
+                      headers={"X-Forwarded-For": "5.6.7.8"}).status_code == 307

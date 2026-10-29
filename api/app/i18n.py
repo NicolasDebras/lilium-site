@@ -23,6 +23,8 @@ MESSAGES: dict[str, dict[str, str]] = {
                      "en": "Discord is not responding, try again in a moment."},
     "too_large": {"fr": "Requête trop volumineuse.", "en": "Request too large."},
     "bad_origin": {"fr": "Origine de la requête refusée.", "en": "Request origin refused."},
+    "too_many_requests": {"fr": "Trop de requêtes : réessaie dans un instant.",
+                          "en": "Too many requests: try again in a moment."},
     # Builds
     "too_many_choices": {"fr": "Trop de choix pour une case.", "en": "Too many choices for one slot."},
     "build_not_found": {"fr": "Build introuvable.", "en": "Build not found."},
