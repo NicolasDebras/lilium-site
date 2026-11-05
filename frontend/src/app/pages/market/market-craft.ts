@@ -10,7 +10,7 @@ import { Pager } from '../../shared/pager';
 import { cityLabel, familyLabel, perDay, percent, silver, tierText } from './market-format';
 import {
   Activity, RECIPE_CATS, RRR_OPTIONS, Recipe, RecipeCat, RecipeFilters, RecipeResult, RecipeScope, SortSpec, activity, baseId, familyOf,
-  filterRecipes, recipeCalc, recipeIds, sortRows,
+  filterRecipes, rawCost, recipeCalc, recipeIds, sortRows,
 } from './market-logic';
 import { AUTOLOAD_MS } from './market-search';
 
@@ -76,7 +76,7 @@ const SORTS: Record<Sort, SortSpec<Row>> = {
       <div class="grid-f">
         <div class="field">
           <label for="c-cat">{{ t().market.craft.type }}</label>
-          <select id="c-cat" class="select" (change)="patch({ cat: $any($event.target).value, fam: '' })">
+          <select id="c-cat" class="select" (change)="patch({ cat: $any($event.target).value, fam: '', ing: '' })">
             <option value="" [selected]="!f().cat">{{ t().market.craft.allTypes }}</option>
             @for (c of cats; track c) { <option [value]="c" [selected]="c === f().cat">{{ t().market.craft.cats[c] }}</option> }
           </select>
@@ -88,6 +88,7 @@ const SORTS: Record<Sort, SortSpec<Row>> = {
             @for (fa of families(); track fa.key) { <option [value]="fa.key" [selected]="fa.key === f().fam">{{ fa.label }}</option> }
           </select>
         </div>
+        @if (f().cat === 'meal') {
         <div class="field">
           <label for="c-ing">{{ t().market.craft.ingredient }}</label>
           <select id="c-ing" class="select" (change)="patch({ ing: $any($event.target).value })">
@@ -95,6 +96,7 @@ const SORTS: Record<Sort, SortSpec<Row>> = {
             @for (i of ingredients(); track i.id) { <option [value]="i.id" [selected]="i.id === f().ing">{{ i.name }}</option> }
           </select>
         </div>
+        }
         <div class="field">
           <label for="c-roi">{{ t().market.minRoi }}</label>
           <div class="input-unit">
@@ -160,8 +162,9 @@ const SORTS: Record<Sort, SortSpec<Row>> = {
       <button type="button" class="btn btn-primary btn-sm" [disabled]="market.busy() || !pageRows().length" (click)="refresh()">
         <app-icon name="clock" [size]="14" /> {{ t().market.refresh }}
       </button>
-      <button type="button" class="btn btn-sm" [disabled]="market.busy() || !matching().length" (click)="loadAll()">
-        <app-icon name="trend" [size]="14" /> {{ t().market.loadAll(bulk) }}
+      <button type="button" class="btn btn-sm bulk" [disabled]="market.busy() || !matching().length" [attr.aria-busy]="bulking()" (click)="loadAll()">
+        @if (bulking()) { <span class="spinner" aria-hidden="true"></span> {{ t().market.loadingAll(market.progress().done, market.progress().total) }} }
+        @else { <app-icon name="trend" [size]="14" /> {{ t().market.loadAll(bulk) }} }
       </button>
     </div>
 
@@ -234,6 +237,22 @@ const SORTS: Record<Sort, SortSpec<Row>> = {
                                 [appCountUp]="r.calc.profit" [countUpFormat]="silver"></td></tr>
                         </tfoot>
                       </table>
+                      @if (openRaw(); as raw) {
+                        <p class="muted crafts raw-title"><app-icon name="sparkles" [size]="13" /> {{ t().market.craft.raw.title(f().rrr) }}</p>
+                        <table class="table lines raw">
+                          <thead><tr><th>{{ t().market.craft.raw.res }}</th><th class="r">{{ t().market.craft.lines.qty }}</th>
+                            <th>{{ t().market.craft.lines.city }}</th><th class="r">{{ t().market.craft.lines.unit }}</th><th class="r">{{ t().market.craft.lines.cost }}</th></tr></thead>
+                          <tbody>
+                            @for (l of raw.lines; track l.id) {
+                              <tr><td>{{ name(l.id) }}</td><td class="r num">{{ silver(l.need) }}</td><td>{{ l.buy ? city(l.buy.city) : '–' }}</td>
+                                <td class="r num">{{ silver(l.buy?.value) }}</td><td class="r num">{{ silver(l.cost) }}</td></tr>
+                            }
+                          </tbody>
+                          <tfoot><tr class="total"><td colspan="4">{{ t().market.craft.raw.total }}
+                            @if (raw.cost != null && r.calc.cost != null) { <small class="faint" [class.pos]="raw.cost < r.calc.cost">{{ t().market.craft.raw.diff(silver(Math.abs(r.calc.cost - raw.cost)), raw.cost < r.calc.cost) }}</small> }</td>
+                            <td class="r num">{{ raw.cost != null ? silver(raw.cost) : t().market.missing }}</td></tr></tfoot>
+                        </table>
+                      }
                     </div></div>
                   </td></tr>
                 }
@@ -301,6 +320,9 @@ const SORTS: Record<Sort, SortSpec<Row>> = {
     tfoot td { font-weight: 600; border-top: 1px solid var(--border); }
     tfoot .total td { font-size: 1.05rem; }
     .hint { font-size: .8rem; margin-top: 10px; }
+    .raw-title { display: flex; align-items: center; gap: 6px; margin-top: 16px; color: var(--lilac); }
+    .raw tfoot small { font-weight: 400; margin-top: 2px; }
+    .raw tfoot small.pos { color: var(--success); }
   `,
 })
 export class MarketCraft {
@@ -328,6 +350,9 @@ export class MarketCraft {
   protected readonly silver = silver;
   protected readonly pct = percent;
   protected readonly city = cityLabel;
+  protected readonly Math = Math;
+  /** « Charger tous les résultats » en cours (loader sur le bouton). */
+  protected readonly bulking = signal(false);
   protected readonly qty = computed(() => Math.max(1, Math.floor(+this.f().qty) || 1));
 
   protected readonly families = computed(() => {
@@ -346,7 +371,8 @@ export class MarketCraft {
 
   private readonly query = debouncedSignal(computed(() => this.f().q));
   protected readonly matching = computed(() =>
-    filterRecipes(this.market.recipes(), { ...this.f(), q: this.query() }, (id) => this.market.nameOf(id)),
+    filterRecipes(this.market.recipes(), { ...this.f(), q: this.query(), ing: this.f().cat === 'meal' ? this.f().ing : '' },
+      (id) => this.market.nameOf(id)),
   );
 
   protected readonly rows = computed(() => {
@@ -385,7 +411,17 @@ export class MarketCraft {
   });
 
   protected readonly openId = signal<string | null>(null);
-  private readonly pageIds = computed(() => this.pageRows().flatMap((r) => recipeIds(r.recipe)).join(','));
+
+  /** Recettes de raffinage par id de ressource raffinée. */
+  private readonly refines = computed(() => new Map(this.market.recipes().filter((r) => r.cat === 'refine').map((r) => [r.id, r])));
+
+  /** Détail ouvert : coût en matériaux bruts (ressources raffinées remplacées par leur recette), en indication. */
+  protected readonly openRaw = computed(() => {
+    const row = this.rows().find((r) => r.recipe.id === this.openId());
+    return row ? rawCost(row.calc.lines, this.refines(), this.market.prices(), +this.f().rrr) : null;
+  });
+  private readonly pageIds = computed(() =>
+    [...this.pageRows().flatMap((r) => recipeIds(r.recipe)), ...(this.openRaw()?.lines.map((l) => l.id) ?? [])].join(','));
   private readonly pageMade = computed(() => this.pageRows().map((r) => r.recipe.id).join(','));
 
   constructor() {
@@ -449,7 +485,9 @@ export class MarketCraft {
       made.push(recipe.id);
       if (ids.size >= BULK_MAX) break;
     }
-    this.market.fetchPrices([...ids], made);
+    if (this.market.busy()) return;
+    this.bulking.set(true);
+    void this.market.fetchPrices([...ids], made).finally(() => this.bulking.set(false));
   }
 
   name(id: string): string {

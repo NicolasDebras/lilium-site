@@ -144,11 +144,15 @@ describe('MarketSearch (recherche marché)', () => {
     await answerPrices(ctx, []);
     const loadAll = [...ctx.el.querySelectorAll<HTMLButtonElement>('.actions button')][1];
     loadAll.click();
+    ctx.fixture.detectChanges();
+    expect(loadAll.querySelector('.spinner')).not.toBeNull();   // loader tant que ça charge
     const req = ctx.http.expectOne(isPrices);
     expect(req.request.url.split('/').pop()!.replace('.json', '').split(',').length).toBe(4);
     req.flush([]);
     await wait();
     ctx.http.expectNone(isHistory);   // historique déjà chargé pour ces objets
+    ctx.fixture.detectChanges();
+    expect(loadAll.querySelector('.spinner')).toBeNull();
   });
 
   it('aucun résultat : message et pas de tableau', async () => {

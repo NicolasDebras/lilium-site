@@ -451,6 +451,45 @@ export function recipeCalc(recipe: Recipe, prices: PriceMap, qty: number, rrr: n
   return { crafts, made, lines, cost, sell, revenue, profit, roi: profit != null && cost ? (profit / cost) * 100 : null };
 }
 
+export interface RawLine {
+  id: string;
+  /** À acheter pour toute la quantité (arrondi au-dessus). */
+  need: number;
+  buy: Quote | null;
+  cost: number | null;
+}
+
+export interface RawResult {
+  lines: RawLine[];
+  /** null si un prix manque. */
+  cost: number | null;
+}
+
+/** Coût en matériaux bruts : chaque ressource raffinée des `lines` est remplacée, récursivement, par sa recette
+ *  de raffinage (même retour de ressources) ; le reste (artefacts, ressources brutes…) est acheté tel quel.
+ *  null si aucune ressource n'est raffinable (rien à comparer). */
+export function rawCost(lines: readonly RecipeLine[], refines: ReadonlyMap<string, Recipe>, prices: PriceMap, rrr: number): RawResult | null {
+  const keep = 1 - rrr / 100;
+  const needs = new Map<string, number>();
+  const add = (id: string, qty: number, depth: number): void => {
+    const rec = depth < 12 ? refines.get(id) : undefined;
+    if (!rec) {
+      needs.set(id, (needs.get(id) ?? 0) + qty);
+      return;
+    }
+    for (const [rid, count, maxReturn] of rec.r) add(rid, (qty / rec.y) * count * (maxReturn === 0 ? 1 : keep), depth + 1);
+  };
+  if (!lines.some((l) => refines.has(l.id))) return null;
+  for (const l of lines) add(l.id, l.need, 0);
+  const raw = [...needs].map(([id, qty]): RawLine => {
+    const need = Math.ceil(qty - 1e-9);
+    const buy = bestBuy(prices[id]);
+    return { id, need, buy, cost: buy ? buy.value * need : null };
+  });
+  const cost = raw.some((l) => l.cost == null) ? null : raw.reduce((sum, l) => sum + (l.cost ?? 0), 0);
+  return { lines: raw, cost };
+}
+
 /** Famille d'une recette : « T6_POTION_HEAL@1 » → « HEAL », « T8_MEAL_STEW_AVALON » → « STEW » ;
  *  raffinage et équipement : type du marché (« T4_LEATHER_LEVEL1@1 » → « leather », « T4_MAIN_SWORD » → « swords »). */
 export function familyOf(recipe: Pick<Recipe, 'id' | 'cat'>): string {

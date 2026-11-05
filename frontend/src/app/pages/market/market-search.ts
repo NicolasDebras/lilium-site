@@ -175,8 +175,9 @@ const SORTS: Record<Sort, SortSpec<Row>> = {
       <button type="button" class="btn btn-primary btn-sm" [disabled]="market.busy() || !pageRows().length" (click)="refresh()">
         <app-icon name="clock" [size]="14" /> {{ t().market.refresh }}
       </button>
-      <button type="button" class="btn btn-sm" [disabled]="market.busy() || !matching().length" (click)="loadAll()">
-        <app-icon name="trend" [size]="14" /> {{ t().market.loadAll(bulk) }}
+      <button type="button" class="btn btn-sm bulk" [disabled]="market.busy() || !matching().length" [attr.aria-busy]="bulking()" (click)="loadAll()">
+        @if (bulking()) { <span class="spinner" aria-hidden="true"></span> {{ t().market.loadingAll(market.progress().done, market.progress().total) }} }
+        @else { <app-icon name="trend" [size]="14" /> {{ t().market.loadAll(bulk) }} }
       </button>
     </div>
 
@@ -338,6 +339,8 @@ export class MarketSearch {
   ] as const;
   protected readonly pageSize = PAGE_SIZE;
   protected readonly bulk = BULK_MAX;
+  /** « Charger tous les résultats » en cours (loader sur le bouton). */
+  protected readonly bulking = signal(false);
   protected readonly silver = silver;
   protected readonly pct = percent;
   protected readonly city = cityLabel;
@@ -512,7 +515,9 @@ export class MarketSearch {
   /** Prix et historique des ventes des résultats, jusqu'à BULK_MAX objets. */
   loadAll(): void {
     const ids = this.matching().slice(0, BULK_MAX).map((it) => it.id);
-    this.market.fetchPrices(ids, ids);
+    if (this.market.busy()) return;
+    this.bulking.set(true);
+    void this.market.fetchPrices(ids, ids).finally(() => this.bulking.set(false));
   }
 
   delay(i: number): number {

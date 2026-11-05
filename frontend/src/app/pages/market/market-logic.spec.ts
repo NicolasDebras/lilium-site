@@ -3,7 +3,7 @@ import { en } from '../../core/i18n/en';
 import { fr } from '../../core/i18n/fr';
 import {
   BLACK_MARKET, CATEGORIES, Recipe, activity, busiestCity, calcTrade, classify, deviation, expandItems, familyOf, filterItems,
-  filterRecipes, hoursSince, matchTokens, mergeHistory, mergePrices, recipeCalc, sortRows, suspect, taxRate,
+  filterRecipes, hoursSince, matchTokens, mergeHistory, mergePrices, rawCost, recipeCalc, sortRows, suspect, taxRate,
 } from './market-logic';
 
 const NOW = Date.parse('2026-10-23T12:00:00Z');
@@ -87,6 +87,26 @@ describe('market-logic', () => {
     expect(calcTrade(p, { mode: 'direct', tax: 4, bm: true, buyCity: 'Lymhurst', sellCity: 'Martlock', now: NOW }).profit).toBe(900 * 0.96 - 1500);
     expect(calcTrade(p, { mode: 'direct', tax: 4, bm: true, maxAge: 1, now: NOW }).buy).toBeNull();
     expect(calcTrade(undefined, { mode: 'direct', tax: 4, bm: true }).profit).toBeNull();
+  });
+
+  it('rawCost : ressources raffinées remplacées récursivement par les matériaux bruts', () => {
+    const refine = (id: string, r: Recipe['r']): Recipe => ({ id, tier: 4, ench: 0, cat: 'refine', y: 1, r });
+    const refines = new Map([
+      ['T4_LEATHER', refine('T4_LEATHER', [['T4_HIDE', 2], ['T3_LEATHER', 1]])],
+      ['T3_LEATHER', refine('T3_LEATHER', [['T3_HIDE', 2], ['T3_RUNE', 1, 0]])],
+    ]);
+    const sword: Recipe = { id: 'T4_MAIN_SWORD', tier: 4, ench: 0, cat: 'gear', y: 1, r: [['T4_LEATHER', 10], ['T4_ARTEFACT', 1, 0]] };
+    const prices = mergePrices({}, ['T4_HIDE', 'T3_HIDE', 'T3_RUNE', 'T4_ARTEFACT'], [
+      priceRow('T4_HIDE', 'Martlock', 10, 0), priceRow('T3_HIDE', 'Lymhurst', 5, 0),
+      priceRow('T3_RUNE', 'Lymhurst', 100, 0), priceRow('T4_ARTEFACT', 'Thetford', 1000, 0),
+    ], 1);
+    const lines = recipeCalc(sword, prices, 2, 50, { mode: 'direct', tax: 4, bm: true }).lines;   // 10 cuirs, 2 artefacts
+    const raw = rawCost(lines, refines, prices, 50)!;
+    // 10 cuirs T4 → 10 peaux T4 + 5 cuirs T3 → 5 peaux T3 + 5 runes (jamais rendues : pas de retour)
+    expect(raw.lines.map((l) => [l.id, l.need])).toEqual([['T4_HIDE', 10], ['T3_HIDE', 5], ['T3_RUNE', 5], ['T4_ARTEFACT', 2]]);
+    expect(raw.cost).toBe(10 * 10 + 5 * 5 + 5 * 100 + 2 * 1000);
+    expect(rawCost(lines, refines, {}, 50)!.cost).toBeNull();
+    expect(rawCost(lines, new Map(), prices, 50)).toBeNull();   // rien à raffiner
   });
 
   it('recette : fabrications, retour de ressources, coût, revente et marge', () => {

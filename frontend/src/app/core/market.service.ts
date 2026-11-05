@@ -86,6 +86,11 @@ export class MarketService {
   readonly history = signal<HistoryMap>({});
   readonly status = signal<MarketStatus>({ kind: 'idle' });
   readonly busy = computed(() => this.status().kind === 'busy');
+  /** Avancement du chargement en cours (0/0 hors chargement). */
+  readonly progress = computed(() => {
+    const st = this.status();
+    return st.kind === 'busy' ? { done: st.done, total: st.total } : { done: 0, total: 0 };
+  });
 
   load(): Promise<void> {
     if (this.data()) return Promise.resolve();

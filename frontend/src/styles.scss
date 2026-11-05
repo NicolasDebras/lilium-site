@@ -276,6 +276,10 @@ a {
 
 .btn-sm { padding: 5px 11px; font-size: 0.85rem; }
 .btn-icon { padding: 7px; aspect-ratio: 1; }
+/* Petit loader circulaire (boutons, lignes) : hérite de la couleur du texte. */
+.spinner { display: inline-block; flex: none; width: 14px; height: 14px; border: 2px solid currentColor; border-right-color: transparent;
+           border-radius: 50%; vertical-align: -2px; animation: spinner-turn .7s linear infinite; }
+@keyframes spinner-turn { to { transform: rotate(360deg); } }
 
 /* ── Badges, chips, sélecteur segmenté ──────────────────────────────────────── */
 .badge {
