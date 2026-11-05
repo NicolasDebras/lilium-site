@@ -2,15 +2,19 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
-import { TEST_MARKET, priceRow } from '../../../testing/market';
+import { TEST_MARKET, historyRow, priceRow } from '../../../testing/market';
 import { MarketService } from '../../core/market.service';
 import { MarketCraft } from './market-craft';
 import { AUTOLOAD_MS } from './market-search';
 
 const wait = (ms = 0) => new Promise((resolve) => setTimeout(resolve, ms));
-const isPrices = (r: { url: string }) => r.url.includes('albion-online-data.com');
+const isPrices = (r: { url: string }) => r.url.includes('/stats/prices/');
+/** Date d'il y a `n` jours (« 2026-10-21 »), dans la fenêtre des 7 derniers jours. */
+const daysAgo = (n: number) => new Date(Date.now() - n * 864e5).toISOString().slice(0, 10);
+const isHistory = (r: { url: string }) => r.url.includes('/stats/history/');
 
-describe('MarketCraft (cuisine & potions)', () => {
+
+describe('MarketCraft (fabrication)', () => {
   async function render() {
     localStorage.clear();
     TestBed.configureTestingModule({ imports: [MarketCraft], providers: [provideHttpClient(), provideHttpClientTesting()] });
@@ -57,7 +61,7 @@ describe('MarketCraft (cuisine & potions)', () => {
     fixture.detectChanges();
     const names = () => [...el.querySelectorAll('tbody .name')].map((n) => n.firstChild?.textContent?.trim());
     const recipe = el.querySelector<HTMLButtonElement>('th .sort-h')!;
-    expect(el.querySelectorAll('th .sort-h').length).toBe(5);
+    expect(el.querySelectorAll('th .sort-h').length).toBe(6);
     recipe.click();
     fixture.detectChanges();
     const asc = names();
@@ -110,5 +114,28 @@ describe('MarketCraft (cuisine & potions)', () => {
     await wait(300);
     fixture.detectChanges();
     expect(el.querySelector('tbody .name')?.textContent).toContain('Soupe');
+  });
+
+  it('types de recettes : cuisine, potions, raffinage, équipement', async () => {
+    const { el } = await render();
+    const type = el.querySelectorAll<HTMLSelectElement>('select')[1];
+    expect([...type.options].map((o) => o.textContent)).toEqual(['Tous les types', 'Potions', 'Nourriture', 'Raffinage', 'Équipement']);
+  });
+
+  it('historique des objets fabriqués seulement : ventes par jour et délai pour écouler', async () => {
+    const { fixture, http, el } = await render();
+    await wait(AUTOLOAD_MS + 50);
+    http.expectOne(isPrices).flush([priceRow('T6_POTION_HEAL', 'Thetford', 3000, 2500)]);
+    await wait();
+    const req = http.expectOne(isHistory);
+    expect(req.request.url.split('/').pop()!.replace('.json', '').split(',').sort()).toEqual(['T4_MEAL_SOUP', 'T6_POTION_HEAL']);
+    req.flush([historyRow('T6_POTION_HEAL', 'Thetford', [[daysAgo(1), 35, 2600], [daysAgo(2), 35, 2600]])]);
+    await wait();
+    fixture.detectChanges();
+    const potion = [...el.querySelectorAll('tbody tr')].find((r) => r.textContent?.includes('Potion de soin'))!;
+    expect(potion.lastElementChild?.textContent?.trim()).toBe('10');
+    potion.querySelector<HTMLButtonElement>('.item')!.click();
+    fixture.detectChanges();
+    expect(el.querySelector('.detail')?.textContent).toContain('Il s’en vend environ 10 par jour à Thetford : compte 10 jours pour en écouler 100.');
   });
 });

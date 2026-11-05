@@ -4,13 +4,13 @@ import { I18nService } from '../../core/i18n/i18n';
 import { MarketService, storedSignal } from '../../core/market.service';
 import { Icon } from '../../shared/icon';
 import { MarketCraft } from './market-craft';
-import { SellMode, Server } from './market-logic';
+import { SALES_TAX, SETUP_FEE, SellMode, Server } from './market-logic';
 import { MarketSearch } from './market-search';
 
 type View = 'search' | 'craft';
 
-/** Onglet Marché (membres de la guilde) : recherche d'objets et marges ville par ville, rentabilité
- *  de la cuisine et des potions. Outil imaginé par Aria le papi. */
+/** Onglet Marché (membres de la guilde) : recherche d'objets, marges ville par ville et volume des ventes,
+ *  rentabilité de la fabrication (cuisine, potions, raffinage, équipement). Outil imaginé par Aria le papi. */
 @Component({
   selector: 'app-market',
   imports: [Icon, MarketSearch, MarketCraft],
@@ -59,14 +59,10 @@ type View = 'search' | 'craft';
                   }
                 </select>
               </div>
-              <div class="field">
-                <label for="m-tax">{{ t().market.settings.tax }}</label>
-                <div class="input-unit">
-                  <input id="m-tax" class="input" type="number" min="0" max="100" step="0.5" inputmode="decimal" [value]="settings().tax"
-                         (change)="setTax($any($event.target).value)" />
-                  <span class="unit">%</span>
-                </div>
-              </div>
+              <label class="switch check">
+                <input id="m-premium" type="checkbox" [checked]="settings().premium" (change)="market.update({ premium: $any($event.target).checked })" />
+                {{ t().market.settings.premium }}
+              </label>
               <div class="field">
                 <label for="m-quality">{{ t().market.settings.quality }}</label>
                 <select id="m-quality" class="select" (change)="market.update({ quality: +$any($event.target).value })">
@@ -80,7 +76,7 @@ type View = 'search' | 'craft';
                 {{ t().market.settings.bm }}
               </label>
             </div>
-            <p class="faint hint">{{ t().market.settings.hint }}</p>
+            <p class="faint hint"><strong class="tax-detail">{{ taxDetail() }}.</strong> {{ t().market.settings.hint }}</p>
           </div>
         </div>
       }
@@ -116,6 +112,7 @@ type View = 'search' | 'craft';
     .status.error-text { color: var(--danger); }
     .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr)); gap: 14px; align-items: end; padding-top: 14px; }
     .check { padding-bottom: 11px; }
+    .tax-detail { color: var(--text-muted); font-weight: 600; }
     .hint { font-size: .8rem; margin: 12px 0 2px; }
     .progress { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; opacity: 0; transition: opacity .6s .4s; overflow: hidden; }
     .progress.active { opacity: 1; transition-delay: 0s; }
@@ -146,7 +143,13 @@ export class MarketPage {
   protected readonly summary = computed(() => {
     const s = this.settings();
     const m = this.t().market.settings;
-    return m.summary(m.servers[s.server], m.modesShort[s.mode], s.tax, m.qualities[s.quality - 1] ?? '');
+    return m.summary(m.servers[s.server], m.modesShort[s.mode], this.market.tax(), m.qualities[s.quality - 1] ?? '');
+  });
+
+  /** « Taxe de vente 4 % + frais de mise en vente 2,5 % = 6,5 % » */
+  protected readonly taxDetail = computed(() => {
+    const { mode, premium } = this.settings();
+    return this.t().market.settings.taxDetail(premium ? SALES_TAX.premium : SALES_TAX.standard, mode === 'order' ? SETUP_FEE : 0);
   });
 
   protected readonly progress = computed(() => {
@@ -160,7 +163,10 @@ export class MarketPage {
     const st = this.t().market.status;
     switch (s.kind) {
       case 'busy': return st.loading(s.done, s.total);
-      case 'done': return st.loaded(s.at.toLocaleTimeString(this.locale(), { hour: '2-digit', minute: '2-digit' }), s.count);
+      case 'done': {
+        const text = st.loaded(s.at.toLocaleTimeString(this.locale(), { hour: '2-digit', minute: '2-digit' }), s.count);
+        return s.history ? text : `${text} ${st.noHistory}`;
+      }
       case 'error': return s.network ? st.network : st.http(s.code);
       default: return this.market.loaded() ? st.ready(this.market.items().length) : this.t().common.loading;
     }
@@ -180,10 +186,5 @@ export class MarketPage {
 
   setMode(mode: SellMode): void {
     this.market.update({ mode });
-  }
-
-  setTax(value: string): void {
-    const tax = Math.min(100, Math.max(0, +value || 0));
-    this.market.update({ tax });
   }
 }

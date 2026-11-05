@@ -1,4 +1,4 @@
-import { MarketData, PriceRow } from '../app/pages/market/market-logic';
+import { HistoryRow, MarketData, PriceRow } from '../app/pages/market/market-logic';
 
 /** Extrait du catalogue du marché (GET /api/market) pour les tests. */
 export const TEST_MARKET: MarketData = {
@@ -18,6 +18,11 @@ export const TEST_MARKET: MarketData = {
 };
 
 const DATE = '2026-10-23T10:00:00';
+
+/** Ligne d'historique de l'Albion Online Data Project : `days` = [date « 2026-10-20 », nombre vendu, prix moyen]. */
+export function historyRow(item_id: string, location: string, days: [string, number, number][], quality = 1): HistoryRow {
+  return { item_id, location, quality, data: days.map(([d, n, p]) => ({ timestamp: `${d}T00:00:00`, item_count: n, avg_price: p })) };
+}
 
 /** Ligne de prix de l'Albion Online Data Project. */
 export function priceRow(item_id: string, city: string, sell: number, buy: number, quality = 1): PriceRow {

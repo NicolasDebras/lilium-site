@@ -2,12 +2,17 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
-import { TEST_MARKET, priceRow } from '../../../testing/market';
+import { TEST_MARKET, historyRow, priceRow } from '../../../testing/market';
 import { MarketService } from '../../core/market.service';
+import { HistoryRow } from './market-logic';
 import { AUTOLOAD_MS, MarketSearch } from './market-search';
 
 const wait = (ms = 0) => new Promise((resolve) => setTimeout(resolve, ms));
-const isPrices = (r: { url: string }) => r.url.includes('albion-online-data.com');
+const isPrices = (r: { url: string }) => r.url.includes('/stats/prices/');
+/** Date d'il y a `n` jours (« 2026-10-21 »), dans la fenêtre des 7 derniers jours. */
+const daysAgo = (n: number) => new Date(Date.now() - n * 864e5).toISOString().slice(0, 10);
+const isHistory = (r: { url: string }) => r.url.includes('/stats/history/');
+
 
 describe('MarketSearch (recherche marché)', () => {
   async function render() {
@@ -24,14 +29,17 @@ describe('MarketSearch (recherche marché)', () => {
     return { fixture, http, market, el };
   }
 
-  /** Attend le chargement automatique des prix de la page et y répond. */
-  async function answerPrices(ctx: Awaited<ReturnType<typeof render>>, rows = PRICES) {
+  /** Attend le chargement automatique des prix de la page, puis de l'historique des ventes, et y répond. */
+  async function answerPrices(ctx: Awaited<ReturnType<typeof render>>, rows = PRICES, history: HistoryRow[] = []) {
     await wait(AUTOLOAD_MS + 50);
     const req = ctx.http.expectOne(isPrices);
     req.flush(rows);
     await wait();
+    const hist = ctx.http.expectOne(isHistory);
+    hist.flush(history);
+    await wait();
     ctx.fixture.detectChanges();
-    return req;
+    return Object.assign(req, { hist });
   }
 
   const PRICES = [
@@ -140,6 +148,7 @@ describe('MarketSearch (recherche marché)', () => {
     expect(req.request.url.split('/').pop()!.replace('.json', '').split(',').length).toBe(4);
     req.flush([]);
     await wait();
+    ctx.http.expectNone(isHistory);   // historique déjà chargé pour ces objets
   });
 
   it('aucun résultat : message et pas de tableau', async () => {
@@ -151,5 +160,37 @@ describe('MarketSearch (recherche marché)', () => {
     ctx.fixture.detectChanges();
     expect(ctx.el.querySelector('table')).toBeNull();
     expect(ctx.el.querySelector('.empty')?.textContent).toContain('Aucun résultat');
+  });
+
+  it('ventes par jour, filtre de volume, alerte prix inhabituel et courbe du prix moyen', async () => {
+    const ctx = await render();
+    const req = await answerPrices(ctx, PRICES, [
+      // revente au Marché noir : 140 ventes en 7 jours ; achat à Martlock bien sous la moyenne (10 000 contre 30 000)
+      historyRow('T6_2H_BOW', 'Black Market', [[daysAgo(1), 70, 15500], [daysAgo(2), 70, 15000]]),
+      historyRow('T6_2H_BOW', 'Martlock', [[daysAgo(1), 3, 30000], [daysAgo(3), 4, 30000]]),
+    ]);
+    expect(req.hist.request.url).toContain('T6_2H_BOW');
+    const bow = () => [...ctx.el.querySelectorAll('tbody tr')].find((r) => r.textContent?.includes('Arc du maître'))!;
+    expect(bow().querySelector('.vol')?.textContent?.trim()).toBe('20');
+    expect(bow().querySelector('.vol')?.getAttribute('title')).toContain('à Marché noir');
+    expect(bow().querySelector('.odd')?.getAttribute('title')).toContain('67 % sous le prix moyen');
+    const sword = [...ctx.el.querySelectorAll('tbody tr')].find((r) => r.textContent?.includes('Épée'))!;
+    expect(sword.querySelector('.vol')?.textContent?.trim()).toBe('0');
+    expect(sword.querySelector('.odd')).toBeNull();
+
+    bow().querySelector<HTMLButtonElement>('.item')!.click();
+    ctx.fixture.detectChanges();
+    const detail = ctx.el.querySelector('.detail')!;
+    const martlock = [...detail.querySelectorAll('.cities tbody tr')].find((r) => r.textContent?.includes('Martlock'))!;
+    expect(martlock.textContent).toContain('30 000');
+    expect(detail.querySelector('.chart-title')?.textContent).toContain('Prix moyen par jour à Marché noir');
+    expect(detail.querySelector('app-line-chart')).not.toBeNull();
+
+    const vol = ctx.el.querySelector<HTMLInputElement>('#s-vol')!;
+    vol.value = '5';
+    vol.dispatchEvent(new Event('change'));
+    ctx.fixture.detectChanges();
+    expect(ctx.el.querySelectorAll('tbody .item').length).toBe(1);
+    expect(ctx.el.querySelector('tbody .name')?.textContent).toContain('Arc du maître');
   });
 });

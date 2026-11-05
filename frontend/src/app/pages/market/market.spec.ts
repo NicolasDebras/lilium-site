@@ -29,7 +29,7 @@ describe('MarketPage (onglet Marché)', () => {
     expect(el.querySelector('.status')?.textContent).toContain('objets disponibles');
   });
 
-  it('bascule vers Cuisine & potions et s’en souvient', async () => {
+  it('bascule vers Fabrication et s’en souvient', async () => {
     const { fixture, http, el } = render();
     http.expectOne('/api/market').flush(TEST_MARKET);
     await wait();
@@ -44,7 +44,7 @@ describe('MarketPage (onglet Marché)', () => {
     expect(JSON.parse(localStorage.getItem('lilium.market.view')!)).toEqual({ view: 'craft' });
   });
 
-  it('réglages repliés par défaut ; mode de vente → taxe par défaut et résumé', async () => {
+  it('réglages repliés par défaut ; mode de vente et Premium → taxe et résumé', async () => {
     const { fixture, http, el } = render();
     http.expectOne('/api/market').flush(TEST_MARKET);
     await wait();
@@ -57,8 +57,15 @@ describe('MarketPage (onglet Marché)', () => {
     mode.value = 'order';
     mode.dispatchEvent(new Event('change'));
     fixture.detectChanges();
-    expect(el.querySelector<HTMLInputElement>('#m-tax')!.value).toBe('6.5');
     expect(el.querySelector('.summary')?.textContent).toContain('mise en vente · taxe 6,5 %');
+    expect(el.querySelector('.tax-detail')?.textContent).toContain('Taxe de vente 4 % + frais de mise en vente 2,5 % = 6,5 %');
+    const premium = el.querySelector<HTMLInputElement>('#m-premium')!;
+    expect(premium.checked).toBe(true);
+    premium.checked = false;
+    premium.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    expect(el.querySelector('.summary')?.textContent).toContain('taxe 10,5 %');
+    expect(el.querySelector('.tax-detail')?.textContent).toContain('Taxe de vente 8 %');
   });
 
   it('état des prix (chargement, erreur réseau) et barre de progression', async () => {

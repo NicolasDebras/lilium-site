@@ -5,20 +5,23 @@ import { I18nService } from '../../core/i18n/i18n';
 import { itemIconUrl, useFallbackIcon } from '../../core/items.service';
 import { BULK_MAX, MarketService, storedSignal } from '../../core/market.service';
 import { Icon } from '../../shared/icon';
+import { LineChart } from '../../shared/charts';
 import { Pager } from '../../shared/pager';
 import { TierBadge } from '../../shared/tier-badge';
-import { cityLabel, itemLabel, otherLabel, percent, silver, tierText } from './market-format';
+import { cityLabel, itemLabel, otherLabel, percent, perDay, silver, tierText } from './market-format';
 import {
-  BLACK_MARKET, CATEGORIES, CATEGORY_KEYS, CITIES, Category, City, ItemFilters, MarketItem, ORIGINS, Origin, Trade,
-  SortSpec, TradeOptions, calcTrade, filterItems, hoursSince, sortRows,
+  Activity, BLACK_MARKET, CATEGORIES, CATEGORY_KEYS, CITIES, Category, City, ItemFilters, MarketItem, ORIGINS, Origin, Trade,
+  SortSpec, TradeOptions, activity, busiestCity, calcTrade, deviation, filterItems, hoursSince, sortRows, suspect,
 } from './market-logic';
 
-type Sort = 'profit' | 'roi' | 'buy' | 'sell' | 'age' | 'name' | 'tier';
+type Sort = 'profit' | 'roi' | 'buy' | 'sell' | 'volume' | 'age' | 'name' | 'tier';
 
 interface SearchPrefs extends ItemFilters {
   buyCity: City | '';
   sellCity: City | '';
   minRoi: string;
+  /** Ventes par jour minimales (7 derniers jours, ville de revente). */
+  minVol: string;
   maxAge: string;
   only: boolean;
   sort: Sort;
@@ -27,7 +30,8 @@ interface SearchPrefs extends ItemFilters {
 }
 
 const DEFAULTS: SearchPrefs = {
-  q: '', cat: '', type: '', tiers: [6], enchs: [0], orig: '', buyCity: '', sellCity: '', minRoi: '', maxAge: '', only: false,
+  q: '', cat: '', type: '', tiers: [6], enchs: [0], orig: '', buyCity: '', sellCity: '', minRoi: '', minVol: '', maxAge: '',
+  only: false,
   sort: 'profit', rev: false,
 };
 const PAGE_SIZE = 25;
@@ -37,6 +41,10 @@ export const AUTOLOAD_MS = 450;
 interface Row {
   it: MarketItem;
   trade: Trade;
+  /** Ventes des 7 derniers jours dans la ville de revente (toutes les villes sans revente) ; null = pas encore chargé. */
+  vol: Activity | null;
+  /** Prix bien loin de la moyenne des ventes : la marge est sans doute trompeuse. */
+  odd: 'buy' | 'sell' | null;
 }
 
 const byName = (a: Row, b: Row) => itemLabel(a.it).localeCompare(itemLabel(b.it));
@@ -46,6 +54,7 @@ const SORTS: Record<Sort, SortSpec<Row>> = {
   roi: { value: (r) => r.trade.roi, desc: true },
   buy: { value: (r) => r.trade.buy?.value },
   sell: { value: (r) => r.trade.sell?.value, desc: true },
+  volume: { value: (r) => r.vol?.perDay, desc: true },
   age: { value: (r) => r.trade.age },
   name: { value: (r) => itemLabel(r.it) },
   tier: { value: (r) => r.it.tier * 10 + r.it.ench, then: byName },
@@ -54,7 +63,7 @@ const SORTS: Record<Sort, SortSpec<Row>> = {
 /** Recherche d'objets : filtres, marge achat/revente par objet, prix ville par ville. */
 @Component({
   selector: 'app-market-search',
-  imports: [Icon, Pager, TierBadge],
+  imports: [Icon, LineChart, Pager, TierBadge],
   template: `
     <section class="card filters">
       <label class="input-icon">
@@ -131,6 +140,14 @@ const SORTS: Record<Sort, SortSpec<Row>> = {
           </div>
         </div>
         <div class="field">
+          <label for="s-vol">{{ t().market.search.minVolume }}</label>
+          <div class="input-unit">
+            <input id="s-vol" class="input" type="number" min="0" step="1" inputmode="numeric" [placeholder]="t().market.noMin" [value]="f().minVol"
+                   (change)="patch({ minVol: $any($event.target).value })" />
+            <span class="unit">{{ t().market.search.perDayUnit }}</span>
+          </div>
+        </div>
+        <div class="field">
           <label for="s-age">{{ t().market.search.freshness }}</label>
           <select id="s-age" class="select" (change)="patch({ maxAge: $any($event.target).value })">
             <option value="" [selected]="!f().maxAge">{{ t().market.search.freshAll }}</option>
@@ -192,27 +209,42 @@ const SORTS: Record<Sort, SortSpec<Row>> = {
                   </td>
                   <td>@if (r.trade.buy; as b) { <span class="flash cell">{{ city(b.city) }}<small class="num">{{ silver(b.value) }}</small></span> } @else { <span class="faint">{{ r.loaded ? '–' : '…' }}</span> }</td>
                   <td>@if (r.trade.sell; as s) { <span class="flash cell">{{ city(s.city) }}<small class="num">{{ silver(s.value) }}</small></span> } @else { <span class="faint">{{ r.loaded ? '–' : '…' }}</span> }</td>
-                  <td class="r num">@if (r.trade.profit != null) { <span class="flash" [class.gain]="r.trade.profit >= 0" [class.pos]="r.trade.profit >= 0" [class.neg]="r.trade.profit < 0">{{ silver(r.trade.profit) }}</span> } @else { – }</td>
+                  <td class="r num">@if (r.odd) { <span class="badge odd" [title]="r.oddText" [attr.aria-label]="r.oddText"><app-icon name="alert" [size]="11" /></span> }
+                    @if (r.trade.profit != null) { <span class="flash" [class.gain]="r.trade.profit >= 0" [class.pos]="r.trade.profit >= 0" [class.neg]="r.trade.profit < 0">{{ silver(r.trade.profit) }}</span> } @else { – }</td>
                   <td class="r num" [class.pos]="(r.trade.roi ?? -1) >= 0" [class.neg]="(r.trade.roi ?? 0) < 0">{{ pct(r.trade.roi) }}</td>
+                  <td class="r num vol" [class.faint]="!r.vol?.perDay" [title]="r.volTitle">{{ r.volText }}</td>
                   <td class="r num" [class.neg]="r.stale" [class.faint]="!r.stale">{{ r.loaded ? r.age : '…' }}</td>
                 </tr>
                 @if (openId() === r.it.id) {
-                  <tr class="detail"><td colspan="6">
+                  <tr class="detail"><td colspan="7">
                     <div class="reveal"><div>
                       <table class="table cities" [attr.aria-label]="t().market.search.details(r.name)">
                         <thead><tr><th>{{ t().market.search.detail.city }}</th><th class="r">{{ t().market.search.detail.sell }}</th>
-                          <th class="r">{{ t().market.search.detail.buy }}</th></tr></thead>
+                          <th class="r">{{ t().market.search.detail.buy }}</th><th class="r">{{ t().market.search.detail.volume }}</th>
+                          <th class="r">{{ t().market.search.detail.avg }}</th></tr></thead>
                         <tbody>
                           @for (c of detail(); track c.city; let j = $index) {
                             <tr class="fade-up" [style.animation-delay.ms]="j * 35">
                               <td>{{ city(c.city) }}</td>
                               <td class="r num"><span [class.hl-buy]="c.bestBuy" [class.hl-sell]="c.bestSellS">{{ silver(c.s) }}<small class="faint">{{ c.sAge }}</small></span></td>
                               <td class="r num"><span [class.hl-sell]="c.bestSellB">{{ silver(c.b) }}<small class="faint">{{ c.bAge }}</small></span></td>
+                              <td class="r num" [class.faint]="!c.vol?.perDay">{{ c.volText }}</td>
+                              <td class="r num">{{ silver(c.vol?.avg) }}</td>
                             </tr>
                           }
                         </tbody>
                       </table>
                       <p class="faint legend"><span class="pos">{{ t().market.search.legend[0] }}</span><span class="lilac">{{ t().market.search.legend[1] }}</span></p>
+                      @if (chart(); as ch) {
+                        @if (ch.points.length > 1) {
+                          <div class="chart"><p class="chart-title">{{ t().market.search.chartTitle(city(ch.city)) }}</p>
+                            <app-line-chart [data]="ch.points" [label]="t().market.search.chartLabel" /></div>
+                        } @else {
+                          <p class="faint legend">{{ t().market.search.noChart }}</p>
+                        }
+                      } @else if (!historyLoaded()) {
+                        <p class="faint legend">{{ t().common.loading }}</p>
+                      }
                     </div></div>
                   </td></tr>
                 }
@@ -241,7 +273,7 @@ const SORTS: Record<Sort, SortSpec<Row>> = {
     .count { flex: 1 1 220px; margin: 0; font-size: .9rem; }
     .table-card { padding: 6px 4px; }
     .scroll { overflow-x: auto; }
-    .table { min-width: 720px; }
+    .table { min-width: 800px; }
     .table td { vertical-align: middle; white-space: nowrap; }
     .r { text-align: right !important; }
     .sort-h { display: inline-flex; align-items: center; gap: 4px; padding: 0; border: 0; background: none;
@@ -276,6 +308,11 @@ const SORTS: Record<Sort, SortSpec<Row>> = {
     .legend { font-size: .8rem; margin: 8px 0 0; }
     .lilac { color: var(--lilac); }
     .hint { font-size: .8rem; margin-top: 10px; }
+    .odd { background: var(--danger-soft); color: var(--danger); padding: 2px 5px; margin-right: 6px; vertical-align: 1px; cursor: help; }
+    .vol { cursor: help; }
+    .cities { max-width: 760px; }
+    .chart { max-width: 760px; margin-top: 14px; }
+    .chart-title { font-size: .85rem; font-weight: 600; color: var(--text-muted); margin: 0 0 4px; }
   `,
 })
 export class MarketSearch {
@@ -288,7 +325,7 @@ export class MarketSearch {
   protected readonly tiers = [1, 2, 3, 4, 5, 6, 7, 8];
   protected readonly enchs = [0, 1, 2, 3, 4];
   protected readonly ages = ['1', '6', '24'];
-  protected readonly sorts: Sort[] = ['profit', 'roi', 'buy', 'sell', 'age', 'name', 'tier'];
+  protected readonly sorts: Sort[] = ['profit', 'roi', 'buy', 'sell', 'volume', 'age', 'name', 'tier'];
   /** En-têtes du tableau : un clic trie sur la colonne, un 2ᵉ inverse le sens. */
   protected readonly columns = [
     { col: 'item', sort: 'name', right: false },
@@ -296,6 +333,7 @@ export class MarketSearch {
     { col: 'sell', sort: 'sell', right: false },
     { col: 'profit', sort: 'profit', right: true },
     { col: 'roi', sort: 'roi', right: true },
+    { col: 'volume', sort: 'volume', right: true },
     { col: 'age', sort: 'age', right: true },
   ] as const;
   protected readonly pageSize = PAGE_SIZE;
@@ -316,16 +354,24 @@ export class MarketSearch {
   private readonly options = computed<TradeOptions>(() => {
     const s = this.market.settings();
     const f = this.f();
-    return { mode: s.mode, tax: s.tax, bm: s.bm, buyCity: f.buyCity, sellCity: f.sellCity, maxAge: f.maxAge === '' ? null : +f.maxAge };
+    return { mode: s.mode, tax: this.market.tax(), bm: s.bm, buyCity: f.buyCity, sellCity: f.sellCity, maxAge: f.maxAge === '' ? null : +f.maxAge };
   });
 
   protected readonly rows = computed(() => {
     const prices = this.market.prices();
+    const history = this.market.history();
     const o = { ...this.options(), now: Date.now() };
     const f = this.f();
-    let rows: Row[] = this.matching().map((it) => ({ it, trade: calcTrade(prices[it.id], o) }));
+    let rows: Row[] = this.matching().map((it) => {
+      const trade = calcTrade(prices[it.id], o);
+      const h = history[it.id];
+      const vol = activity(h, trade.sell?.city ?? f.sellCity, o.now);
+      const buyAvg = trade.buy && activity(h, trade.buy.city, o.now)?.avg;
+      return { it, trade, vol, odd: suspect(trade, buyAvg, vol?.avg) };
+    });
     if (f.only) rows = rows.filter((r) => r.trade.buy || r.trade.sell);
     if (f.minRoi !== '') rows = rows.filter((r) => r.trade.roi != null && r.trade.roi >= +f.minRoi);
+    if (f.minVol !== '' && +f.minVol > 0) rows = rows.filter((r) => r.vol != null && r.vol.perDay >= +f.minVol);
     return sortRows(rows, SORTS[f.sort] ?? SORTS.profit, f.rev);
   });
 
@@ -347,15 +393,34 @@ export class MarketSearch {
       age: this.t().market.age(r.trade.age),
       stale: (r.trade.age ?? 0) > 24,
       best: firstPage && i === 0 && (r.trade.profit ?? 0) > 0,
+      volText: r.vol ? perDay(r.vol.perDay) : '…',
+      volTitle: r.vol ? this.t().market.search.volumeTitle(r.trade.sell ? cityLabel(r.trade.sell.city) : '') : '',
+      oddText: this.oddText(r),
     }));
   });
 
   protected readonly openId = signal<string | null>(null);
+  private readonly openRow = computed(() => {
+    const id = this.openId();
+    return id ? this.rows().find((r) => r.it.id === id) ?? null : null;
+  });
+  protected readonly historyLoaded = computed(() => !!this.openId() && this.openId()! in this.market.history());
+
+  /** Prix moyen jour par jour dans la ville de revente (sinon la plus active), pour le graphique du détail. */
+  protected readonly chart = computed(() => {
+    const id = this.openId();
+    const h = id ? this.market.history()[id] : undefined;
+    if (!h) return null;
+    const city = this.openRow()?.trade.sell?.city ?? busiestCity(h);
+    if (!city) return { city: '' as City, points: [] };
+    return { city, points: (h[city] ?? []).map((pt) => ({ date: pt.d, total: pt.p })) };
+  });
 
   /** Prix ville par ville de l'objet ouvert ; meilleur achat (vert) et meilleure revente (lilas) surlignés. */
   protected readonly detail = computed(() => {
     const id = this.openId();
     const p = id ? this.market.prices()[id] ?? {} : {};
+    const h = id ? this.market.history()[id] : undefined;
     const { mode, bm } = this.market.settings();
     const now = Date.now();
     const all: City[] = bm ? [...CITIES, BLACK_MARKET] : [...CITIES];
@@ -364,6 +429,7 @@ export class MarketSearch {
     const maxV = Math.max(0, ...all.map((c) => p[c]?.[key] || 0));
     return all.map((city) => {
       const e = p[city];
+      const vol = activity(h, city, now);
       const age = (d: string | null | undefined) => this.t().market.age(hoursSince(d, now));
       return {
         city,
@@ -374,6 +440,8 @@ export class MarketSearch {
         bestBuy: !!e?.s && city !== BLACK_MARKET && e.s === minS,
         bestSellS: key === 's' && !!e?.s && e.s === maxV,
         bestSellB: key === 'b' && !!e?.b && e.b === maxV,
+        vol,
+        volText: vol ? perDay(vol.perDay) : '…',
       };
     });
   });
@@ -385,9 +453,19 @@ export class MarketSearch {
     effect((onCleanup) => {
       const ids = this.pageIds();
       if (!ids || this.market.busy()) return;
-      const timer = setTimeout(() => this.market.fetchPrices(this.market.untried(ids.split(','))), AUTOLOAD_MS);
+      const list = ids.split(',');
+      const timer = setTimeout(() => this.market.fetchPrices(this.market.untried(list), list), AUTOLOAD_MS);
       onCleanup(() => clearTimeout(timer));
     });
+  }
+
+  /** Bulle de l'alerte « prix inhabituel » : quel prix, et son écart à la moyenne des ventes. */
+  private oddText(r: Row): string {
+    if (!r.odd) return '';
+    const q = r.odd === 'buy' ? r.trade.buy : r.trade.sell;
+    const h = this.market.history()[r.it.id];
+    const avg = q ? activity(h, q.city, Date.now())?.avg : null;
+    return this.t().market.search.odd(r.odd, percent(Math.abs(deviation(q?.value, avg) ?? 0) * 100));
   }
 
   patch(change: Partial<SearchPrefs>): void {
@@ -427,11 +505,14 @@ export class MarketSearch {
   }
 
   refresh(): void {
-    this.market.fetchPrices(this.pageRows().map((r) => r.it.id));
+    const ids = this.pageRows().map((r) => r.it.id);
+    this.market.fetchPrices(ids, ids);
   }
 
+  /** Prix et historique des ventes des résultats, jusqu'à BULK_MAX objets. */
   loadAll(): void {
-    this.market.fetchPrices(this.matching().slice(0, BULK_MAX).map((it) => it.id));
+    const ids = this.matching().slice(0, BULK_MAX).map((it) => it.id);
+    this.market.fetchPrices(ids, ids);
   }
 
   delay(i: number): number {

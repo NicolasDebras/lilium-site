@@ -1,4 +1,4 @@
-import { dict, lang } from '../../core/i18n/i18n';
+import { dict, lang, locale } from '../../core/i18n/i18n';
 import { fullSilver } from '../../shared/charts';
 import { BLACK_MARKET, City } from './market-logic';
 
@@ -11,6 +11,12 @@ export function silver(n: number | null | undefined): string {
 export function percent(n: number | null | undefined): string {
   if (n == null) return '–';
   return lang() === 'en' ? `${n.toFixed(0)}%` : `${n.toFixed(0)} %`;
+}
+
+/** Ventes par jour : « 0 », « < 1 », « 12 », « 1 250 ». */
+export function perDay(n: number): string {
+  if (n <= 0) return '0';
+  return n < 1 ? '< 1' : Math.round(n).toLocaleString(locale());
 }
 
 export function cityLabel(city: City): string {
@@ -28,9 +34,11 @@ export function otherLabel(item: { fr: string; en: string }): string {
   return other && other !== itemLabel(item) ? other : '';
 }
 
-/** Famille de recettes : libellé traduit, sinon le mot du jeu en minuscules (« TORNADO » → « Tornado »). */
+/** Famille de recettes : libellé traduit (famille de cuisine/potion, sinon type d'objet pour le raffinage et
+ *  l'équipement), sinon le mot du jeu en minuscules (« TORNADO » → « Tornado »). */
 export function familyLabel(key: string): string {
-  return dict().market.families[key] ?? key.charAt(0) + key.slice(1).toLowerCase();
+  const m = dict().market;
+  return m.families[key] ?? m.types[key] ?? key.charAt(0) + key.slice(1).toLowerCase();
 }
 
 /** « 6.1 » */

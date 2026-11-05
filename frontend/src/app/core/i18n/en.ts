@@ -355,7 +355,7 @@ export const en: typeof fr = {
     title: 'Market',
     subtitle: 'Find an item, compare cities, spot the good deals. Prices reported by players (Albion Online Data Project): check in game.',
     viewAria: 'Market tool',
-    views: { search: 'Market search', craft: 'Cooking & potions' },
+    views: { search: 'Market search', craft: 'Crafting' },
     credit: ['Tool designed by ', ', built into Lilium.'],
     loadError: 'Could not load the market catalog.',
     retry: 'Retry',
@@ -366,11 +366,12 @@ export const en: typeof fr = {
       mode: 'Selling mode',
       modes: { direct: 'Instant sell (buy orders)', order: 'Sell order (listing)' },
       modesShort: { direct: 'instant sell', order: 'sell order' },
-      tax: 'Sales tax',
+      premium: 'Premium account',
+      taxDetail: (tax: number, fee: number) => (fee ? `Sales tax ${tax}% + setup fee ${fee}% = ${tax + fee}%` : `Sales tax ${tax}%`),
       quality: 'Quality',
       qualities: ['Normal', 'Good', 'Outstanding', 'Excellent', 'Masterpiece'],
       bm: 'Black Market as a place to sell',
-      hint: 'Taxes with Premium: 4% for instant sells, 6.5% for sell orders. Without Premium: 8% and 10.5%. The Black Market only buys through buy orders.',
+      hint: 'Sales tax: 4% with Premium, 8% without; a sell order also costs a 2.5% setup fee. The Black Market only buys through buy orders.',
       summary: (server: string, mode: string, tax: number, quality: string) => `${server} · ${mode} · ${tax}% tax · ${quality}`,
     },
     status: {
@@ -379,6 +380,7 @@ export const en: typeof fr = {
       loaded: (time: string, n: number) => `Prices loaded at ${time} (${n} ${plural(n, 'item', 'items')}).`,
       network: 'Could not reach the price API (offline, ad blocker or firewall?).',
       http: (code: number) => `Loading prices failed (HTTP ${code}).`,
+      noHistory: 'Sales history unavailable right now (API limit?): try again in a minute.',
     },
     progress: 'Loading prices',
     refresh: 'Refresh this page',
@@ -412,30 +414,39 @@ export const en: typeof fr = {
       allCities: 'All cities',
       freshness: 'Price freshness',
       freshAll: 'Any',
+      minVolume: 'Minimum sales',
+      perDayUnit: '/ day',
       fresh: { '1': 'under 1 h', '6': 'under 6 h', '24': 'under 24 h' },
       sorts: {
         profit: 'Margin per item', roi: 'Margin (%)', buy: 'Buy price (ascending)',
-        sell: 'Sell price (descending)', age: 'Freshness', name: 'Name', tier: 'Tier',
+        sell: 'Sell price (descending)', volume: 'Sales per day', age: 'Freshness', name: 'Name', tier: 'Tier',
       },
       count: (n: number, total: number) =>
         `${n.toLocaleString('en-US')} ${plural(n, 'item', 'items')}${n !== total ? ` (out of ${total.toLocaleString('en-US')} matching the search)` : ''}`,
-      cols: { item: 'Item', buy: 'Buy in', sell: 'Sell in', profit: 'Net margin', roi: 'Margin', age: 'Freshness' },
-      detail: { city: 'City', sell: 'Lowest sell order', buy: 'Highest buy order' },
+      cols: { item: 'Item', buy: 'Buy in', sell: 'Sell in', profit: 'Net margin', roi: 'Margin', volume: 'Sales/d', age: 'Freshness' },
+      detail: { city: 'City', sell: 'Lowest sell order', buy: 'Highest buy order', volume: 'Sales/d (7 d)', avg: 'Average price (7 d)' },
+      volumeTitle: (city: string) => `Sales per day over the last 7 days ${city ? `in ${city}` : 'in all cities'}`,
+      odd: (which: 'buy' | 'sell', pct: string) => (which === 'buy'
+        ? `Buy price ${pct} below the average sale price: a lone listing, or already gone? Check in game.`
+        : `Sell price ${pct} above the average sale price: check in game.`),
+      chartTitle: (city: string) => `Average price per day in ${city} (last 14 days)`,
+      chartLabel: 'Average price',
+      noChart: 'Not enough reported sales to draw the curve.',
       legend: ['Green: cheapest place to buy. ', 'Lilac: best place to sell for your selling mode.'],
       empty: (strict: boolean) =>
         `No result. ${strict ? 'Load prices for all results or loosen the price filters.' : 'Loosen the filters (tier, enchantment, type).'}`,
-      hint: 'Net margin = sell price after tax − lowest buy price (instant buy). Click an item to see prices city by city.',
+      hint: 'Net margin = sell price after tax − lowest buy price (instant buy). Sales/d = average of the last 7 days in the selling city; the red alert flags a price far from the average sale price. Click an item to see prices city by city and the curve.',
       pagerLabel: 'items',
       details: (name: string) => `Prices by city: ${name}`,
     },
     craft: {
       label: 'Search a recipe',
-      placeholder: 'healing, soup, agaric, egg… (-word to exclude)',
+      placeholder: 'healing, soup, leather, sword, agaric… (-word to exclude)',
       scope: 'Search in',
       scopes: { both: 'Name and ingredients', name: 'Recipe name', ing: 'Ingredients' },
       type: 'Type',
-      allTypes: 'Cooking and potions',
-      cats: { potion: 'Potions', meal: 'Food' },
+      allTypes: 'All types',
+      cats: { potion: 'Potions', meal: 'Food', refine: 'Refining', gear: 'Equipment' },
       family: 'Family',
       allFamilies: 'All families',
       ingredient: 'Contains the ingredient',
@@ -443,14 +454,28 @@ export const en: typeof fr = {
       qty: 'Quantity to craft',
       rrr: 'Resource return',
       rrrs: {
-        '0': '0% (no bonus)', '15.2': '15.2% (city with bonus)',
-        '43.5': '43.5% (with focus)', '53.9': '53.9% (city bonus + focus)',
+        '0': '0% (no bonus)', '15.2': '15.2% (royal city)',
+        '24.8': '24.8% (specialized city, crafting)', '36.7': '36.7% (specialized city, refining)',
+        '43.5': '43.5% (focus)', '47.9': '47.9% (focus + specialized city, crafting)',
+        '53.9': '53.9% (focus + specialized city, refining)',
       },
-      sorts: { profit: 'Total margin', roi: 'Margin (%)', cost: 'Cost (ascending)', sell: 'Sale (descending)', name: 'Name', tier: 'Tier' },
+      sorts: {
+        profit: 'Total margin', roi: 'Margin (%)', cost: 'Cost (ascending)', sell: 'Sale (descending)', volume: 'Sales per day', name: 'Name', tier: 'Tier',
+      },
       count: (n: number, total: number, qty: number) =>
         `${n} ${plural(n, 'recipe', 'recipes')}${n !== total ? ` (out of ${total} matching the search)` : ''} · computed for ${qty.toLocaleString('en-US')} ${plural(qty, 'unit', 'units')}`,
-      cols: { recipe: 'Recipe', formula: 'Formula (per craft)', cost: 'Resource cost', sell: 'Sale (best city)', profit: 'Margin', roi: 'Margin %' },
-      produces: (n: number, potion: boolean) => (potion ? plural(n, 'potion', 'potions') : plural(n, 'meal', 'meals')),
+      cols: {
+        recipe: 'Recipe', formula: 'Formula (per craft)', cost: 'Resource cost', sell: 'Sale (best city)', profit: 'Margin',
+        roi: 'Margin %', volume: 'Sales/d',
+      },
+      produces: (n: number, cat: string) =>
+        cat === 'potion' ? plural(n, 'potion', 'potions') : cat === 'meal' ? plural(n, 'meal', 'meals') : plural(n, 'item', 'items'),
+      sellOut: (perDay: number, made: number, city: string) => {
+        const where = city ? ` in ${city}` : '';
+        if (perDay <= 0) return `No sale reported over the last 7 days${where}: ${made} ${plural(made, 'item', 'items')} may take a long time to sell.`;
+        const days = Math.ceil(made / perDay);
+        return `About ${perDay < 1 ? 'less than 1' : Math.round(perDay).toLocaleString('en-US')} sold per day${where}: expect ${days} ${plural(days, 'day', 'days')} to sell ${made}.`;
+      },
       crafts: (crafts: number, made: number, rrr: string) =>
         `${crafts} ${plural(crafts, 'craft', 'crafts')} for ${made} units produced (resource return: ${rrr}%).`,
       formula: 'Formula:',
@@ -461,7 +486,7 @@ export const en: typeof fr = {
       revenue: 'Estimated sale',
       margin: 'Margin',
       empty: (strict: boolean) => `No recipe matches.${strict ? ' Load prices for all results or loosen the price filters.' : ''}`,
-      hint: 'Resources bought at the lowest sell order; sold at the best price for your selling mode, tax deducted. Click a recipe for the shopping list.',
+      hint: 'Resources bought at the lowest sell order; sold at the best price for your selling mode, tax deducted; sales/d of the crafted item over 7 days. Click a recipe for the shopping list.',
       pagerLabel: 'recipes',
     },
     cats: {

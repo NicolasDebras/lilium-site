@@ -3,7 +3,8 @@ import { Injectable, WritableSignal, computed, effect, inject, signal } from '@a
 import { firstValueFrom } from 'rxjs';
 
 import {
-  DEFAULT_TAX, MarketData, MarketItem, PriceMap, PriceRow, Recipe, SellMode, Server, baseId, expandItems, mergePrices,
+  HISTORY_DAYS, HistoryMap, HistoryRow, MarketData, MarketItem, PriceMap, PriceRow, Recipe, SellMode, Server, baseId, expandItems,
+  mergeHistory, mergePrices, taxRate,
 } from '../pages/market/market-logic';
 import { lang } from './i18n/i18n';
 
@@ -32,7 +33,8 @@ export function storedSignal<T extends object>(key: string, initial: T): Writabl
 export interface MarketSettings {
   server: Server;
   mode: SellMode;
-  tax: number;
+  /** Compte Premium : taxe de vente de 4 % au lieu de 8 %. */
+  premium: boolean;
   /** 1 = normale … 5 = chef-d'œuvre */
   quality: number;
   /** Marché noir comme lieu de vente. */
@@ -42,11 +44,20 @@ export interface MarketSettings {
 export type MarketStatus =
   | { kind: 'idle' }
   | { kind: 'busy'; done: number; total: number }
-  | { kind: 'done'; at: Date; count: number }
+  /** `history` faux = l'historique des ventes n'a pas pu être chargé (les prix, si). */
+  | { kind: 'done'; at: Date; count: number; history: boolean }
   | { kind: 'error'; network: boolean; code: number };
 
 /** Lot d'ids par requête (longueur d'URL raisonnable). */
 const CHUNK = 40;
+/** Lot d'ids pour l'historique (réponse bien plus lourde : un point par jour et par ville). */
+const HISTORY_CHUNK = 20;
+
+/** Date de début de l'historique au format de l'API (« 10-22-2026 », mois-jour-année). */
+export function historyStart(now: number, days = HISTORY_DAYS): string {
+  const d = new Date(now - days * 864e5);
+  return `${d.getUTCMonth() + 1}-${d.getUTCDate()}-${d.getUTCFullYear()}`;
+}
 /** « Charger les prix de tous les résultats » : plafond par clic (limite de l'API : 180 requêtes/min). */
 export const BULK_MAX = 300;
 
@@ -58,6 +69,7 @@ export class MarketService {
   private readonly data = signal<{ items: MarketItem[]; recipes: Recipe[]; names: Map<string, [string, string]> } | null>(null);
   private pending: Promise<void> | null = null;
   private tried = new Set<string>();
+  private triedHistory = new Set<string>();
 
   readonly items = computed(() => this.data()?.items ?? []);
   readonly recipes = computed(() => this.data()?.recipes ?? []);
@@ -65,9 +77,13 @@ export class MarketService {
   readonly loadError = signal<unknown>(null);
 
   readonly settings = storedSignal<MarketSettings>('lilium.market.settings', {
-    server: 'europe', mode: 'direct', tax: DEFAULT_TAX.direct, quality: 1, bm: true,
+    server: 'europe', mode: 'direct', premium: true, quality: 1, bm: true,
   });
+  /** Taxe totale d'une vente (%) selon le mode et le Premium. */
+  readonly tax = computed(() => taxRate(this.settings().mode, this.settings().premium));
   readonly prices = signal<PriceMap>({});
+  /** Ventes jour par jour (14 derniers jours), par objet et par ville. */
+  readonly history = signal<HistoryMap>({});
   readonly status = signal<MarketStatus>({ kind: 'idle' });
   readonly busy = computed(() => this.status().kind === 'busy');
 
@@ -97,8 +113,9 @@ export class MarketService {
 
   update(patch: Partial<MarketSettings>): void {
     const before = this.settings();
-    const next = { ...before, ...patch };
-    if (patch.mode && patch.tax === undefined) next.tax = DEFAULT_TAX[patch.mode];
+    const { server, mode, premium, quality, bm } = { ...before, ...patch };
+    // Réglage d'une ancienne version (taxe saisie à la main) : abandonné.
+    const next = { server, mode, premium, quality, bm };
     this.settings.set(next);
     // Prix propres à un serveur et à une qualité : on repart de zéro.
     if (next.server !== before.server || next.quality !== before.quality) this.resetPrices();
@@ -107,6 +124,8 @@ export class MarketService {
   resetPrices(): void {
     this.prices.set({});
     this.tried = new Set();
+    this.history.set({});
+    this.triedHistory = new Set();
   }
 
   /** Ids jamais demandés (le chargement automatique ne redemande pas un objet sans relevé). */
@@ -114,12 +133,18 @@ export class MarketService {
     return [...new Set(ids)].filter((id) => !this.tried.has(id) && !(id in this.prices()));
   }
 
-  /** Charge les prix par lots ; chaque lot s'affiche dès qu'il arrive. Ignoré si un chargement est en cours. */
-  async fetchPrices(ids: readonly string[]): Promise<void> {
+  /** Charge les prix par lots, puis l'historique des ventes des ids `historyIds` jamais demandés ; chaque lot
+   *  s'affiche dès qu'il arrive. Ignoré si un chargement est en cours. Un échec de l'historique ne gâche pas
+   *  les prix (statut « done » avec `history: false`). */
+  async fetchPrices(ids: readonly string[], historyIds: readonly string[] = []): Promise<void> {
     const list = [...new Set(ids)];
-    if (!list.length || this.busy()) return;
+    const hist = [...new Set(historyIds)].filter((id) => !this.triedHistory.has(id));
+    if ((!list.length && !hist.length) || this.busy()) return;
     const { server, quality } = this.settings();
-    this.status.set({ kind: 'busy', done: 0, total: list.length });
+    const total = list.length + hist.length;
+    const changed = () => this.settings().server !== server || this.settings().quality !== quality;
+    let historyOk = true;
+    this.status.set({ kind: 'busy', done: 0, total });
     try {
       for (let i = 0; i < list.length; i += CHUNK) {
         const chunk = list.slice(i, i + CHUNK);
@@ -127,12 +152,30 @@ export class MarketService {
           this.http.get<PriceRow[]>(`https://${server}.albion-online-data.com/api/v2/stats/prices/${chunk.join(',')}.json`),
         );
         // Réglage changé pendant le chargement : ces prix ne valent plus.
-        if (this.settings().server !== server || this.settings().quality !== quality) return;
+        if (changed()) return;
         chunk.forEach((id) => this.tried.add(id));
         this.prices.update((p) => mergePrices(p, chunk, rows, quality));
-        this.status.set({ kind: 'busy', done: Math.min(i + CHUNK, list.length), total: list.length });
+        this.status.set({ kind: 'busy', done: Math.min(i + CHUNK, list.length), total });
       }
-      this.status.set({ kind: 'done', at: new Date(), count: list.length });
+      const start = historyStart(Date.now());
+      for (let i = 0; i < hist.length; i += HISTORY_CHUNK) {
+        const chunk = hist.slice(i, i + HISTORY_CHUNK);
+        let rows: HistoryRow[];
+        try {
+          rows = await firstValueFrom(this.http.get<HistoryRow[]>(
+            `https://${server}.albion-online-data.com/api/v2/stats/history/${chunk.join(',')}.json`,
+            { params: { 'time-scale': 24, qualities: quality, date: start } },
+          ));
+        } catch {
+          historyOk = false;
+          break;
+        }
+        if (changed()) return;
+        chunk.forEach((id) => this.triedHistory.add(id));
+        this.history.update((h) => mergeHistory(h, chunk, rows, quality));
+        this.status.set({ kind: 'busy', done: list.length + Math.min(i + HISTORY_CHUNK, hist.length), total });
+      }
+      this.status.set({ kind: 'done', at: new Date(), count: list.length || hist.length, history: historyOk });
     } catch (err) {
       const code = err instanceof HttpErrorResponse ? err.status : 0;
       this.status.set({ kind: 'error', network: code === 0, code });

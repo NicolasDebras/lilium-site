@@ -1,9 +1,9 @@
-import { priceRow } from '../../../testing/market';
+import { historyRow, priceRow } from '../../../testing/market';
 import { en } from '../../core/i18n/en';
 import { fr } from '../../core/i18n/fr';
 import {
-  BLACK_MARKET, CATEGORIES, Recipe, calcTrade, classify, expandItems, familyOf, filterItems, filterRecipes, hoursSince,
-  matchTokens, mergePrices, recipeCalc, sortRows,
+  BLACK_MARKET, CATEGORIES, Recipe, activity, busiestCity, calcTrade, classify, deviation, expandItems, familyOf, filterItems,
+  filterRecipes, hoursSince, matchTokens, mergeHistory, mergePrices, recipeCalc, sortRows, suspect, taxRate,
 } from './market-logic';
 
 const NOW = Date.parse('2026-10-23T12:00:00Z');
@@ -109,8 +109,13 @@ describe('market-logic', () => {
   });
 
   it('familles et filtre des recettes (nom, ingrédients, exclusion)', () => {
-    expect(familyOf({ id: 'T6_POTION_HEAL@1' })).toBe('HEAL');
-    expect(familyOf({ id: 'T8_MEAL_STEW_AVALON' })).toBe('STEW');
+    expect(familyOf({ id: 'T6_POTION_HEAL@1', cat: 'potion' })).toBe('HEAL');
+    expect(familyOf({ id: 'T8_MEAL_STEW_AVALON', cat: 'meal' })).toBe('STEW');
+    // raffinage et équipement : type du marché
+    expect(familyOf({ id: 'T4_LEATHER_LEVEL1@1', cat: 'refine' })).toBe('leather');
+    expect(familyOf({ id: 'T6_2H_BOW_KEEPER@2', cat: 'gear' })).toBe('bows');
+    expect(familyOf({ id: 'T5_ARMOR_PLATE_SET1', cat: 'gear' })).toBe('armorPlate');
+    expect(familyOf({ id: 'UNKNOWN', cat: 'gear' })).toBe('other');
     const recipes: Recipe[] = [
       { id: 'T6_POTION_HEAL', tier: 6, ench: 0, cat: 'potion', y: 5, r: [['T5_EGG', 18]] },
       { id: 'T4_MEAL_SOUP@1', tier: 4, ench: 1, cat: 'meal', y: 10, r: [['T1_CARROT', 16], ['T1_FISHSAUCE_LEVEL1', 10]] },
@@ -124,5 +129,52 @@ describe('market-logic', () => {
     expect(filterRecipes(recipes, { ...base, ing: 'T1_FISHSAUCE' }, name).map((r) => r.id)).toEqual(['T4_MEAL_SOUP@1']);
     expect(filterRecipes(recipes, { ...base, cat: 'potion', enchs: [0] }, name)).toHaveLength(1);
     expect(filterRecipes(recipes, { ...base, fam: 'SOUP' }, name)).toHaveLength(1);
+  });
+
+  it('taxe : 4 % avec Premium, 8 % sans, + 2,5 % de frais de mise en vente', () => {
+    expect(taxRate('direct', true)).toBe(4);
+    expect(taxRate('order', true)).toBe(6.5);
+    expect(taxRate('direct', false)).toBe(8);
+    expect(taxRate('order', false)).toBe(10.5);
+  });
+
+  it('historique : fusion par ville et par jour, qualité et villes inconnues ignorées', () => {
+    const h = mergeHistory({ OLD: {} }, ['T4_BAG', 'T5_BAG'], [
+      historyRow('T4_BAG', 'Martlock', [['2026-10-21', 10, 1000], ['2026-10-20', 4, 900], ['2026-10-19', 0, 5]]),
+      historyRow('T4_BAG', 'Martlock', [['2026-10-22', 6, 1100]]),
+      historyRow('T4_BAG', 'Thetford', [['2026-10-22', 2, 2000]], 2),     // autre qualité
+      historyRow('T4_BAG', 'Thetford Portal', [['2026-10-22', 2, 2000]]), // pas une ville du marché
+      historyRow('T9_UNASKED', 'Martlock', [['2026-10-22', 2, 2000]]),
+    ], 1);
+    expect(h['T4_BAG'].Martlock).toEqual([{ d: '2026-10-20', n: 4, p: 900 }, { d: '2026-10-21', n: 10, p: 1000 }, { d: '2026-10-22', n: 6, p: 1100 }]);
+    expect(h['T4_BAG'].Thetford).toBeUndefined();
+    expect(h['T5_BAG']).toEqual({});    // demandé, aucune vente : entrée vide
+    expect(h['OLD']).toEqual({});
+    expect(h['T9_UNASKED']).toBeUndefined();
+  });
+
+  it('activité : ventes par jour et prix moyen pondéré sur 7 jours, ville ou toutes', () => {
+    const h = mergeHistory({}, ['T4_BAG'], [
+      historyRow('T4_BAG', 'Martlock', [['2026-10-10', 100, 1], ['2026-10-20', 10, 1000], ['2026-10-22', 4, 1350]]),
+      historyRow('T4_BAG', BLACK_MARKET, [['2026-10-21', 7, 2000]]),
+    ], 1)['T4_BAG'];
+    // NOW = 23/10 12 h : du 17 au 23 ; le relevé du 10 est trop vieux
+    expect(activity(h, 'Martlock', NOW)).toEqual({ perDay: 2, avg: (10 * 1000 + 4 * 1350) / 14 });
+    expect(activity(h, '', NOW)?.perDay).toBe(3);
+    expect(activity(h, 'Lymhurst', NOW)).toEqual({ perDay: 0, avg: null });
+    expect(activity(undefined, 'Martlock', NOW)).toBeNull();
+    expect(busiestCity(h)).toBe('Martlock');
+    expect(busiestCity({})).toBeNull();
+  });
+
+  it('prix inhabituels : achat bien sous la moyenne, revente bien au-dessus', () => {
+    expect(deviation(150, 100)).toBeCloseTo(0.5);
+    expect(deviation(150, null)).toBeNull();
+    expect(deviation(null, 100)).toBeNull();
+    const q = (value: number) => ({ city: 'Martlock' as const, value, date: null });
+    expect(suspect({ buy: q(40), sell: q(100) }, 100, 100)).toBe('buy');
+    expect(suspect({ buy: q(90), sell: q(200) }, 100, 100)).toBe('sell');
+    expect(suspect({ buy: q(60), sell: q(140) }, 100, 100)).toBeNull();
+    expect(suspect({ buy: q(1), sell: null }, null, null)).toBeNull();
   });
 });

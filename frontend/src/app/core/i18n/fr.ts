@@ -326,7 +326,7 @@ export const fr = {
     title: 'Marché',
     subtitle: 'Cherche un objet, compare les villes, repère les bonnes affaires. Prix relevés par les joueurs (Albion Online Data Project) : vérifie en jeu.',
     viewAria: 'Outil du marché',
-    views: { search: 'Recherche marché', craft: 'Cuisine & potions' },
+    views: { search: 'Recherche marché', craft: 'Fabrication' },
     credit: ['Outil imaginé par ', ', intégré à Lilium.'],
     loadError: 'Impossible de charger le catalogue du marché.',
     retry: 'Réessayer',
@@ -337,11 +337,15 @@ export const fr = {
       mode: 'Mode de vente',
       modes: { direct: 'Vente directe (ordres d’achat)', order: 'Mise en vente (ordres de vente)' } as Record<string, string>,
       modesShort: { direct: 'vente directe', order: 'mise en vente' } as Record<string, string>,
-      tax: 'Taxe de vente',
+      premium: 'Compte Premium',
+      taxDetail: (tax: number, fee: number) => {
+        const n = (v: number) => v.toLocaleString('fr-FR');
+        return fee ? `Taxe de vente ${n(tax)} % + frais de mise en vente ${n(fee)} % = ${n(tax + fee)} %` : `Taxe de vente ${n(tax)} %`;
+      },
       quality: 'Qualité',
       qualities: ['Normale', 'Bonne', 'Remarquable', 'Excellente', 'Chef-d’œuvre'],
       bm: 'Marché noir comme lieu de vente',
-      hint: 'Taxes avec Premium : 4 % en vente directe, 6,5 % en mise en vente. Sans Premium : 8 % et 10,5 %. Le Marché noir n’achète qu’aux ordres d’achat.',
+      hint: 'Taxe de vente : 4 % avec Premium, 8 % sans ; une mise en vente coûte en plus 2,5 % de frais. Le Marché noir n’achète qu’aux ordres d’achat.',
       summary: (server: string, mode: string, tax: number, quality: string) => `${server} · ${mode} · taxe ${tax.toLocaleString('fr-FR')} % · ${quality}`,
     },
     status: {
@@ -350,6 +354,7 @@ export const fr = {
       loaded: (time: string, n: number) => `Prix chargés à ${time} (${n} ${plural(n, 'objet', 'objets')}).`,
       network: 'Impossible de joindre l’API des prix (connexion coupée, bloqueur de publicités ou pare-feu ?).',
       http: (code: number) => `Échec du chargement des prix (HTTP ${code}).`,
+      noHistory: 'Historique des ventes indisponible pour l’instant (limite de l’API ?) : réessaie dans une minute.',
     },
     progress: 'Chargement des prix',
     refresh: 'Actualiser la page',
@@ -383,30 +388,41 @@ export const fr = {
       allCities: 'Toutes les villes',
       freshness: 'Fraîcheur des prix',
       freshAll: 'Toutes',
+      minVolume: 'Ventes minimales',
+      perDayUnit: '/ jour',
       fresh: { '1': 'moins de 1 h', '6': 'moins de 6 h', '24': 'moins de 24 h' } as Record<string, string>,
       sorts: {
         profit: 'Marge par objet', roi: 'Marge (%)', buy: 'Prix d’achat (croissant)',
-        sell: 'Prix de vente (décroissant)', age: 'Fraîcheur', name: 'Nom', tier: 'Tier',
+        sell: 'Prix de vente (décroissant)', volume: 'Ventes par jour', age: 'Fraîcheur', name: 'Nom', tier: 'Tier',
       } as Record<string, string>,
       count: (n: number, total: number) =>
         `${n.toLocaleString('fr-FR')} ${plural(n, 'objet', 'objets')}${n !== total ? ` (sur ${total.toLocaleString('fr-FR')} correspondant à la recherche)` : ''}`,
-      cols: { item: 'Objet', buy: 'Acheter à', sell: 'Vendre à', profit: 'Marge nette', roi: 'Marge', age: 'Fraîcheur' },
-      detail: { city: 'Ville', sell: 'Mise en vente la plus basse', buy: 'Ordre d’achat le plus haut' },
+      cols: { item: 'Objet', buy: 'Acheter à', sell: 'Vendre à', profit: 'Marge nette', roi: 'Marge', volume: 'Ventes/j', age: 'Fraîcheur' },
+      detail: {
+        city: 'Ville', sell: 'Mise en vente la plus basse', buy: 'Ordre d’achat le plus haut', volume: 'Ventes/j (7 j)', avg: 'Prix moyen (7 j)',
+      },
+      volumeTitle: (city: string) => `Ventes par jour sur les 7 derniers jours ${city ? `à ${city}` : 'dans toutes les villes'}`,
+      odd: (which: 'buy' | 'sell', pct: string) => (which === 'buy'
+        ? `Prix d’achat ${pct} sous le prix moyen des ventes : relevé isolé ou déjà parti ? Vérifie en jeu.`
+        : `Prix de revente ${pct} au-dessus du prix moyen des ventes : vérifie en jeu.`),
+      chartTitle: (city: string) => `Prix moyen par jour à ${city} (14 derniers jours)`,
+      chartLabel: 'Prix moyen',
+      noChart: 'Pas assez de ventes relevées pour tracer la courbe.',
       legend: ['Vert : où acheter le moins cher. ', 'Lilas : où vendre le mieux selon ton mode de vente.'],
       empty: (strict: boolean) =>
         `Aucun résultat. ${strict ? 'Charge les prix de tous les résultats ou assouplis les filtres de prix.' : 'Assouplis les filtres (tier, enchantement, type).'}`,
-      hint: 'Marge nette = prix de vente après taxe − prix d’achat le plus bas (achat immédiat). Clique sur un objet pour voir les prix ville par ville.',
+      hint: 'Marge nette = prix de vente après taxe − prix d’achat le plus bas (achat immédiat). Ventes/j = moyenne des 7 derniers jours dans la ville de revente ; l’alerte rouge signale un prix loin du prix moyen des ventes. Clique sur un objet pour voir les prix ville par ville et la courbe.',
       pagerLabel: 'objets',
       details: (name: string) => `Prix par ville : ${name}`,
     },
     craft: {
       label: 'Rechercher une recette',
-      placeholder: 'soin, soupe, agaric, œuf… (-mot pour exclure)',
+      placeholder: 'soin, soupe, cuir, épée, agaric… (-mot pour exclure)',
       scope: 'La recherche porte sur',
       scopes: { both: 'Nom et ingrédients', name: 'Nom de la recette', ing: 'Ingrédients' } as Record<string, string>,
       type: 'Type',
-      allTypes: 'Cuisine et potions',
-      cats: { potion: 'Potions', meal: 'Nourriture' } as Record<string, string>,
+      allTypes: 'Tous les types',
+      cats: { potion: 'Potions', meal: 'Nourriture', refine: 'Raffinage', gear: 'Équipement' } as Record<string, string>,
       family: 'Famille',
       allFamilies: 'Toutes les familles',
       ingredient: 'Contient l’ingrédient',
@@ -414,14 +430,28 @@ export const fr = {
       qty: 'Quantité à fabriquer',
       rrr: 'Retour de ressources',
       rrrs: {
-        '0': '0 % (sans bonus)', '15.2': '15,2 % (ville avec bonus)',
-        '43.5': '43,5 % (avec focus)', '53.9': '53,9 % (bonus de ville + focus)',
+        '0': '0 % (sans bonus)', '15.2': '15,2 % (ville royale)',
+        '24.8': '24,8 % (ville spécialisée, fabrication)', '36.7': '36,7 % (ville spécialisée, raffinage)',
+        '43.5': '43,5 % (focus)', '47.9': '47,9 % (focus + ville spécialisée, fabrication)',
+        '53.9': '53,9 % (focus + ville spécialisée, raffinage)',
       } as Record<string, string>,
-      sorts: { profit: 'Marge totale', roi: 'Marge (%)', cost: 'Coût (croissant)', sell: 'Vente (décroissant)', name: 'Nom', tier: 'Tier' } as Record<string, string>,
+      sorts: {
+        profit: 'Marge totale', roi: 'Marge (%)', cost: 'Coût (croissant)', sell: 'Vente (décroissant)', volume: 'Ventes par jour', name: 'Nom', tier: 'Tier',
+      } as Record<string, string>,
       count: (n: number, total: number, qty: number) =>
         `${n} ${plural(n, 'recette', 'recettes')}${n !== total ? ` (sur ${total} correspondant à la recherche)` : ''} · calcul pour ${qty.toLocaleString('fr-FR')} ${plural(qty, 'unité', 'unités')}`,
-      cols: { recipe: 'Recette', formula: 'Formule (par fabrication)', cost: 'Coût des ressources', sell: 'Vente (meilleure ville)', profit: 'Marge', roi: 'Marge %' },
-      produces: (n: number, potion: boolean) => (potion ? plural(n, 'potion', 'potions') : plural(n, 'plat', 'plats')),
+      cols: {
+        recipe: 'Recette', formula: 'Formule (par fabrication)', cost: 'Coût des ressources', sell: 'Vente (meilleure ville)', profit: 'Marge',
+        roi: 'Marge %', volume: 'Ventes/j',
+      },
+      produces: (n: number, cat: string) =>
+        cat === 'potion' ? plural(n, 'potion', 'potions') : cat === 'meal' ? plural(n, 'plat', 'plats') : plural(n, 'objet', 'objets'),
+      sellOut: (perDay: number, made: number, city: string) => {
+        const where = city ? ` à ${city}` : '';
+        if (perDay <= 0) return `Aucune vente relevée ces 7 derniers jours${where} : ${made} ${plural(made, 'objet', 'objets')} risquent d’être longs à écouler.`;
+        const days = Math.ceil(made / perDay);
+        return `Il s’en vend environ ${perDay < 1 ? 'moins de 1' : Math.round(perDay).toLocaleString('fr-FR')} par jour${where} : compte ${days} ${plural(days, 'jour', 'jours')} pour en écouler ${made}.`;
+      },
       crafts: (crafts: number, made: number, rrr: string) =>
         `${crafts} ${plural(crafts, 'fabrication', 'fabrications')} pour ${made} unités produites (retour de ressources : ${rrr.replace('.', ',')} %).`,
       formula: 'Formule :',
@@ -432,7 +462,7 @@ export const fr = {
       revenue: 'Revente estimée',
       margin: 'Marge',
       empty: (strict: boolean) => `Aucune recette ne correspond.${strict ? ' Charge les prix de tous les résultats ou assouplis les filtres de prix.' : ''}`,
-      hint: 'Ressources achetées au prix de mise en vente le plus bas ; revente au meilleur prix selon ton mode de vente, taxe déduite. Clique sur une recette pour la liste de courses.',
+      hint: 'Ressources achetées au prix de mise en vente le plus bas ; revente au meilleur prix selon ton mode de vente, taxe déduite ; ventes/j de l’objet fabriqué sur 7 jours. Clique sur une recette pour la liste de courses.',
       pagerLabel: 'recettes',
     },
     cats: {

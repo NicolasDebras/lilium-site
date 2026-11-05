@@ -2,12 +2,13 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
-import { TEST_MARKET, priceRow } from '../../testing/market';
+import { TEST_MARKET, historyRow, priceRow } from '../../testing/market';
 import { setLang } from './i18n/i18n';
-import { MarketService } from './market.service';
+import { MarketService, historyStart } from './market.service';
 
 const tick = () => new Promise((resolve) => setTimeout(resolve));
 const priceUrl = (server: string) => (r: { url: string }) => r.url.startsWith(`https://${server}.albion-online-data.com/api/v2/stats/prices/`);
+const historyUrl = (server: string) => (r: { url: string }) => r.url.startsWith(`https://${server}.albion-online-data.com/api/v2/stats/history/`);
 
 describe('MarketService', () => {
   let service: MarketService;
@@ -76,10 +77,14 @@ describe('MarketService', () => {
     expect(service.busy()).toBe(false);
   });
 
-  it('réglages : taxe par défaut du mode, prix remis à zéro au changement de serveur ou de qualité, mémorisés', async () => {
+  it('réglages : taxe selon le mode et le Premium, prix remis à zéro au changement de serveur ou de qualité, mémorisés', async () => {
     service.prices.set({ T4_BAG: {} });
+    expect(service.tax()).toBe(4);
     service.update({ mode: 'order' });
-    expect(service.settings().tax).toBe(6.5);
+    expect(service.tax()).toBe(6.5);
+    service.update({ premium: false });
+    expect(service.tax()).toBe(10.5);
+    service.update({ premium: true });
     expect(service.prices()).toEqual({ T4_BAG: {} });
     service.update({ quality: 3 });
     expect(service.prices()).toEqual({});
@@ -87,10 +92,68 @@ describe('MarketService', () => {
     service.update({ server: 'west' });
     expect(service.prices()).toEqual({});
     TestBed.tick();
-    expect(JSON.parse(localStorage.getItem('lilium.market.settings')!)).toMatchObject({ server: 'west', mode: 'order', quality: 3 });
+    expect(JSON.parse(localStorage.getItem('lilium.market.settings')!)).toEqual({ server: 'west', mode: 'order', premium: true, quality: 3, bm: true });
     const done = service.fetchPrices(['T4_BAG']);
     http.expectOne(priceUrl('west')).flush([]);
     await done;
+  });
+
+  it('ancien réglage mémorisé (taxe saisie à la main) : abandonné au 1er changement', () => {
+    localStorage.setItem('lilium.market.settings', JSON.stringify({ server: 'east', mode: 'order', tax: 3, quality: 2, bm: false }));
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting()] });
+    const fresh = TestBed.inject(MarketService);
+    expect(fresh.tax()).toBe(6.5);     // Premium par défaut
+    fresh.update({ bm: true });
+    expect(fresh.settings()).toEqual({ server: 'east', mode: 'order', premium: true, quality: 2, bm: true });
+    http = TestBed.inject(HttpTestingController);
+  });
+
+  it('historique des ventes après les prix : lots de 20, 14 jours, qualité, une seule fois par objet', async () => {
+    const ids = Array.from({ length: 25 }, (_, i) => `T4_ITEM${i}`);
+    const done = service.fetchPrices(['T4_ITEM0'], ids);
+    http.expectOne(priceUrl('europe')).flush([]);
+    await tick();
+    const first = http.expectOne(historyUrl('europe'));
+    expect(first.request.url).toContain('/T4_ITEM0,T4_ITEM1,');
+    expect(first.request.url.endsWith('T4_ITEM19.json')).toBe(true);
+    expect(first.request.params.get('time-scale')).toBe('24');
+    expect(first.request.params.get('qualities')).toBe('1');
+    expect(first.request.params.get('date')).toBe(historyStart(Date.now()));
+    first.flush([historyRow('T4_ITEM0', 'Martlock', [['2026-10-22', 5, 100]])]);
+    await tick();
+    expect(service.history()['T4_ITEM0'].Martlock).toEqual([{ d: '2026-10-22', n: 5, p: 100 }]);
+    expect(service.status()).toEqual({ kind: 'busy', done: 21, total: 26 });
+    http.expectOne(historyUrl('europe')).flush([]);
+    await done;
+    expect(service.status()).toMatchObject({ kind: 'done', count: 1, history: true });
+    // déjà demandé : ni prix (rien à charger) ni historique
+    await service.fetchPrices([], ids);
+    http.expectNone(historyUrl('europe'));
+    // changement de qualité : historique remis à zéro
+    service.update({ quality: 2 });
+    expect(service.history()).toEqual({});
+  });
+
+  it('historique en échec : les prix restent, statut « done » sans historique', async () => {
+    const done = service.fetchPrices(['T4_BAG'], ['T4_BAG']);
+    http.expectOne(priceUrl('europe')).flush([priceRow('T4_BAG', 'Martlock', 100, 80)]);
+    await tick();
+    http.expectOne(historyUrl('europe')).flush('', { status: 429, statusText: 'Too Many Requests' });
+    await done;
+    expect(service.prices()['T4_BAG'].Martlock?.s).toBe(100);
+    expect(service.status()).toMatchObject({ kind: 'done', history: false });
+    expect(service.history()).toEqual({});
+    // réessayé au prochain chargement
+    const again = service.fetchPrices([], ['T4_BAG']);
+    http.expectOne(historyUrl('europe')).flush([]);
+    await again;
+    expect(service.history()).toEqual({ T4_BAG: {} });
+  });
+
+  it('date de début de l’historique au format mois-jour-année', () => {
+    expect(historyStart(Date.parse('2026-10-23T12:00:00Z'))).toBe('10-9-2026');
+    expect(historyStart(Date.parse('2026-01-05T12:00:00Z'), 7)).toBe('12-29-2025');
   });
 
   it('ignore les prix arrivés après un changement de serveur', async () => {

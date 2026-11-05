@@ -1,5 +1,5 @@
 """Données de l'onglet Marché : noms FR/EN de tous les objets à tier du jeu et recettes
-de cuisine / potions, extraits des mêmes dumps que le catalogue des builds :
+(cuisine, potions, raffinage, équipement), extraits des mêmes dumps que le catalogue des builds :
 
     https://github.com/ao-data/ao-bin-dumps  (items.json + formatted/items.json)
 
@@ -49,21 +49,42 @@ def _requirements(req) -> dict | None:
     return {"y": int(first.get("@amountcrafted") or 0), "r": resources} if resources else None
 
 
+# Sections des dumps dont les objets à tier se fabriquent à l'établi : armes, armures,
+# hors-main, sacs, capes, outils, montures.
+_GEAR_SECTIONS = {"weapon", "equipmentitem", "mount", "transformationweapon"}
+
+
+def _recipe_category(section: str, item: dict) -> str | None:
+    """potion / meal (d'après l'id), refine (ressource raffinée), gear (équipement), sinon None."""
+    unique = item.get("@uniquename", "")
+    if match := _RECIPE.match(unique):
+        return "potion" if match.group(2) == "POTION" else "meal"
+    if not _TIERED.match(unique):
+        return None
+    if section == "simpleitem" and item.get("@shopsubcategory1") == "refinedresources":
+        return "refine"
+    return "gear" if section in _GEAR_SECTIONS else None
+
+
 def extract_recipes(raw_items: dict) -> list[dict]:
-    """Recettes de cuisine et de potions, enchantements compris (« T6_POTION_HEAL@1 »)."""
+    """Recettes de cuisine, de potions, de raffinage et d'équipement, enchantements compris
+    (« T6_POTION_HEAL@1 », « T4_MAIN_SWORD@2 »). Une ressource raffinée enchantée est un objet
+    à part dans les dumps (« T4_LEATHER_LEVEL1 », @enchantmentlevel="1") : id du marché
+    « T4_LEATHER_LEVEL1@1 »."""
     recipes = []
-    for section in raw_items.values():
+    for section_name, section in raw_items.items():
         for item in section if isinstance(section, list) else []:
             unique = item.get("@uniquename", "")
-            match = _RECIPE.match(unique)
-            if not match or "@" in unique or not item.get("craftingrequirements"):
+            cat = _recipe_category(section_name, item)
+            if not cat or "@" in unique or not item.get("craftingrequirements"):
                 continue
-            tier, cat = int(match.group(1)), "potion" if match.group(2) == "POTION" else "meal"
+            tier = int(unique[1])
+            own_level = int(item.get("@enchantmentlevel") or 0)
             default_yield = int(item.get("@amountcrafted") or 0)
             base = _requirements(item["craftingrequirements"])
             if base:
-                recipes.append({"id": unique, "tier": tier, "ench": 0, "cat": cat,
-                                "y": base["y"] or default_yield or 1, "r": base["r"]})
+                recipes.append({"id": f"{unique}@{own_level}" if own_level else unique, "tier": tier,
+                                "ench": own_level, "cat": cat, "y": base["y"] or default_yield or 1, "r": base["r"]})
             for ench in _as_list((item.get("enchantments") or {}).get("enchantment")):
                 level = int(ench.get("@enchantmentlevel") or 0)
                 req = _requirements(ench.get("craftingrequirements")) if level else None
@@ -79,7 +100,8 @@ def build_market(raw_items: dict, localized: list[dict]) -> dict:
     portent le nom de T4_MAIN_SWORD, ils sont donc repliés dessus (enchantement max = 4).
     Une variante sans objet de base (« T4_FIBER_LEVEL1@1 ») reste une ligne à part.
     Les ingrédients des recettes sans tier (« QUESTITEM_TOKEN_AVALON ») sont ajoutés
-    pour pouvoir afficher leur nom."""
+    pour pouvoir afficher leur nom. Équipement et raffinage sans nom (prototypes jamais sortis
+    en jeu) : recette écartée."""
     recipes = extract_recipes(raw_items)
     wanted = {res[0] for r in recipes for res in r["r"]}
     names = {}
@@ -88,6 +110,8 @@ def build_market(raw_items: dict, localized: list[dict]) -> dict:
         fr, en = loc.get("FR-FR") or loc.get("EN-US"), loc.get("EN-US") or ""
         if fr and (_TIERED.match(unique) or unique in wanted):
             names[unique] = (fr, en)
+    recipes = [r for r in recipes
+               if r["cat"] not in ("gear", "refine") or r["id"] in names or r["id"].split("@")[0] in names]
 
     max_ench: dict[str, int] = {}
     for unique in names:
@@ -110,7 +134,7 @@ def load_market() -> dict:
 
 @lru_cache(maxsize=1)
 def market_json() -> bytes:
-    """Corps de la réponse, sérialisé une seule fois (environ 400 Ko)."""
+    """Corps de la réponse, sérialisé une seule fois (environ 1,5 Mo)."""
     return json.dumps(load_market(), ensure_ascii=False, separators=(",", ":")).encode()
 
 

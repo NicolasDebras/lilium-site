@@ -1,4 +1,4 @@
-/* Onglet Marché : logique pure (classement des objets, prix, marges, recettes), portée de
+/* Onglet Marché : logique pure (classement des objets, prix, historique, marges, recettes), portée de
    l'outil d'Aria le papi. Les libellés sont des clés traduites dans `t().market`. */
 
 import { normalize } from '../../core/items.service';
@@ -10,7 +10,15 @@ export type City = (typeof CITIES)[number] | typeof BLACK_MARKET;
 export type Server = 'europe' | 'west' | 'east';
 /** direct = vendre aux ordres d'achat ; order = mettre en vente. */
 export type SellMode = 'direct' | 'order';
-export const DEFAULT_TAX: Record<SellMode, number> = { direct: 4, order: 6.5 };
+/** Taxe de vente du jeu (%) : 4 avec Premium, 8 sans. */
+export const SALES_TAX = { premium: 4, standard: 8 } as const;
+/** Frais de mise en vente (%), payés en plus quand on crée un ordre de vente. */
+export const SETUP_FEE = 2.5;
+
+/** Taxe totale d'une vente (%) : taxe de vente, plus frais de mise en vente en mode « order ». */
+export function taxRate(mode: SellMode, premium: boolean): number {
+  return (premium ? SALES_TAX.premium : SALES_TAX.standard) + (mode === 'order' ? SETUP_FEE : 0);
+}
 
 // ── Catalogue ─────────────────────────────────────────────────────────────────
 
@@ -114,7 +122,8 @@ export interface Recipe {
   id: string;
   tier: number;
   ench: number;
-  cat: 'potion' | 'meal';
+  /** potion, meal (cuisine), refine (raffinage), gear (équipement : armes, armures, sacs, capes, outils, montures). */
+  cat: RecipeCat;
   /** Unités produites par fabrication. */
   y: number;
   /** Ressources d'une fabrication : [id, nombre], ou [id, nombre, 0] si le jeu ne la rend jamais
@@ -123,6 +132,8 @@ export interface Recipe {
 }
 
 export type RecipeResource = [string, number] | [string, number, 0];
+export type RecipeCat = 'potion' | 'meal' | 'refine' | 'gear';
+export const RECIPE_CATS: RecipeCat[] = ['potion', 'meal', 'refine', 'gear'];
 
 export interface MarketData {
   items: MarketEntry[];
@@ -235,6 +246,94 @@ export function hoursSince(date: string | null | undefined, now: number): number
   return (now - Date.parse(date.endsWith('Z') ? date : `${date}Z`)) / 36e5;
 }
 
+// ── Historique des ventes ────────────────────────────────────────────────────
+
+/** Ligne de l'API de l'Albion Online Data Project (/api/v2/stats/history, time-scale=24). */
+export interface HistoryRow {
+  location: string;
+  item_id: string;
+  quality: number;
+  data: { item_count: number; avg_price: number; timestamp: string }[];
+}
+
+/** Un jour de ventes dans une ville : date (« 2026-10-23 »), nombre vendu, prix moyen. */
+export interface DayPoint {
+  d: string;
+  n: number;
+  p: number;
+}
+export type ItemHistory = Partial<Record<City, DayPoint[]>>;
+export type HistoryMap = Record<string, ItemHistory>;
+
+/** Jours d'historique demandés (graphique) et fenêtre des moyennes (ventes/jour, prix moyen). */
+export const HISTORY_DAYS = 14;
+export const ACTIVITY_DAYS = 7;
+/** Écart au prix moyen à partir duquel un prix est signalé (0,5 = moitié moins ou moitié plus). */
+export const UNUSUAL = 0.5;
+
+/** Ajoute l'historique reçu : chaque id demandé a une entrée (vide = aucune vente relevée). */
+export function mergeHistory(history: HistoryMap, ids: readonly string[], rows: readonly HistoryRow[], quality: number): HistoryMap {
+  const next: HistoryMap = { ...history };
+  for (const id of ids) next[id] = {};
+  for (const x of rows) {
+    const city = x.location as City;
+    if (!(CITIES as readonly string[]).includes(city) && city !== BLACK_MARKET) continue;
+    if (x.quality !== quality || !next[x.item_id]) continue;
+    const days = new Map<string, DayPoint>();
+    for (const pt of [...(next[x.item_id][city] ?? []), ...x.data]) {
+      const d = 'd' in pt ? pt : { d: pt.timestamp.slice(0, 10), n: pt.item_count, p: pt.avg_price };
+      if (d.n > 0) days.set(d.d, d);
+    }
+    next[x.item_id] = { ...next[x.item_id], [city]: [...days.values()].sort((a, b) => a.d.localeCompare(b.d)) };
+  }
+  return next;
+}
+
+/** Ventes des `days` derniers jours : par jour en moyenne, et prix moyen pondéré par les quantités. */
+export interface Activity {
+  perDay: number;
+  avg: number | null;
+}
+
+/** Activité d'une ville (ou de toutes avec `city` vide) ; null tant que l'historique n'est pas chargé. */
+export function activity(h: ItemHistory | undefined, city: City | '', now: number, days = ACTIVITY_DAYS): Activity | null {
+  if (!h) return null;
+  const from = new Date(now - days * 864e5).toISOString().slice(0, 10);
+  let count = 0;
+  let value = 0;
+  for (const c of city ? [city] : (Object.keys(h) as City[])) {
+    for (const pt of h[c] ?? []) {
+      if (pt.d <= from) continue;
+      count += pt.n;
+      value += pt.n * pt.p;
+    }
+  }
+  return { perDay: count / days, avg: count ? value / count : null };
+}
+
+/** Écart d'un prix à la moyenne (+0,8 = 80 % plus cher) ; null sans moyenne. */
+export function deviation(value: number | null | undefined, avg: number | null | undefined): number | null {
+  return value && avg ? value / avg - 1 : null;
+}
+
+/** Prix suspect pour la marge : achat bien sous la moyenne (relevé isolé, déjà parti ?) ou revente bien au-dessus. */
+export function suspect(trade: Pick<Trade, 'buy' | 'sell'>, buyAvg: number | null | undefined, sellAvg: number | null | undefined): 'buy' | 'sell' | null {
+  if ((deviation(trade.buy?.value, buyAvg) ?? 0) < -UNUSUAL) return 'buy';
+  if ((deviation(trade.sell?.value, sellAvg) ?? 0) > UNUSUAL) return 'sell';
+  return null;
+}
+
+/** Ville la plus active (le plus de ventes sur la période), pour le graphique quand aucune n'est imposée. */
+export function busiestCity(h: ItemHistory | undefined): City | null {
+  let best: City | null = null;
+  let max = 0;
+  for (const [city, pts] of Object.entries(h ?? {}) as [City, DayPoint[]][]) {
+    const n = pts.reduce((sum, pt) => sum + pt.n, 0);
+    if (n > max) [best, max] = [city, n];
+  }
+  return best;
+}
+
 export interface Quote {
   city: City;
   value: number;
@@ -306,8 +405,9 @@ export function calcTrade(p: ItemPrices | undefined, o: TradeOptions): Trade {
 
 // ── Recettes ─────────────────────────────────────────────────────────────────
 
-/** Retour de ressources : sans bonus, ville avec bonus, focus, les deux. */
-export const RRR_OPTIONS = ['0', '15.2', '43.5', '53.9'] as const;
+/** Retour de ressources (%) : sans bonus, ville royale, ville spécialisée (fabrication puis raffinage), focus,
+ *  focus en ville spécialisée (fabrication puis raffinage). */
+export const RRR_OPTIONS = ['0', '15.2', '24.8', '36.7', '43.5', '47.9', '53.9'] as const;
 
 export interface RecipeLine {
   id: string;
@@ -351,12 +451,14 @@ export function recipeCalc(recipe: Recipe, prices: PriceMap, qty: number, rrr: n
   return { crafts, made, lines, cost, sell, revenue, profit, roi: profit != null && cost ? (profit / cost) * 100 : null };
 }
 
-/** Famille d'une recette : « T6_POTION_HEAL@1 » → « HEAL », « T8_MEAL_STEW_AVALON » → « STEW ». */
-export function familyOf(recipe: Pick<Recipe, 'id'>): string {
+/** Famille d'une recette : « T6_POTION_HEAL@1 » → « HEAL », « T8_MEAL_STEW_AVALON » → « STEW » ;
+ *  raffinage et équipement : type du marché (« T4_LEATHER_LEVEL1@1 » → « leather », « T4_MAIN_SWORD » → « swords »). */
+export function familyOf(recipe: Pick<Recipe, 'id' | 'cat'>): string {
+  if (recipe.cat === 'refine' || recipe.cat === 'gear') return classify(recipe.id)?.type ?? 'other';
   return /^(?:POTION|MEAL)_([A-Z0-9]+)/.exec(recipe.id.replace(/^T\d_/, ''))?.[1] ?? 'OTHER';
 }
 
-/** Ids dont il faut les prix pour une recette : le plat/la potion et ses ressources. */
+/** Ids dont il faut les prix pour une recette : l'objet fabriqué et ses ressources. */
 export function recipeIds(recipe: Recipe): string[] {
   return [recipe.id, ...recipe.r.map((x) => x[0])];
 }
@@ -366,7 +468,7 @@ export type RecipeScope = 'both' | 'name' | 'ing';
 export interface RecipeFilters {
   q: string;
   scope: RecipeScope;
-  cat: Recipe['cat'] | '';
+  cat: RecipeCat | '';
   fam: string;
   ing: string;
   tiers: number[];

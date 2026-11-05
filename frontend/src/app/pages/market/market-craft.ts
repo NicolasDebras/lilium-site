@@ -7,19 +7,21 @@ import { BULK_MAX, MarketService, storedSignal } from '../../core/market.service
 import { CountUp } from '../../shared/count-up';
 import { Icon } from '../../shared/icon';
 import { Pager } from '../../shared/pager';
-import { cityLabel, familyLabel, percent, silver, tierText } from './market-format';
+import { cityLabel, familyLabel, perDay, percent, silver, tierText } from './market-format';
 import {
-  RRR_OPTIONS, Recipe, RecipeFilters, RecipeResult, RecipeScope, SortSpec, baseId, familyOf, filterRecipes, recipeCalc, recipeIds,
-  sortRows,
+  Activity, RECIPE_CATS, RRR_OPTIONS, Recipe, RecipeCat, RecipeFilters, RecipeResult, RecipeScope, SortSpec, activity, baseId, familyOf,
+  filterRecipes, recipeCalc, recipeIds, sortRows,
 } from './market-logic';
 import { AUTOLOAD_MS } from './market-search';
 
-type Sort = 'profit' | 'roi' | 'cost' | 'sell' | 'name' | 'tier';
+type Sort = 'profit' | 'roi' | 'cost' | 'sell' | 'volume' | 'name' | 'tier';
 
 interface CraftPrefs extends RecipeFilters {
   qty: number;
   rrr: string;
   minRoi: string;
+  /** Ventes par jour minimales de l'objet fabriqué (7 derniers jours, ville de revente). */
+  minVol: string;
   only: boolean;
   sort: Sort;
   /** Sens inverse du sens naturel de la colonne (2ᵉ clic sur l'en-tête). */
@@ -27,7 +29,8 @@ interface CraftPrefs extends RecipeFilters {
 }
 
 const DEFAULTS: CraftPrefs = {
-  q: '', scope: 'both', cat: '', fam: '', ing: '', tiers: [], enchs: [0], qty: 100, rrr: '15.2', minRoi: '', only: false,
+  q: '', scope: 'both', cat: '', fam: '', ing: '', tiers: [], enchs: [0], qty: 100, rrr: '15.2', minRoi: '', minVol: '',
+  only: false,
   sort: 'profit', rev: false,
 };
 const PAGE_SIZE = 20;
@@ -36,6 +39,8 @@ interface Row {
   recipe: Recipe;
   calc: RecipeResult;
   name: string;
+  /** Ventes de l'objet fabriqué (7 derniers jours, ville de revente) ; null = pas encore chargé. */
+  vol: Activity | null;
 }
 
 const SORTS: Record<Sort, SortSpec<Row>> = {
@@ -43,11 +48,13 @@ const SORTS: Record<Sort, SortSpec<Row>> = {
   roi: { value: (r) => r.calc.roi, desc: true },
   cost: { value: (r) => r.calc.cost },
   sell: { value: (r) => (r.calc.sell ? r.calc.revenue : null), desc: true },
+  volume: { value: (r) => r.vol?.perDay, desc: true },
   name: { value: (r) => r.name },
   tier: { value: (r) => r.recipe.tier * 10 + r.recipe.ench, then: (a, b) => a.name.localeCompare(b.name) },
 };
 
-/** Cuisine et potions : coût des ressources, revente, marge pour une quantité et un retour de ressources. */
+/** Fabrication (cuisine, potions, raffinage, équipement) : coût des ressources, revente, marge et ventes par jour
+ *  pour une quantité et un retour de ressources. */
 @Component({
   selector: 'app-market-craft',
   imports: [CountUp, Icon, Pager],
@@ -94,6 +101,14 @@ const SORTS: Record<Sort, SortSpec<Row>> = {
             <input id="c-roi" class="input" type="number" min="0" step="1" inputmode="numeric" [placeholder]="t().market.noMin" [value]="f().minRoi"
                    (change)="patch({ minRoi: $any($event.target).value })" />
             <span class="unit">%</span>
+          </div>
+        </div>
+        <div class="field">
+          <label for="c-vol">{{ t().market.search.minVolume }}</label>
+          <div class="input-unit">
+            <input id="c-vol" class="input" type="number" min="0" step="1" inputmode="numeric" [placeholder]="t().market.noMin" [value]="f().minVol"
+                   (change)="patch({ minVol: $any($event.target).value })" />
+            <span class="unit">{{ t().market.search.perDayUnit }}</span>
           </div>
         </div>
         <div class="field">
@@ -182,18 +197,20 @@ const SORTS: Record<Sort, SortSpec<Row>> = {
                   </td>
                   <td class="formula">
                     @for (x of r.formula; track x.id; let last = $last) { <span><b>{{ x.count }}×</b> {{ x.name }}</span>@if (!last) { <span class="faint"> + </span> } }
-                    <span class="yield">→ <b>{{ r.recipe.y }}</b> {{ t().market.craft.produces(r.recipe.y, r.recipe.cat === 'potion') }}</span>
+                    <span class="yield">→ <b>{{ r.recipe.y }}</b> {{ t().market.craft.produces(r.recipe.y, r.recipe.cat) }}</span>
                   </td>
                   <td class="r num">@if (r.calc.cost != null) { <span class="flash cell">{{ silver(r.calc.cost) }}<small class="faint">{{ t().market.perUnit(silver(r.calc.cost / r.calc.made)) }}</small></span> }
                     @else { <span class="faint">{{ r.loaded ? t().market.missing : '…' }}</span> }</td>
                   <td class="r num">@if (r.calc.sell; as s) { <span class="flash cell">{{ silver(r.calc.revenue) }}<small class="faint">{{ city(s.city) }} · {{ t().market.perUnit(silver(s.value)) }}</small></span> } @else { – }</td>
                   <td class="r num">@if (r.calc.profit != null) { <span class="flash" [class.gain]="r.calc.profit >= 0" [class.pos]="r.calc.profit >= 0" [class.neg]="r.calc.profit < 0">{{ silver(r.calc.profit) }}</span> } @else { – }</td>
                   <td class="r num" [class.pos]="(r.calc.roi ?? -1) >= 0" [class.neg]="(r.calc.roi ?? 0) < 0">{{ pct(r.calc.roi) }}</td>
+                  <td class="r num" [class.faint]="!r.vol?.perDay">{{ r.volText }}</td>
                 </tr>
                 @if (openId() === r.recipe.id) {
-                  <tr class="detail"><td colspan="6">
+                  <tr class="detail"><td colspan="7">
                     <div class="reveal"><div>
                       <p class="muted crafts">{{ t().market.craft.crafts(r.calc.crafts, r.calc.made, f().rrr) }}</p>
+                      @if (r.vol) { <p class="muted crafts">{{ r.sellOut }}</p> }
                       <table class="table lines">
                         <thead><tr><th>{{ t().market.craft.lines.res }}</th><th class="r">{{ t().market.craft.lines.qty }}</th>
                           <th>{{ t().market.craft.lines.city }}</th><th class="r">{{ t().market.craft.lines.unit }}</th><th class="r">{{ t().market.craft.lines.cost }}</th></tr></thead>
@@ -247,7 +264,7 @@ const SORTS: Record<Sort, SortSpec<Row>> = {
     .count { flex: 1 1 220px; margin: 0; font-size: .9rem; }
     .table-card { padding: 6px 4px; }
     .scroll { overflow-x: auto; }
-    .table { min-width: 860px; }
+    .table { min-width: 940px; }
     .table td { vertical-align: middle; }
     .r { text-align: right !important; white-space: nowrap; }
     .sort-h { display: inline-flex; align-items: center; gap: 4px; padding: 0; border: 0; background: none;
@@ -291,19 +308,20 @@ export class MarketCraft {
   protected readonly t = inject(I18nService).t;
   protected readonly f = storedSignal<CraftPrefs>('lilium.market.craft', DEFAULTS);
   protected readonly scopes: RecipeScope[] = ['both', 'name', 'ing'];
-  protected readonly cats: Recipe['cat'][] = ['potion', 'meal'];
+  protected readonly cats: RecipeCat[] = RECIPE_CATS;
   protected readonly tiers = [1, 2, 3, 4, 5, 6, 7, 8];
-  protected readonly enchs = [0, 1, 2, 3];
+  protected readonly enchs = [0, 1, 2, 3, 4];
   protected readonly rrrs = RRR_OPTIONS;
-  protected readonly sorts: Sort[] = ['profit', 'roi', 'cost', 'sell', 'name', 'tier'];
+  protected readonly sorts: Sort[] = ['profit', 'roi', 'cost', 'sell', 'volume', 'name', 'tier'];
   /** En-têtes du tableau : un clic trie sur la colonne, un 2ᵉ inverse le sens (la formule ne se trie pas). */
-  protected readonly columns: { col: 'recipe' | 'formula' | 'cost' | 'sell' | 'profit' | 'roi'; sort: Sort | null; right: boolean }[] = [
+  protected readonly columns: { col: 'recipe' | 'formula' | 'cost' | 'sell' | 'profit' | 'roi' | 'volume'; sort: Sort | null; right: boolean }[] = [
     { col: 'recipe', sort: 'name', right: false },
     { col: 'formula', sort: null, right: false },
     { col: 'cost', sort: 'cost', right: true },
     { col: 'sell', sort: 'sell', right: true },
     { col: 'profit', sort: 'profit', right: true },
     { col: 'roi', sort: 'roi', right: true },
+    { col: 'volume', sort: 'volume', right: true },
   ];
   protected readonly pageSize = PAGE_SIZE;
   protected readonly bulk = BULK_MAX;
@@ -318,8 +336,11 @@ export class MarketCraft {
     return [...keys].map((key) => ({ key, label: familyLabel(key) })).sort((a, b) => a.label.localeCompare(b.label));
   });
 
+  /** Ingrédients des recettes du type et de la famille choisis (la liste complète compterait des milliers d'entrées). */
   protected readonly ingredients = computed(() => {
-    const ids = new Set(this.market.recipes().flatMap((r) => r.r.map((x) => baseId(x[0]))));
+    const { cat, fam } = this.f();
+    const recipes = this.market.recipes().filter((r) => (!cat || r.cat === cat) && (!fam || familyOf(r) === fam));
+    const ids = new Set(recipes.flatMap((r) => r.r.map((x) => baseId(x[0]))));
     return [...ids].map((id) => ({ id, name: this.market.nameOf(id) })).sort((a, b) => a.name.localeCompare(b.name));
   });
 
@@ -330,14 +351,18 @@ export class MarketCraft {
 
   protected readonly rows = computed(() => {
     const prices = this.market.prices();
+    const history = this.market.history();
     const s = this.market.settings();
     const f = this.f();
-    const o = { mode: s.mode, tax: s.tax, bm: s.bm };
-    let rows: Row[] = this.matching().map((recipe) => ({
-      recipe, calc: recipeCalc(recipe, prices, this.qty(), +f.rrr, o), name: this.market.nameOf(recipe.id),
-    }));
+    const o = { mode: s.mode, tax: this.market.tax(), bm: s.bm };
+    const now = Date.now();
+    let rows: Row[] = this.matching().map((recipe) => {
+      const calc = recipeCalc(recipe, prices, this.qty(), +f.rrr, o);
+      return { recipe, calc, name: this.market.nameOf(recipe.id), vol: activity(history[recipe.id], calc.sell?.city ?? '', now) };
+    });
     if (f.only) rows = rows.filter((r) => r.calc.cost != null || r.calc.sell);
     if (f.minRoi !== '') rows = rows.filter((r) => r.calc.roi != null && r.calc.roi >= +f.minRoi);
+    if (f.minVol !== '' && +f.minVol > 0) rows = rows.filter((r) => r.vol != null && r.vol.perDay >= +f.minVol);
     return sortRows(rows, SORTS[f.sort] ?? SORTS.profit, f.rev);
   });
 
@@ -354,17 +379,23 @@ export class MarketCraft {
       formula: r.recipe.r.map(([id, count]) => ({ id, count, name: this.market.nameOf(id) })),
       loaded: r.recipe.id in prices,
       best: firstPage && i === 0 && (r.calc.profit ?? 0) > 0,
+      volText: r.vol ? perDay(r.vol.perDay) : '…',
+      sellOut: r.vol ? this.t().market.craft.sellOut(r.vol.perDay, r.calc.made, r.calc.sell ? cityLabel(r.calc.sell.city) : '') : '',
     }));
   });
 
   protected readonly openId = signal<string | null>(null);
   private readonly pageIds = computed(() => this.pageRows().flatMap((r) => recipeIds(r.recipe)).join(','));
+  private readonly pageMade = computed(() => this.pageRows().map((r) => r.recipe.id).join(','));
 
   constructor() {
     effect((onCleanup) => {
       const ids = this.pageIds();
       if (!ids || this.market.busy()) return;
-      const timer = setTimeout(() => this.market.fetchPrices(this.market.untried(ids.split(','))), AUTOLOAD_MS);
+      const list = ids.split(',');
+      // Historique des ventes : seulement pour les objets fabriqués (pas les ressources).
+      const made = this.pageMade().split(',');
+      const timer = setTimeout(() => this.market.fetchPrices(this.market.untried(list), made), AUTOLOAD_MS);
       onCleanup(() => clearTimeout(timer));
     });
   }
@@ -406,17 +437,19 @@ export class MarketCraft {
   }
 
   refresh(): void {
-    this.market.fetchPrices(this.pageRows().flatMap((r) => recipeIds(r.recipe)));
+    this.market.fetchPrices(this.pageRows().flatMap((r) => recipeIds(r.recipe)), this.pageRows().map((r) => r.recipe.id));
   }
 
   /** Prix des recettes filtrées et de leurs ressources, jusqu'à BULK_MAX ids. */
   loadAll(): void {
     const ids = new Set<string>();
+    const made: string[] = [];
     for (const recipe of this.matching()) {
       recipeIds(recipe).forEach((id) => ids.add(id));
+      made.push(recipe.id);
       if (ids.size >= BULK_MAX) break;
     }
-    this.market.fetchPrices([...ids]);
+    this.market.fetchPrices([...ids], made);
   }
 
   name(id: string): string {
