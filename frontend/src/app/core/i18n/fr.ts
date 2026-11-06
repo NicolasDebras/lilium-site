@@ -345,6 +345,7 @@ export const fr = {
       quality: 'Qualité',
       qualities: ['Normale', 'Bonne', 'Remarquable', 'Excellente', 'Chef-d’œuvre'],
       bm: 'Marché noir comme lieu de vente',
+      noBuy: (city: string) => `Craft : pas d’achat de matériaux à ${city}`,
       hint: 'Taxe de vente : 4 % avec Premium, 8 % sans ; une mise en vente coûte en plus 2,5 % de frais. Le Marché noir n’achète qu’aux ordres d’achat.',
       summary: (server: string, mode: string, tax: number, quality: string) => `${server} · ${mode} · taxe ${tax.toLocaleString('fr-FR')} % · ${quality}`,
     },

@@ -92,7 +92,7 @@ describe('MarketService', () => {
     service.update({ server: 'west' });
     expect(service.prices()).toEqual({});
     TestBed.tick();
-    expect(JSON.parse(localStorage.getItem('lilium.market.settings')!)).toEqual({ server: 'west', mode: 'order', premium: true, quality: 3, bm: true });
+    expect(JSON.parse(localStorage.getItem('lilium.market.settings')!)).toEqual({ server: 'west', mode: 'order', premium: true, quality: 3, bm: true, noBuy: [] });
     const done = service.fetchPrices(['T4_BAG']);
     http.expectOne(priceUrl('west')).flush([]);
     await done;
@@ -105,8 +105,22 @@ describe('MarketService', () => {
     const fresh = TestBed.inject(MarketService);
     expect(fresh.tax()).toBe(6.5);     // Premium par défaut
     fresh.update({ bm: true });
-    expect(fresh.settings()).toEqual({ server: 'east', mode: 'order', premium: true, quality: 2, bm: true });
+    expect(fresh.settings()).toEqual({ server: 'east', mode: 'order', premium: true, quality: 2, bm: true, noBuy: [] });
     http = TestBed.inject(HttpTestingController);
+  });
+
+  it('villes exclues de l\'achat des matériaux : cochées/décochées, ville inconnue ignorée, prix gardés', () => {
+    service.prices.set({ T4_BAG: {} });
+    service.toggleNoBuy('Brecilien', true);
+    service.toggleNoBuy('Caerleon', true);
+    expect(service.settings().noBuy).toEqual(['Caerleon', 'Brecilien']);
+    service.toggleNoBuy('Caerleon', false);
+    expect(service.settings().noBuy).toEqual(['Brecilien']);
+    service.update({ noBuy: ['Martlock', 'Brecilien'] });
+    expect(service.settings().noBuy).toEqual(['Brecilien']);
+    service.update({ noBuy: 'Caerleon' as never });   // valeur mémorisée abîmée
+    expect(service.settings().noBuy).toEqual([]);
+    expect(service.prices()).toEqual({ T4_BAG: {} });
   });
 
   it('historique des ventes après les prix : lots de 20, 14 jours, qualité, une seule fois par objet', async () => {

@@ -6,6 +6,9 @@ import { normalize } from '../../core/items.service';
 export const CITIES = ['Caerleon', 'Bridgewatch', 'Fort Sterling', 'Lymhurst', 'Martlock', 'Thetford', 'Brecilien'] as const;
 export const BLACK_MARKET = 'Black Market';
 export type City = (typeof CITIES)[number] | typeof BLACK_MARKET;
+/** Villes qu'on peut exclure de l'achat des matériaux du craft (réglage « noBuy ») : Caerleon (zone rouge
+ *  autour) et Brecilien (dans les Brumes), peu pratiques pour acheter en gros. */
+export const NO_BUY_CITIES = ['Caerleon', 'Brecilien'] as const satisfies readonly City[];
 
 export type Server = 'europe' | 'west' | 'east';
 /** direct = vendre aux ordres d'achat ; order = mettre en vente. */
@@ -346,6 +349,8 @@ export interface TradeOptions {
   bm: boolean;
   buyCity?: City | '';
   sellCity?: City | '';
+  /** Villes où ne pas acheter (matériaux du craft). */
+  noBuy?: readonly City[];
   /** Fraîcheur maximale des prix (heures), null = toutes. */
   maxAge?: number | null;
   now?: number;
@@ -361,6 +366,7 @@ function fresh(date: string | null, o: TradeOptions): boolean {
 export function bestBuy(p: ItemPrices | undefined, o: Partial<TradeOptions> = {}): Quote | null {
   let best: Quote | null = null;
   for (const city of o.buyCity ? [o.buyCity] : CITIES) {
+    if (o.noBuy?.includes(city)) continue;
     const e = p?.[city];
     if (e?.s && fresh(e.sd, o as TradeOptions) && (!best || e.s < best.value)) best = { city, value: e.s, date: e.sd };
   }
@@ -441,7 +447,7 @@ export function recipeCalc(recipe: Recipe, prices: PriceMap, qty: number, rrr: n
   const lines = recipe.r.map(([id, count, maxReturn]): RecipeLine => {
     const noReturn = maxReturn === 0;
     const need = Math.ceil(crafts * count * (noReturn ? 1 : keep) - 1e-9);
-    const buy = bestBuy(prices[id]);
+    const buy = bestBuy(prices[id], { noBuy: o.noBuy });
     return { id, count, need, noReturn, buy, cost: buy ? buy.value * need : null };
   });
   const cost = lines.some((l) => l.cost == null) ? null : lines.reduce((sum, l) => sum + (l.cost ?? 0), 0);
@@ -466,9 +472,11 @@ export interface RawResult {
 }
 
 /** Coût en matériaux bruts : chaque ressource raffinée des `lines` est remplacée, récursivement, par sa recette
- *  de raffinage (même retour de ressources) ; le reste (artefacts, ressources brutes…) est acheté tel quel.
+ *  de raffinage (même retour de ressources) ; le reste (artefacts, ressources brutes…) est acheté tel quel,
+ *  hors des villes `noBuy`.
  *  null si aucune ressource n'est raffinable (rien à comparer). */
-export function rawCost(lines: readonly RecipeLine[], refines: ReadonlyMap<string, Recipe>, prices: PriceMap, rrr: number): RawResult | null {
+export function rawCost(lines: readonly RecipeLine[], refines: ReadonlyMap<string, Recipe>, prices: PriceMap, rrr: number,
+                        noBuy: readonly City[] = []): RawResult | null {
   const keep = 1 - rrr / 100;
   const needs = new Map<string, number>();
   const add = (id: string, qty: number, depth: number): void => {
@@ -483,7 +491,7 @@ export function rawCost(lines: readonly RecipeLine[], refines: ReadonlyMap<strin
   for (const l of lines) add(l.id, l.need, 0);
   const raw = [...needs].map(([id, qty]): RawLine => {
     const need = Math.ceil(qty - 1e-9);
-    const buy = bestBuy(prices[id]);
+    const buy = bestBuy(prices[id], { noBuy });
     return { id, need, buy, cost: buy ? buy.value * need : null };
   });
   const cost = raw.some((l) => l.cost == null) ? null : raw.reduce((sum, l) => sum + (l.cost ?? 0), 0);

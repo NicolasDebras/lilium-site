@@ -380,7 +380,7 @@ export class MarketCraft {
     const history = this.market.history();
     const s = this.market.settings();
     const f = this.f();
-    const o = { mode: s.mode, tax: this.market.tax(), bm: s.bm };
+    const o = { mode: s.mode, tax: this.market.tax(), bm: s.bm, noBuy: s.noBuy };
     const now = Date.now();
     let rows: Row[] = this.matching().map((recipe) => {
       const calc = recipeCalc(recipe, prices, this.qty(), +f.rrr, o);
@@ -418,7 +418,7 @@ export class MarketCraft {
   /** Détail ouvert : coût en matériaux bruts (ressources raffinées remplacées par leur recette), en indication. */
   protected readonly openRaw = computed(() => {
     const row = this.rows().find((r) => r.recipe.id === this.openId());
-    return row ? rawCost(row.calc.lines, this.refines(), this.market.prices(), +this.f().rrr) : null;
+    return row ? rawCost(row.calc.lines, this.refines(), this.market.prices(), +this.f().rrr, this.market.settings().noBuy) : null;
   });
   private readonly pageIds = computed(() =>
     [...this.pageRows().flatMap((r) => recipeIds(r.recipe)), ...(this.openRaw()?.lines.map((l) => l.id) ?? [])].join(','));

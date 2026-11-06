@@ -66,6 +66,14 @@ describe('MarketPage (onglet Marché)', () => {
     fixture.detectChanges();
     expect(el.querySelector('.summary')?.textContent).toContain('taxe 10,5 %');
     expect(el.querySelector('.tax-detail')?.textContent).toContain('Taxe de vente 8 %');
+    const caerleon = el.querySelector<HTMLInputElement>('#m-nobuy-Caerleon')!;
+    expect(caerleon.parentElement?.textContent).toContain('pas d’achat de matériaux à Caerleon');
+    expect(el.querySelector<HTMLInputElement>('#m-nobuy-Brecilien')!.checked).toBe(false);
+    caerleon.checked = true;
+    caerleon.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    expect(TestBed.inject(MarketService).settings().noBuy).toEqual(['Caerleon']);
+    expect(caerleon.checked).toBe(true);
   });
 
   it('état des prix (chargement, erreur réseau) et barre de progression', async () => {

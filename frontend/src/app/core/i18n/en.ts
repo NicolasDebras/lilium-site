@@ -371,6 +371,7 @@ export const en: typeof fr = {
       quality: 'Quality',
       qualities: ['Normal', 'Good', 'Outstanding', 'Excellent', 'Masterpiece'],
       bm: 'Black Market as a place to sell',
+      noBuy: (city: string) => `Crafting: don't buy materials in ${city}`,
       hint: 'Sales tax: 4% with Premium, 8% without; a sell order also costs a 2.5% setup fee. The Black Market only buys through buy orders.',
       summary: (server: string, mode: string, tax: number, quality: string) => `${server} · ${mode} · ${tax}% tax · ${quality}`,
     },

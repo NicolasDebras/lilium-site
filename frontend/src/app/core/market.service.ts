@@ -3,7 +3,8 @@ import { Injectable, WritableSignal, computed, effect, inject, signal } from '@a
 import { firstValueFrom } from 'rxjs';
 
 import {
-  HISTORY_DAYS, HistoryMap, HistoryRow, MarketData, MarketItem, PriceMap, PriceRow, Recipe, SellMode, Server, baseId, expandItems,
+  City, HISTORY_DAYS, HistoryMap, HistoryRow, MarketData, MarketItem, NO_BUY_CITIES, PriceMap, PriceRow, Recipe, SellMode, Server, baseId,
+  expandItems,
   mergeHistory, mergePrices, taxRate,
 } from '../pages/market/market-logic';
 import { lang } from './i18n/i18n';
@@ -39,6 +40,8 @@ export interface MarketSettings {
   quality: number;
   /** Marché noir comme lieu de vente. */
   bm: boolean;
+  /** Villes où ne pas acheter les matériaux du craft (parmi NO_BUY_CITIES). */
+  noBuy: City[];
 }
 
 export type MarketStatus =
@@ -77,7 +80,7 @@ export class MarketService {
   readonly loadError = signal<unknown>(null);
 
   readonly settings = storedSignal<MarketSettings>('lilium.market.settings', {
-    server: 'europe', mode: 'direct', premium: true, quality: 1, bm: true,
+    server: 'europe', mode: 'direct', premium: true, quality: 1, bm: true, noBuy: [],
   });
   /** Taxe totale d'une vente (%) selon le mode et le Premium. */
   readonly tax = computed(() => taxRate(this.settings().mode, this.settings().premium));
@@ -118,12 +121,18 @@ export class MarketService {
 
   update(patch: Partial<MarketSettings>): void {
     const before = this.settings();
-    const { server, mode, premium, quality, bm } = { ...before, ...patch };
-    // Réglage d'une ancienne version (taxe saisie à la main) : abandonné.
-    const next = { server, mode, premium, quality, bm };
+    const { server, mode, premium, quality, bm, noBuy } = { ...before, ...patch };
+    // Réglage d'une ancienne version (taxe saisie à la main) : abandonné ; villes inconnues ignorées.
+    const next = { server, mode, premium, quality, bm, noBuy: NO_BUY_CITIES.filter((c) => Array.isArray(noBuy) && noBuy.includes(c)) };
     this.settings.set(next);
     // Prix propres à un serveur et à une qualité : on repart de zéro.
     if (next.server !== before.server || next.quality !== before.quality) this.resetPrices();
+  }
+
+  /** Coche ou décoche une ville d'achat exclue pour les matériaux. */
+  toggleNoBuy(city: City, excluded: boolean): void {
+    const rest = this.settings().noBuy.filter((c) => c !== city);
+    this.update({ noBuy: excluded ? [...rest, city] : rest });
   }
 
   resetPrices(): void {

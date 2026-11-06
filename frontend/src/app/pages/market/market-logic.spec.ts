@@ -109,6 +109,24 @@ describe('market-logic', () => {
     expect(rawCost(lines, new Map(), prices, 50)).toBeNull();   // rien à raffiner
   });
 
+  it('matériaux : villes exclues de l\'achat (recette et matériaux bruts), jamais pour la revente', () => {
+    const recipe: Recipe = { id: 'T4_LEATHER', tier: 4, ench: 0, cat: 'refine', y: 1, r: [['T4_HIDE', 2]] };
+    const prices = mergePrices({}, ['T4_HIDE', 'T4_LEATHER'], [
+      priceRow('T4_HIDE', 'Caerleon', 5, 0), priceRow('T4_HIDE', 'Brecilien', 6, 0), priceRow('T4_HIDE', 'Martlock', 10, 0),
+      priceRow('T4_LEATHER', 'Caerleon', 0, 100),
+    ], 1);
+    const o = { mode: 'direct' as const, tax: 4, bm: true };
+    expect(recipeCalc(recipe, prices, 1, 0, o).lines[0].buy?.city).toBe('Caerleon');
+    const res = recipeCalc(recipe, prices, 1, 0, { ...o, noBuy: ['Caerleon', 'Brecilien'] });
+    expect(res.lines[0].buy).toMatchObject({ city: 'Martlock', value: 10 });
+    expect(res.sell?.city).toBe('Caerleon');   // la revente n'est pas concernée
+    expect(recipeCalc(recipe, prices, 1, 0, { ...o, noBuy: ['Caerleon', 'Brecilien', 'Martlock'] }).cost).toBeNull();
+    const sword: Recipe = { id: 'T4_MAIN_SWORD', tier: 4, ench: 0, cat: 'gear', y: 1, r: [['T4_LEATHER', 1]] };
+    const lines = recipeCalc(sword, prices, 1, 0, o).lines;
+    expect(rawCost(lines, new Map([['T4_LEATHER', recipe]]), prices, 0)!.lines[0].buy?.city).toBe('Caerleon');
+    expect(rawCost(lines, new Map([['T4_LEATHER', recipe]]), prices, 0, ['Caerleon'])!.lines[0].buy?.city).toBe('Brecilien');
+  });
+
   it('recette : fabrications, retour de ressources, coût, revente et marge', () => {
     const recipe: Recipe = { id: 'T6_POTION_HEAL', tier: 6, ench: 0, cat: 'potion', y: 5, r: [['T6_FOXGLOVE', 72], ['T5_EGG', 18]] };
     const prices = mergePrices({}, ['T6_POTION_HEAL', 'T6_FOXGLOVE', 'T5_EGG'], [

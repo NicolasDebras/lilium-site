@@ -4,7 +4,7 @@ import { I18nService } from '../../core/i18n/i18n';
 import { MarketService, storedSignal } from '../../core/market.service';
 import { Icon } from '../../shared/icon';
 import { MarketCraft } from './market-craft';
-import { SALES_TAX, SETUP_FEE, SellMode, Server } from './market-logic';
+import { NO_BUY_CITIES, SALES_TAX, SETUP_FEE, SellMode, Server } from './market-logic';
 import { MarketSearch } from './market-search';
 
 type View = 'search' | 'craft';
@@ -75,6 +75,13 @@ type View = 'search' | 'craft';
                 <input type="checkbox" [checked]="settings().bm" (change)="market.update({ bm: $any($event.target).checked })" />
                 {{ t().market.settings.bm }}
               </label>
+              @for (c of noBuyCities; track c) {
+                <label class="switch check">
+                  <input [id]="'m-nobuy-' + c" type="checkbox" [checked]="settings().noBuy.includes(c)"
+                         (change)="market.toggleNoBuy(c, $any($event.target).checked)" />
+                  {{ t().market.settings.noBuy(c) }}
+                </label>
+              }
             </div>
             <p class="faint hint"><strong class="tax-detail">{{ taxDetail() }}.</strong> {{ t().market.settings.hint }}</p>
           </div>
@@ -134,6 +141,7 @@ export class MarketPage {
   protected readonly settings = this.market.settings;
   protected readonly servers: Server[] = ['europe', 'west', 'east'];
   protected readonly modes: SellMode[] = ['direct', 'order'];
+  protected readonly noBuyCities = NO_BUY_CITIES;
 
   private readonly prefs = storedSignal<{ view: View }>('lilium.market.view', { view: 'search' });
   protected readonly view = computed(() => this.prefs().view);
