@@ -3,7 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 
 import { TEST_MARKET } from '../../../testing/market';
-import { MarketService } from '../../core/market.service';
+import { MARKET_URL, MarketService } from '../../core/market.service';
 import { MarketItemField, PickedItem } from './market-item-field';
 
 describe('MarketItemField (champ objet de Mon craft)', () => {
@@ -11,7 +11,7 @@ describe('MarketItemField (champ objet de Mon craft)', () => {
     TestBed.configureTestingModule({ imports: [MarketItemField], providers: [provideHttpClient(), provideHttpClientTesting()] });
     const market = TestBed.inject(MarketService);
     const loading = market.load();
-    TestBed.inject(HttpTestingController).expectOne('/api/market').flush(TEST_MARKET);
+    TestBed.inject(HttpTestingController).expectOne(MARKET_URL).flush(TEST_MARKET);
     await loading;
     const fixture = TestBed.createComponent(MarketItemField);
     fixture.componentRef.setInput('label', 'Ressource 1');
@@ -65,6 +65,14 @@ describe('MarketItemField (champ objet de Mon craft)', () => {
     el.querySelector<HTMLElement>('[role=option]')!.click();
     fixture.detectChanges();
     expect(picks.at(-1)).toEqual({ id: 'T1_CARROT', name: 'Carottes' });
+  });
+
+  it('suggestions restreintes par `only`', async () => {
+    const { fixture, el, input, typeIn } = await render();
+    fixture.componentRef.setInput('only', (item: { ench: number }) => item.ench === 0);
+    input.dispatchEvent(new Event('focus'));
+    typeIn('bow');
+    expect([...el.querySelectorAll('[role=option] small')].map((s) => s.textContent)).toEqual(['6.0 · T6_2H_BOW']);
   });
 
   it('objet choisi : icône à gauche du nom', async () => {

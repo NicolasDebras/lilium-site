@@ -4,7 +4,7 @@ import { TestBed } from '@angular/core/testing';
 
 import { TEST_MARKET, historyRow, priceRow } from '../../testing/market';
 import { setLang } from './i18n/i18n';
-import { MarketService, historyStart } from './market.service';
+import { MARKET_URL, MarketService, historyStart } from './market.service';
 
 const tick = () => new Promise((resolve) => setTimeout(resolve));
 const priceUrl = (server: string) => (r: { url: string }) => r.url.startsWith(`https://${server}.albion-online-data.com/api/v2/stats/prices/`);
@@ -29,7 +29,7 @@ describe('MarketService', () => {
   it('charge le catalogue une fois et déplie les enchantements', async () => {
     const first = service.load();
     service.load();
-    http.expectOne('/api/market').flush(TEST_MARKET);
+    http.expectOne(MARKET_URL).flush(TEST_MARKET);
     await first;
     expect(service.items().filter((i) => i.id.startsWith('T6_2H_BOW')).map((i) => i.id)).toEqual(['T6_2H_BOW', 'T6_2H_BOW@1', 'T6_2H_BOW@2']);
     expect(service.recipes()).toHaveLength(2);
@@ -42,7 +42,7 @@ describe('MarketService', () => {
 
   it('garde l’erreur de chargement pour la réafficher', async () => {
     const done = service.load();
-    http.expectOne('/api/market').flush('ko', { status: 500, statusText: 'Server Error' });
+    http.expectOne(MARKET_URL).flush('ko', { status: 500, statusText: 'Server Error' });
     await done;
     expect(service.loadError()).toBeTruthy();
     expect(service.loaded()).toBe(false);

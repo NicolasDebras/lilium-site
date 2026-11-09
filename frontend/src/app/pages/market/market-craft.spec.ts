@@ -4,7 +4,7 @@ import { TestBed } from '@angular/core/testing';
 
 import { TEST_MARKET, historyRow, priceRow } from '../../../testing/market';
 import { MarketData } from './market-logic';
-import { MarketService } from '../../core/market.service';
+import { MARKET_URL, MarketService } from '../../core/market.service';
 import { MarketCraft } from './market-craft';
 import { AUTOLOAD_MS } from './market-search';
 
@@ -22,7 +22,7 @@ describe('MarketCraft (fabrication)', () => {
     const http = TestBed.inject(HttpTestingController);
     const market = TestBed.inject(MarketService);
     const loading = market.load();
-    http.expectOne('/api/market').flush(data);
+    http.expectOne(MARKET_URL).flush(data);
     await loading;
     const fixture = TestBed.createComponent(MarketCraft);
     fixture.detectChanges();
@@ -182,6 +182,7 @@ describe('MarketCraft (fabrication)', () => {
         { id: 'T4_MAIN_SWORD', tier: 4, ench: 0, cat: 'gear', y: 1, r: [['T4_LEATHER', 10]] },
         { id: 'T4_LEATHER', tier: 4, ench: 0, cat: 'refine', y: 1, r: [['T4_HIDE', 2], ['T3_LEATHER', 1]] },
       ],
+      up: {},
     };
     const { fixture, http, el } = await render(data);
     const type = el.querySelector<HTMLSelectElement>('#c-cat')!;

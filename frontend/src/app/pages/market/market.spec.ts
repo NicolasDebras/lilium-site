@@ -3,7 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 
 import { TEST_MARKET } from '../../../testing/market';
-import { MarketService } from '../../core/market.service';
+import { MARKET_URL, MarketService } from '../../core/market.service';
 import { MarketPage } from './market';
 
 const wait = (ms = 0) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -22,7 +22,7 @@ describe('MarketPage (onglet Marché)', () => {
     expect(el.querySelector('h1')?.textContent).toBe('Marché');
     expect(el.querySelectorAll('.skeleton').length).toBeGreaterThan(0);
     expect(el.querySelector('.credit')?.textContent).toContain('Aria le papi');
-    http.expectOne('/api/market').flush(TEST_MARKET);
+    http.expectOne(MARKET_URL).flush(TEST_MARKET);
     await wait();
     fixture.detectChanges();
     expect(el.querySelector('app-market-search')).not.toBeNull();
@@ -31,7 +31,7 @@ describe('MarketPage (onglet Marché)', () => {
 
   it('bascule vers Fabrication et s’en souvient', async () => {
     const { fixture, http, el } = render();
-    http.expectOne('/api/market').flush(TEST_MARKET);
+    http.expectOne(MARKET_URL).flush(TEST_MARKET);
     await wait();
     fixture.detectChanges();
     const craft = el.querySelectorAll<HTMLButtonElement>('.segmented button')[1];
@@ -46,7 +46,7 @@ describe('MarketPage (onglet Marché)', () => {
 
   it('onglet Mon craft', async () => {
     const { fixture, http, el } = render();
-    http.expectOne('/api/market').flush(TEST_MARKET);
+    http.expectOne(MARKET_URL).flush(TEST_MARKET);
     await wait();
     fixture.detectChanges();
     const mine = el.querySelectorAll<HTMLButtonElement>('.segmented button')[2];
@@ -58,9 +58,25 @@ describe('MarketPage (onglet Marché)', () => {
     expect(el.querySelector('app-market-craft')).toBeNull();
   });
 
+  it('onglet Upgradeur', async () => {
+    const { fixture, http, el } = render();
+    http.expectOne(MARKET_URL).flush(TEST_MARKET);
+    await wait();
+    fixture.detectChanges();
+    const upgrade = el.querySelectorAll<HTMLButtonElement>('.page-head .segmented button')[3];
+    expect(upgrade.textContent).toContain('Upgradeur');
+    upgrade.click();
+    fixture.detectChanges();
+    expect(upgrade.getAttribute('aria-pressed')).toBe('true');
+    expect(el.querySelector('app-market-upgrade')).not.toBeNull();
+    expect(el.querySelector('app-market-mycraft')).toBeNull();
+    TestBed.tick();
+    expect(JSON.parse(localStorage.getItem('lilium.market.view')!)).toEqual({ view: 'upgrade' });
+  });
+
   it('réglages repliés par défaut ; mode de vente et Premium → taxe et résumé', async () => {
     const { fixture, http, el } = render();
-    http.expectOne('/api/market').flush(TEST_MARKET);
+    http.expectOne(MARKET_URL).flush(TEST_MARKET);
     await wait();
     fixture.detectChanges();
     expect(el.querySelector('#market-settings')).toBeNull();
@@ -92,7 +108,7 @@ describe('MarketPage (onglet Marché)', () => {
 
   it('état des prix (chargement, erreur réseau) et barre de progression', async () => {
     const { fixture, http, el } = render();
-    http.expectOne('/api/market').flush(TEST_MARKET);
+    http.expectOne(MARKET_URL).flush(TEST_MARKET);
     await wait();
     const market = TestBed.inject(MarketService);
     market.status.set({ kind: 'busy', done: 20, total: 40 });
@@ -107,12 +123,12 @@ describe('MarketPage (onglet Marché)', () => {
 
   it('catalogue indisponible : message et bouton pour réessayer', async () => {
     const { fixture, http, el } = render();
-    http.expectOne('/api/market').flush('ko', { status: 500, statusText: 'Server Error' });
+    http.expectOne(MARKET_URL).flush('ko', { status: 500, statusText: 'Server Error' });
     await wait();
     fixture.detectChanges();
     expect(el.querySelector('.alert')?.textContent).toContain('Impossible de charger le catalogue');
     el.querySelector<HTMLButtonElement>('.alert button')!.click();
-    http.expectOne('/api/market').flush(TEST_MARKET);
+    http.expectOne(MARKET_URL).flush(TEST_MARKET);
     await wait();
     fixture.detectChanges();
     expect(el.querySelector('.alert')).toBeNull();

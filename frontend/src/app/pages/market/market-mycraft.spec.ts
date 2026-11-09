@@ -3,7 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 
 import { TEST_MARKET, priceRow } from '../../../testing/market';
-import { MarketService } from '../../core/market.service';
+import { MARKET_URL, MarketService } from '../../core/market.service';
 import { AUTOLOAD_MS } from './market-search';
 import { MarketMyCraft } from './market-mycraft';
 
@@ -17,7 +17,7 @@ describe('MarketMyCraft (mon craft)', () => {
     const http = TestBed.inject(HttpTestingController);
     const market = TestBed.inject(MarketService);
     const loading = market.load();
-    http.expectOne('/api/market').flush(TEST_MARKET);
+    http.expectOne(MARKET_URL).flush(TEST_MARKET);
     await loading;
     const fixture = TestBed.createComponent(MarketMyCraft);
     fixture.detectChanges();

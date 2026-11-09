@@ -1,7 +1,7 @@
 import gzip
 import json
 
-from app.market import build_market, extract_recipes, load_market, market_gzip
+from app.market import build_market, extract_recipes, extract_upgrades, load_market, market_gzip
 from tests.fakes import MEMBER_ID
 
 # Extrait minimal au format des dumps ao-bin-dumps
@@ -14,7 +14,9 @@ RAW = {
          "enchantments": {"enchantment": [
              {"@enchantmentlevel": "1", "craftingrequirements": {"craftresource": [
                  {"@uniquename": "T6_FOXGLOVE", "@count": "72"},
-                 {"@uniquename": "T1_ALCHEMY_EXTRACT_LEVEL1", "@count": "45"}]}},
+                 {"@uniquename": "T1_ALCHEMY_EXTRACT_LEVEL1", "@count": "45"}]},
+              # extrait d'alchimie : pas une amélioration à la rune
+              "upgraderequirements": {"upgraderesource": {"@uniquename": "T1_ALCHEMY_EXTRACT_LEVEL1", "@count": "9"}}},
              {"@enchantmentlevel": "2"},   # sans recette : ignoré
          ]}},
         # une seule recette « craftresource » (dict, pas liste) et plusieurs recettes : on prend la 1re
@@ -35,9 +37,22 @@ RAW = {
         # équipement : recette de base + enchantements (ressources « T4_METALBAR_LEVEL1@1 »)
         {"@uniquename": "T4_MAIN_SWORD", "craftingrequirements": {"craftresource": [
             {"@uniquename": "T4_METALBAR", "@count": "16"}, {"@uniquename": "T4_LEATHER", "@count": "8"}]},
-         "enchantments": {"enchantment": {"@enchantmentlevel": "1", "craftingrequirements": {"craftresource": [
-             {"@uniquename": "T4_METALBAR_LEVEL1", "@enchantmentlevel": "1", "@count": "16"},
-             {"@uniquename": "T4_LEATHER_LEVEL1", "@enchantmentlevel": "1", "@count": "8"}]}}}},
+         "enchantments": {"enchantment": [
+             {"@enchantmentlevel": "1", "craftingrequirements": {"craftresource": [
+                 {"@uniquename": "T4_METALBAR_LEVEL1", "@enchantmentlevel": "1", "@count": "16"},
+                 {"@uniquename": "T4_LEATHER_LEVEL1", "@enchantmentlevel": "1", "@count": "8"}]},
+              "upgraderequirements": {"upgraderesource": {"@uniquename": "T4_RUNE", "@count": "288"}}},
+             {"@enchantmentlevel": "2", "upgraderequirements": {"upgraderesource": {"@uniquename": "T4_SOUL", "@count": "288"}}},
+             {"@enchantmentlevel": "3", "upgraderequirements": {"upgraderesource": [
+                 {"@uniquename": "T5_RELIC", "@count": "1"}, {"@uniquename": "T4_RELIC", "@count": "288"}]}},
+             {"@enchantmentlevel": "4", "upgraderequirements": {"upgraderesource": {"@uniquename": "T4_SHARD_AVALONIAN", "@count": "288"}}},
+         ]}},
+        # sans âmes vers .2 : l'amélioration s'arrête à .1 ; prototype sans nom : écarté
+        {"@uniquename": "T5_MAIN_SWORD", "enchantments": {"enchantment": [
+            {"@enchantmentlevel": "1", "upgraderequirements": {"upgraderesource": {"@uniquename": "T5_RUNE", "@count": "288"}}},
+            {"@enchantmentlevel": "3", "upgraderequirements": {"upgraderesource": {"@uniquename": "T5_RELIC", "@count": "288"}}}]}},
+        {"@uniquename": "T8_MAIN_PROTOTYPE", "enchantments": {"enchantment": {
+            "@enchantmentlevel": "1", "upgraderequirements": {"upgraderesource": {"@uniquename": "T8_RUNE", "@count": "288"}}}}},
         {"@uniquename": "T4_2H_BOW_KEEPER", "craftingrequirements": [
             {"craftresource": [{"@uniquename": "T4_PLANKS", "@count": "32"},
                                {"@uniquename": "T4_ARTEFACT_2H_BOW_KEEPER", "@count": "1", "@maxreturnamount": "0"}]},
@@ -78,6 +93,7 @@ LOCALIZED = [
     loc("T4_MAIN_SWORD", "Épée large de l'adepte", "Adept's Broadsword"),
     loc("T4_MAIN_SWORD@1", "Épée large de l'adepte", "Adept's Broadsword"),
     loc("T4_MAIN_SWORD@3", "Épée large de l'adepte", "Adept's Broadsword"),
+    loc("T5_MAIN_SWORD", "Épée large de l'expert", "Expert's Broadsword"),
     loc("T4_FIBER_LEVEL1@1", "Chanvre peu commun", "Uncommon Hemp"),
     loc("T6_POTION_HEAL", "Potion de soin majeure", "Major Healing Potion"),
     loc("QUESTITEM_TOKEN_AVALON", "Énergie avalonienne", "Avalonian Energy"),
@@ -143,6 +159,15 @@ def test_market_items_fold_enchantments_and_keep_recipe_ingredients():
     assert {"T4_MAIN_SWORD", "T4_MAIN_SWORD@1", "T4_2H_BOW_KEEPER", "T4_LEATHER", "T4_LEATHER_LEVEL1@1"} <= recipes
     assert "T8_ARMOR_CLOTH_PROTOTYPE" not in recipes
     assert len(data["recipes"]) == 10
+    assert data["up"] == {"T4_MAIN_SWORD": [288, 288, 288], "T5_MAIN_SWORD": [288]}
+
+
+def test_upgrades_only_runes_souls_relics_of_the_item_tier():
+    up = extract_upgrades(RAW)
+    # .4 (fragments avaloniens) hors amélioration ; relique d'un autre tier ignorée
+    assert up["T4_MAIN_SWORD"] == [288, 288, 288]
+    assert up["T5_MAIN_SWORD"] == [288]
+    assert "T6_POTION_HEAL" not in up and "T8_MAIN_PROTOTYPE" in up
 
 
 def test_generated_market_file_is_coherent():
@@ -157,6 +182,12 @@ def test_generated_market_file_is_coherent():
     assert all(r["y"] >= 1 and r["r"] for r in data["recipes"])
     no_return = {res[0] for r in data["recipes"] for res in r["r"] if res[2:] == [0]}
     assert "QUESTITEM_TOKEN_AVALON" in no_return and "T1_ALCHEMY_EXTRACT_LEVEL1" not in no_return
+    up = data["up"]
+    assert len(up) > 1000 and set(up) <= ids
+    assert up["T4_MAIN_SWORD"] == [288] * 3 and up["T6_2H_BOW"] == [384] * 3
+    assert up["T4_HEAD_CLOTH_SET1"] == [96] * 3 and up["T4_ARMOR_CLOTH_SET1"] == [192] * 3
+    assert all(1 <= len(c) <= 3 for c in up.values()) and not any("POTION" in u or "MEAL" in u for u in up)
+    assert {f"T{t}_{kind}" for t in range(4, 9) for kind in ("RUNE", "SOUL", "RELIC")} <= ids
 
 
 def test_market_requires_login(client):

@@ -4,7 +4,7 @@ import { fr } from '../../core/i18n/fr';
 import {
   BLACK_MARKET, CATEGORIES, CustomCraft, Recipe, activity, busiestCity, calcTrade, classify, customCraftCalc, deviation, expandItems,
   familyOf, filterItems, filterRecipes, hoursSince, matchTokens, mergeHistory, mergePrices, rawCost, recipeCalc, sortRows, suspect,
-  taxRate,
+  taxRate, UpgradePlan, enchantedId, upgradeCalc, upgradeMaterial,
 } from './market-logic';
 
 const NOW = Date.parse('2026-10-23T12:00:00Z');
@@ -184,6 +184,68 @@ describe('market-logic', () => {
     // saisies vides ou négatives : 1 fabrication, ni retour ni frais
     const empty = customCraftCalc({ ...craft, units: null, qty: -3, rrr: null, fee: -10, lines: [] }, {}, o);
     expect([empty.crafts, empty.made, empty.fees, empty.cost, empty.unit]).toEqual([1, 1, 0, 0, null]);
+  });
+
+  it('qualité choisie : objets d’équipement seulement, une rune ou une ressource garde son prix en qualité normale', () => {
+    const p = mergePrices({}, ['T6_RUNE', 'T6_PLANKS', 'T6_2H_BOW'], [
+      priceRow('T6_RUNE', 'Martlock', 100, 0), priceRow('T6_RUNE', 'Martlock', 0, 0, 3),
+      priceRow('T6_PLANKS', 'Lymhurst', 300, 0), priceRow('T6_2H_BOW', 'Martlock', 50000, 0), priceRow('T6_2H_BOW', 'Martlock', 70000, 0, 3),
+    ], 3);
+    expect([p['T6_RUNE'].Martlock?.s, p['T6_PLANKS'].Lymhurst?.s, p['T6_2H_BOW'].Martlock?.s]).toEqual([100, 300, 70000]);
+  });
+
+  it('upgradeur : runes, âmes, reliques à la meilleure ville ou dans une ville donnée, marge par niveau visé', () => {
+    expect([upgradeMaterial(6, 1), upgradeMaterial(6, 2), upgradeMaterial(8, 3), enchantedId('T6_2H_BOW', 2)])
+      .toEqual(['T6_RUNE', 'T6_SOUL', 'T8_RELIC', 'T6_2H_BOW@2']);
+    const ids = ['T6_2H_BOW', 'T6_2H_BOW@1', 'T6_2H_BOW@2', 'T6_2H_BOW@3', 'T6_RUNE', 'T6_SOUL', 'T6_RELIC'];
+    const prices = mergePrices({}, ids, [
+      priceRow('T6_2H_BOW', 'Martlock', 50000, 0), priceRow('T6_2H_BOW', 'Caerleon', 45000, 0),
+      priceRow('T6_RUNE', 'Lymhurst', 100, 0), priceRow('T6_RUNE', 'Martlock', 120, 0), priceRow('T6_RUNE', 'Caerleon', 90, 0),
+      priceRow('T6_SOUL', 'Lymhurst', 400, 0), priceRow('T6_SOUL', 'Martlock', 380, 0), priceRow('T6_RELIC', 'Martlock', 1500, 0),
+      priceRow('T6_2H_BOW@1', BLACK_MARKET, 0, 120000), priceRow('T6_2H_BOW@1', 'Lymhurst', 110000, 0),
+      priceRow('T6_2H_BOW@2', 'Martlock', 300000, 200000),
+    ], 1);
+    const o = { mode: 'direct' as const, tax: 4, bm: true, noBuy: ['Caerleon' as const] };
+    const counts = [384, 384, 384];
+    const plan: UpgradePlan = {
+      id: 'T6_2H_BOW', name: 'Arc du maître', from: 0, qty: 2, buyIn: 'best', city: 'Martlock', buy: null, mats: [null, null, null], sell: [null, null, null],
+    };
+    const res = upgradeCalc(plan, counts, prices, o);
+    // objet et matériaux hors des villes exclues ; 384 par objet × 2
+    expect(res.item).toMatchObject({ id: 'T6_2H_BOW', unit: 50000, cost: 100000, market: { city: 'Martlock' } });
+    expect(res.lines.map((l) => [l.id, l.need, l.unit, l.market?.city])).toEqual([
+      ['T6_RUNE', 768, 100, 'Lymhurst'], ['T6_SOUL', 768, 380, 'Martlock'], ['T6_RELIC', 768, 1500, 'Martlock'],
+    ]);
+    const [to1, to2, to3] = res.targets;
+    expect([to1.mats, to1.cost, to1.unit, to1.market?.city]).toEqual([76800, 176800, 120000, BLACK_MARKET]);
+    expect(to1.revenue).toBeCloseTo(120000 * 0.96 * 2);
+    expect(to1.profit).toBeCloseTo(120000 * 0.96 * 2 - 176800);
+    expect(to1.perItem).toBeCloseTo((120000 * 0.96 * 2 - 176800) / 2);
+    expect(to1.roi).toBeCloseTo(((120000 * 0.96 * 2 - 176800) / 176800) * 100);
+    // déjà enchanté à 110 000 au marché, amélioration à 88 400 l'objet
+    expect([to1.direct?.value, to1.saving]).toEqual([110000, 110000 - 88400]);
+    expect([to2.mats, to2.cost, to2.unit]).toEqual([76800 + 768 * 380, 100000 + 76800 + 768 * 380, 200000]);
+    expect(to2.profit!).toBeLessThan(0);
+    expect([to3.unit, to3.profit, to3.direct]).toEqual([null, null, null]);
+    expect(res.best).toBe(1);
+
+    // ville donnée : tous les matériaux y sont achetés (villes exclues comprises), prix manquant = pas de total
+    const city = upgradeCalc({ ...plan, buyIn: 'city', city: 'Lymhurst' }, counts, prices, o);
+    expect(city.lines.map((l) => l.unit)).toEqual([100, 400, null]);
+    expect([city.targets[1].mats, city.targets[2].mats]).toEqual([768 * 500, null]);
+    expect(upgradeCalc({ ...plan, buyIn: 'city', city: 'Caerleon' }, counts, prices, o).lines[0].unit).toBe(90);
+
+    // prix saisis : objet de départ, rune, revente en .3
+    const own = upgradeCalc({ ...plan, buy: 0, mats: [80, null, null], sell: [null, null, 1000000] }, counts, prices, o);
+    expect([own.item.cost, own.lines[0].unit, own.lines[0].own, own.targets[2].unit, own.targets[2].own]).toEqual([0, 80, true, 1000000, true]);
+    expect(own.best).toBe(3);
+
+    // départ en .2 : reliques seulement ; départ hors bornes ramené au plus haut possible
+    const from2 = upgradeCalc({ ...plan, from: 2 }, counts, prices, o);
+    expect([from2.item.id, from2.lines.map((l) => l.id), from2.targets.map((t) => t.level)]).toEqual(['T6_2H_BOW@2', ['T6_RELIC'], [3]]);
+    expect(upgradeCalc({ ...plan, from: 7 }, [384], prices, o)).toMatchObject({ from: 0, targets: [{ level: 1 }] });
+    // aucun objet choisi : rien à calculer
+    expect(upgradeCalc({ ...plan, id: '' }, counts, prices, o)).toMatchObject({ lines: [], targets: [], best: null });
   });
 
   it('familles et filtre des recettes (nom, ingrédients, exclusion)', () => {

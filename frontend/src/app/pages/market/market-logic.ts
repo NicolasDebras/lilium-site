@@ -141,6 +141,8 @@ export const RECIPE_CATS: RecipeCat[] = ['potion', 'meal', 'refine', 'gear'];
 export interface MarketData {
   items: MarketEntry[];
   recipes: Recipe[];
+  /** Amélioration d'un objet (id sans enchantement) : nombre de runes vers .1, d'âmes vers .2, de reliques vers .3. */
+  up: Record<string, number[]>;
 }
 
 export interface MarketItem extends Classified {
@@ -221,14 +223,21 @@ export interface PriceRow {
   buy_price_max_date: string;
 }
 
-/** Ajoute les lignes reçues : chaque id demandé a une entrée (vide = aucun relevé). */
+/** Catégories sans qualité en jeu (ressources, runes, nourriture…) : seuls les relevés en qualité normale existent. */
+const NO_QUALITY = new Set<Category>(['resources', 'artifacts', 'consumables', 'journals', 'farm']);
+
+/** Ajoute les lignes reçues : chaque id demandé a une entrée (vide = aucun relevé). La qualité choisie ne vaut que
+ *  pour les objets qui en ont une : une rune ou une ressource garde son prix en qualité normale. */
 export function mergePrices(prices: PriceMap, ids: readonly string[], rows: readonly PriceRow[], quality: number): PriceMap {
   const next: PriceMap = { ...prices };
   for (const id of ids) next[id] = {};
+  const wanted = new Map<string, number>();
   for (const x of rows) {
     const city = x.city as City;
     if (!(CITIES as readonly string[]).includes(city) && city !== BLACK_MARKET) continue;
-    if (x.quality !== quality && x.quality !== 0) continue;
+    let q = wanted.get(x.item_id);
+    if (q == null) wanted.set(x.item_id, (q = NO_QUALITY.has(classify(x.item_id)?.cat ?? 'other') ? 1 : quality));
+    if (x.quality !== q && x.quality !== 0) continue;
     const p = (next[x.item_id] ??= {});
     const e = (p[city] ??= { s: 0, b: 0, sd: null, bd: null });
     if (x.sell_price_min > 0 && (!e.s || x.sell_price_min < e.s)) {
@@ -585,6 +594,136 @@ export function customCraftCalc(c: CustomCraft, prices: PriceMap, o: TradeOption
     perUnit: profit != null ? profit / made : null,
     breakEven: cost != null && keepSale > 0 ? cost / made / keepSale : null,
   };
+}
+
+// ── Upgradeur (runes, âmes, reliques) ────────────────────────────────────────
+
+/** Matériau de chaque niveau d'amélioration : runes vers .1, âmes vers .2, reliques vers .3. */
+export const UPGRADE_KINDS = ['RUNE', 'SOUL', 'RELIC'] as const;
+
+/** Matériau pour passer au niveau `level` (1 à 3) un objet du tier `tier` : « T6_RUNE », « T6_SOUL », « T6_RELIC ». */
+export function upgradeMaterial(tier: number, level: number): string {
+  return `T${tier}_${UPGRADE_KINDS[level - 1]}`;
+}
+
+/** « T6_2H_BOW » au niveau 2 → « T6_2H_BOW@2 ». */
+export function enchantedId(id: string, level: number): string {
+  return level ? `${id}@${level}` : id;
+}
+
+/** Où acheter runes, âmes et reliques : la ville la moins chère (hors villes `noBuy`) ou une ville donnée. */
+export type UpgradeBuy = 'best' | 'city';
+
+/** Amélioration saisie : objet sans enchantement (vide = pas encore choisi), enchantement de départ, nombre d'objets,
+ *  lieu d'achat des matériaux, prix unitaires saisis (null = prix du marché) de l'objet de départ, des runes/âmes/reliques
+ *  et de l'objet revendu en .1/.2/.3. */
+export interface UpgradePlan {
+  id: string;
+  name: string;
+  from: number;
+  qty: number | null;
+  buyIn: UpgradeBuy;
+  city: City;
+  buy: number | null;
+  mats: (number | null)[];
+  sell: (number | null)[];
+}
+
+export interface UpgradeLine {
+  /** Niveau atteint avec ce matériau. */
+  level: number;
+  id: string;
+  /** Par objet. */
+  per: number;
+  need: number;
+  /** Achat immédiat le moins cher (ville donnée ou meilleure ville), affiché même si un prix est saisi. */
+  market: Quote | null;
+  unit: number | null;
+  own: boolean;
+  cost: number | null;
+}
+
+export interface UpgradeTarget {
+  level: number;
+  id: string;
+  /** Matériaux de toutes les étapes jusqu'à ce niveau (null s'il manque un prix). */
+  mats: number | null;
+  /** Objets de départ + matériaux. */
+  cost: number | null;
+  market: Quote | null;
+  unit: number | null;
+  own: boolean;
+  /** Revente après taxe de tous les objets. */
+  revenue: number | null;
+  profit: number | null;
+  roi: number | null;
+  perItem: number | null;
+  /** Achat immédiat de l'objet déjà enchanté, pour comparer. */
+  direct: Quote | null;
+  /** Prix de l'objet déjà enchanté − coût de l'amélioration, par objet : positif = améliorer revient moins cher. */
+  saving: number | null;
+}
+
+export interface UpgradeResult {
+  qty: number;
+  tier: number;
+  /** Enchantement de départ retenu (borné aux niveaux que l'objet peut atteindre). */
+  from: number;
+  item: { id: string; market: Quote | null; unit: number | null; own: boolean; cost: number | null };
+  /** Un matériau par niveau à franchir, du départ au niveau le plus haut. */
+  lines: UpgradeLine[];
+  /** Un résultat par niveau visé. */
+  targets: UpgradeTarget[];
+  /** Niveau visé le plus rentable (null sans marge calculable). */
+  best: number | null;
+}
+
+/** `counts` = runes, âmes, reliques par objet (`MarketData.up`) ; aucun niveau sans objet choisi. */
+export function upgradeCalc(plan: UpgradePlan, counts: readonly number[], prices: PriceMap, o: TradeOptions): UpgradeResult {
+  const qty = Math.max(1, Math.floor(positive(plan.qty)));
+  const tier = classify(plan.id)?.tier ?? 0;
+  const top = plan.id && tier ? counts.length : 0;
+  const from = Math.min(Math.max(0, Math.floor(positive(plan.from))), Math.max(0, top - 1));
+  const typed = (v: number | null | undefined): v is number => v != null && v >= 0;
+  const itemId = enchantedId(plan.id, from);
+  const itemMarket = plan.id ? bestBuy(prices[itemId], { noBuy: o.noBuy }) : null;
+  const itemUnit = typed(plan.buy) ? plan.buy : (itemMarket?.value ?? null);
+  const item = { id: itemId, market: itemMarket, unit: itemUnit, own: typed(plan.buy), cost: itemUnit != null ? itemUnit * qty : null };
+  const where = plan.buyIn === 'city' ? { buyCity: plan.city } : { noBuy: o.noBuy };
+
+  const lines: UpgradeLine[] = [];
+  for (let level = from + 1; level <= top; level++) {
+    const id = upgradeMaterial(tier, level);
+    const per = counts[level - 1];
+    const market = bestBuy(prices[id], where);
+    const typedPrice = plan.mats?.[level - 1];
+    const unit = typed(typedPrice) ? typedPrice : (market?.value ?? null);
+    lines.push({ level, id, per, need: per * qty, market, unit, own: typed(typedPrice), cost: unit != null ? unit * per * qty : null });
+  }
+
+  const keepSale = 1 - Math.min(100, Math.max(0, o.tax)) / 100;
+  const targets = lines.map(({ level }): UpgradeTarget => {
+    const steps = lines.filter((l) => l.level <= level);
+    const mats = steps.some((l) => l.cost == null) ? null : steps.reduce((sum, l) => sum + (l.cost ?? 0), 0);
+    const cost = item.cost != null && mats != null ? item.cost + mats : null;
+    const id = enchantedId(plan.id, level);
+    const market = bestSell(prices[id], { ...o, buyCity: '', sellCity: '', maxAge: null });
+    const typedSell = plan.sell?.[level - 1];
+    const unit = typed(typedSell) ? typedSell : (market?.value ?? null);
+    const revenue = unit != null ? unit * keepSale * qty : null;
+    const profit = cost != null && revenue != null ? revenue - cost : null;
+    const direct = bestBuy(prices[id], { noBuy: o.noBuy });
+    return {
+      level, id, mats, cost, market, unit, own: typed(typedSell), revenue, profit,
+      roi: profit != null && cost ? (profit / cost) * 100 : null,
+      perItem: profit != null ? profit / qty : null,
+      direct,
+      saving: direct && cost != null ? direct.value - cost / qty : null,
+    };
+  });
+  const priced = targets.filter((x) => x.profit != null);
+  const best = priced.length ? priced.reduce((a, b) => (b.profit! > a.profit! ? b : a)).level : null;
+  return { qty, tier, from, item, lines, targets, best };
 }
 
 /** Famille d'une recette : « T6_POTION_HEAL@1 » → « HEAL », « T8_MEAL_STEW_AVALON » → « STEW » ;

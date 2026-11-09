@@ -15,6 +15,7 @@ export const TEST_MARKET: MarketData = {
     { id: 'T6_POTION_HEAL', tier: 6, ench: 0, cat: 'potion', y: 5, r: [['T6_FOXGLOVE', 72], ['T5_EGG', 18]] },
     { id: 'T4_MEAL_SOUP', tier: 4, ench: 0, cat: 'meal', y: 10, r: [['T1_CARROT', 16]] },
   ],
+  up: { T6_2H_BOW: [384, 384, 384], T6_MAIN_SWORD: [288, 288, 288] },
 };
 
 const DATE = '2026-10-23T10:00:00';

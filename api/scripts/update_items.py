@@ -49,7 +49,8 @@ async def main() -> None:
 
     data = market.build_market(raw["items"], localized)
     market.DATA_FILE.write_text(json.dumps(data, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
-    print(f"{len(data['items'])} objets et {len(data['recipes'])} recettes écrits dans {market.DATA_FILE}")
+    print(f"{len(data['items'])} objets, {len(data['recipes'])} recettes et {len(data['up'])} améliorations "
+          f"écrits dans {market.DATA_FILE}")
 
 
 if __name__ == "__main__":

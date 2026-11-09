@@ -1,5 +1,6 @@
-"""Données de l'onglet Marché : noms FR/EN de tous les objets à tier du jeu et recettes
-(cuisine, potions, raffinage, équipement), extraits des mêmes dumps que le catalogue des builds :
+"""Données de l'onglet Marché : noms FR/EN de tous les objets à tier du jeu, recettes
+(cuisine, potions, raffinage, équipement) et runes/âmes/reliques de l'amélioration d'un équipement,
+extraits des mêmes dumps que le catalogue des builds :
 
     https://github.com/ao-data/ao-bin-dumps  (items.json + formatted/items.json)
 
@@ -95,13 +96,44 @@ def extract_recipes(raw_items: dict) -> list[dict]:
     return recipes
 
 
+# Amélioration d'un équipement : runes vers .1, âmes vers .2, reliques vers .3 (du tier de l'objet)
+_UPGRADE_KINDS = ("RUNE", "SOUL", "RELIC")
+
+
+def extract_upgrades(raw_items: dict) -> dict[str, list[int]]:
+    """Amélioration d'un objet : {id: [runes vers .1, âmes vers .2, reliques vers .3]}, nombre par objet.
+    Seul le matériau attendu compte (« T6_RUNE » pour un objet T6 vers .1) : les extraits des potions
+    et la sauce de poisson de la cuisine ne sont pas des améliorations. Un niveau manquant arrête la liste."""
+    upgrades = {}
+    for section in raw_items.values():
+        for item in section if isinstance(section, list) else []:
+            unique = item.get("@uniquename", "")
+            if not _TIERED.match(unique) or "@" in unique:
+                continue
+            by_level = {}
+            for ench in _as_list((item.get("enchantments") or {}).get("enchantment")):
+                level = int(ench.get("@enchantmentlevel") or 0)
+                if not 1 <= level <= len(_UPGRADE_KINDS):
+                    continue
+                wanted = f"{unique[:2]}_{_UPGRADE_KINDS[level - 1]}"
+                for res in _as_list((ench.get("upgraderequirements") or {}).get("upgraderesource")):
+                    if res.get("@uniquename") == wanted and int(res.get("@count") or 0) > 0:
+                        by_level[level] = int(res["@count"])
+            counts = []
+            while len(counts) + 1 in by_level:
+                counts.append(by_level[len(counts) + 1])
+            if counts:
+                upgrades[unique] = counts
+    return upgrades
+
+
 def build_market(raw_items: dict, localized: list[dict]) -> dict:
     """items = [[id, nom FR, nom EN, enchantement max]] : « T4_MAIN_SWORD@1 » à « @4 »
     portent le nom de T4_MAIN_SWORD, ils sont donc repliés dessus (enchantement max = 4).
     Une variante sans objet de base (« T4_FIBER_LEVEL1@1 ») reste une ligne à part.
     Les ingrédients des recettes sans tier (« QUESTITEM_TOKEN_AVALON ») sont ajoutés
     pour pouvoir afficher leur nom. Équipement et raffinage sans nom (prototypes jamais sortis
-    en jeu) : recette écartée."""
+    en jeu) : recette écartée. up = améliorations des objets nommés (voir extract_upgrades)."""
     recipes = extract_recipes(raw_items)
     wanted = {res[0] for r in recipes for res in r["r"]}
     names = {}
@@ -124,7 +156,8 @@ def build_market(raw_items: dict, localized: list[dict]) -> dict:
         for unique, (fr, en) in sorted(names.items())
         if not ((m := _ENCHANTED.match(unique)) and m.group(1) in names)
     ]
-    return {"items": items, "recipes": recipes}
+    upgrades = {unique: counts for unique, counts in sorted(extract_upgrades(raw_items).items()) if unique in names}
+    return {"items": items, "recipes": recipes, "up": upgrades}
 
 
 @lru_cache(maxsize=1)

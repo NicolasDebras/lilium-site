@@ -3,7 +3,7 @@ import { Component, computed, inject, input, output, signal } from '@angular/cor
 import { itemIconUrl, useFallbackIcon } from '../../core/items.service';
 import { MarketService } from '../../core/market.service';
 import { itemLabel, tierText } from './market-format';
-import { matchTokens } from './market-logic';
+import { MarketItem, matchTokens } from './market-logic';
 
 /** Suggestions affichées au plus. */
 const MAX_SUGGESTIONS = 8;
@@ -15,8 +15,8 @@ export interface PickedItem {
   name: string;
 }
 
-/** Champ « objet » de Mon craft : texte libre, ou objet du catalogue choisi dans les suggestions
- *  (le prix du marché suit alors). Retaper le nom revient au texte libre. */
+/** Champ « objet » de Mon craft et de l'upgradeur : texte libre, ou objet du catalogue choisi dans les suggestions
+ *  (le prix du marché suit alors). Retaper le nom revient au texte libre. `only` restreint les suggestions. */
 @Component({
   selector: 'app-market-item-field',
   template: `
@@ -61,6 +61,7 @@ export class MarketItemField {
   readonly name = input('');
   readonly label = input('');
   readonly placeholder = input('');
+  readonly only = input<((item: MarketItem) => boolean) | null>(null);
   readonly pick = output<PickedItem>();
 
   protected readonly listId = `item-field-${nextId++}`;
@@ -72,9 +73,10 @@ export class MarketItemField {
   protected readonly suggestions = computed(() => {
     const q = this.query().trim();
     if (q.length < 2) return [];
+    const only = this.only();
     const out: { id: string; name: string; tier: string }[] = [];
     for (const item of this.market.items()) {
-      if (!matchTokens(item.search, q)) continue;
+      if ((only && !only(item)) || !matchTokens(item.search, q)) continue;
       out.push({ id: item.id, name: itemLabel(item), tier: tierText(item.tier, item.ench) });
       if (out.length >= MAX_SUGGESTIONS) break;
     }

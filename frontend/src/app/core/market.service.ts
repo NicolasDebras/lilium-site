@@ -61,6 +61,9 @@ export function historyStart(now: number, days = HISTORY_DAYS): string {
   const d = new Date(now - days * 864e5);
   return `${d.getUTCMonth() + 1}-${d.getUTCDate()}-${d.getUTCFullYear()}`;
 }
+/** Catalogue du marché, mis en cache un jour par le navigateur : changer la version quand son contenu change de forme
+ *  (ajout de `up` = 2), sinon les joueurs gardent l'ancien jusqu'au lendemain. */
+export const MARKET_URL = '/api/market?v=2';
 /** « Charger les prix de tous les résultats » : plafond par clic (limite de l'API : 180 requêtes/min). */
 export const BULK_MAX = 300;
 
@@ -69,13 +72,17 @@ export const BULK_MAX = 300;
 @Injectable({ providedIn: 'root' })
 export class MarketService {
   private readonly http = inject(HttpClient);
-  private readonly data = signal<{ items: MarketItem[]; recipes: Recipe[]; names: Map<string, [string, string]> } | null>(null);
+  private readonly data = signal<{
+    items: MarketItem[]; recipes: Recipe[]; up: Record<string, number[]>; names: Map<string, [string, string]>;
+  } | null>(null);
   private pending: Promise<void> | null = null;
   private tried = new Set<string>();
   private triedHistory = new Set<string>();
 
   readonly items = computed(() => this.data()?.items ?? []);
   readonly recipes = computed(() => this.data()?.recipes ?? []);
+  /** Runes, âmes, reliques par objet pour chaque niveau d'amélioration (id sans enchantement). */
+  readonly upgrades = computed(() => this.data()?.up ?? {});
   readonly loaded = computed(() => this.data() !== null);
   readonly loadError = signal<unknown>(null);
 
@@ -98,11 +105,12 @@ export class MarketService {
   load(): Promise<void> {
     if (this.data()) return Promise.resolve();
     this.loadError.set(null);
-    this.pending ??= firstValueFrom(this.http.get<MarketData>('/api/market'))
-      .then(({ items, recipes }) => {
+    this.pending ??= firstValueFrom(this.http.get<MarketData>(MARKET_URL))
+      .then(({ items, recipes, up }) => {
         this.data.set({
           items: expandItems(items),
           recipes,
+          up,
           names: new Map(items.map(([id, fr, en]) => [id, [fr, en]])),
         });
       })
