@@ -309,13 +309,13 @@ export interface Activity {
   avg: number | null;
 }
 
-/** Activité d'une ville (ou de toutes avec `city` vide) ; null tant que l'historique n'est pas chargé. */
-export function activity(h: ItemHistory | undefined, city: City | '', now: number, days = ACTIVITY_DAYS): Activity | null {
+/** Activité d'une ville, de plusieurs (liste) ou de toutes (`city` vide) ; null tant que l'historique n'est pas chargé. */
+export function activity(h: ItemHistory | undefined, city: City | '' | readonly City[], now: number, days = ACTIVITY_DAYS): Activity | null {
   if (!h) return null;
   const from = new Date(now - days * 864e5).toISOString().slice(0, 10);
   let count = 0;
   let value = 0;
-  for (const c of city ? [city] : (Object.keys(h) as City[])) {
+  for (const c of typeof city !== 'string' ? city : city ? [city] : (Object.keys(h) as City[])) {
     for (const pt of h[c] ?? []) {
       if (pt.d <= from) continue;
       count += pt.n;

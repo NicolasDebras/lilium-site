@@ -6,9 +6,11 @@ import { itemIconUrl, useFallbackIcon } from '../../core/items.service';
 import { MarketService, storedSignal } from '../../core/market.service';
 import { CountUp } from '../../shared/count-up';
 import { Icon } from '../../shared/icon';
-import { cityLabel, percent, silver, tierText } from './market-format';
+import { cityLabel, perDay, percent, silver, tierText } from './market-format';
 import { MarketItemField, PickedItem } from './market-item-field';
-import { CITIES, City, MarketItem, PriceMap, Quote, UPGRADE_KINDS, UpgradeBuy, UpgradePlan, upgradeCalc } from './market-logic';
+import {
+  CITIES, City, MarketItem, PriceMap, Quote, ROYAL_CITIES, UPGRADE_KINDS, UpgradeBuy, UpgradePlan, activity, upgradeCalc,
+} from './market-logic';
 import { AUTOLOAD_MS } from './market-search';
 
 const noPrices = () => UPGRADE_KINDS.map((): number | null => null);
@@ -31,7 +33,8 @@ function sanitized(plan: WritableSignal<UpgradePlan>): WritableSignal<UpgradePla
 }
 
 /** Upgradeur : un équipement passé en .1, .2 ou .3 avec runes, âmes et reliques (achetées dans la ville la moins
- *  chère ou une ville donnée), comparé à sa revente et à l'achat de l'objet déjà enchanté. */
+ *  chère ou une ville donnée), comparé à sa revente en ville royale, à ses ventes par jour et à l'achat de l'objet
+ *  déjà enchanté. */
 @Component({
   selector: 'app-market-upgrade',
   imports: [CountUp, FormField, Icon, MarketItemField],
@@ -163,6 +166,11 @@ function sanitized(plan: WritableSignal<UpgradePlan>): WritableSignal<UpgradePla
                 <span class="lbl">{{ u.perItem }}</span>
                 <strong class="per-item" [class.pos]="(v.t.perItem ?? -1) >= 0" [class.neg]="(v.t.perItem ?? 0) < 0">{{ silver(v.t.perItem) }}</strong>
               </div>
+              <div class="tile">
+                <span class="lbl">{{ u.sold }}</span>
+                <strong class="sold" [class.faint]="!v.vol?.perDay">{{ v.vol ? perDay(v.vol.perDay) : '…' }}</strong>
+                @if (v.soldDetail) { <small class="faint sold-detail">{{ v.soldDetail }}</small> }
+              </div>
               <div class="field">
                 <label [for]="'up-sell-' + v.t.level">{{ u.sell }}</label>
                 <input [id]="'up-sell-' + v.t.level" class="input" type="number" step="1" inputmode="numeric" [placeholder]="v.placeholder"
@@ -262,6 +270,7 @@ export class MarketUpgrade {
   protected readonly wheres: UpgradeBuy[] = ['best', 'city'];
   protected readonly silver = silver;
   protected readonly pct = percent;
+  protected readonly perDay = perDay;
   /** Suggestions : équipement améliorable, sans enchantement (le niveau de départ se choisit à part). */
   protected readonly upgradable = (item: MarketItem) => item.ench === 0 && item.id in this.market.upgrades();
 
@@ -314,9 +323,13 @@ export class MarketUpgrade {
   protected readonly targetViews = computed(() => {
     const res = this.calc();
     const prices = this.market.prices();
+    const history = this.market.history();
+    const now = Date.now();
     const u = this.t().market.upgrade;
     return res.targets.map((t) => {
       const tier = this.tierLabel(t.level);
+      // Ventes dans la ville de revente ; sans prix relevé, dans toutes les villes royales.
+      const vol = activity(history[t.id], t.market?.city ?? ROYAL_CITIES, now);
       return {
         t,
         tier,
@@ -326,6 +339,8 @@ export class MarketUpgrade {
         direct: t.direct ? u.direct(tier, silver(t.direct.value), cityLabel(t.direct.city)) : '',
         saving: t.saving != null ? u.saving(silver(Math.abs(t.saving)), t.saving >= 0) : '',
         noSell: t.unit == null && t.id in prices,
+        vol,
+        soldDetail: vol ? u.soldDetail(t.market ? cityLabel(t.market.city) : '', vol.perDay, res.qty) : '',
       };
     });
   });
@@ -343,14 +358,17 @@ export class MarketUpgrade {
   protected readonly ids = computed(() => {
     const res = this.calc();
     if (!this.model().id) return '';
-    return [res.item.id, ...res.targets.map((t) => t.id), ...res.lines.map((l) => l.id)].join(',');
+    return [res.item.id, ...this.targetIds(), ...res.lines.map((l) => l.id)].join(',');
   });
+  /** Historique des ventes : seulement l'objet à chaque niveau visé. */
+  private readonly targetIds = computed(() => this.calc().targets.map((t) => t.id));
 
   constructor() {
     effect((onCleanup) => {
       const ids = this.ids();
       if (!ids || this.market.busy()) return;
-      const timer = setTimeout(() => this.market.fetchPrices(this.market.untried(ids.split(','))), AUTOLOAD_MS);
+      const targets = this.targetIds();
+      const timer = setTimeout(() => this.market.fetchPrices(this.market.untried(ids.split(',')), targets), AUTOLOAD_MS);
       onCleanup(() => clearTimeout(timer));
     });
   }
@@ -384,7 +402,7 @@ export class MarketUpgrade {
   }
 
   refresh(): void {
-    this.market.fetchPrices(this.ids().split(','));
+    this.market.fetchPrices(this.ids().split(','), this.targetIds());
   }
 
   icon(id: string): string {

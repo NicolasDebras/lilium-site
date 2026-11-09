@@ -536,6 +536,13 @@ export const fr = {
       costDetail: (item: string, mats: string) => `objets ${item} + matériaux ${mats}`,
       sell: 'Prix de vente unitaire',
       perItem: 'Marge par objet',
+      sold: 'Écoulés par jour',
+      soldDetail: (city: string, perDay: number, qty: number) => {
+        const where = city ? `à ${city}` : 'dans les villes royales';
+        if (perDay <= 0) return `Aucune vente relevée ces 7 derniers jours ${where}.`;
+        const days = Math.ceil(qty / perDay);
+        return `Moyenne sur 7 jours ${where} : compte ${days} ${plural(days, 'jour', 'jours')} pour écouler ${qty} ${plural(qty, 'objet', 'objets')}.`;
+      },
       direct: (tier: string, price: string, city: string) => `Déjà en ${tier} au marché : ${price} · ${city}`,
       saving: (v: string, cheaper: boolean): string =>
         (cheaper ? `Améliorer revient ${v} moins cher par objet.` : `L’acheter déjà enchanté revient ${v} moins cher par objet.`),

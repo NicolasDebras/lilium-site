@@ -2,7 +2,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
-import { TEST_MARKET, priceRow } from '../../../testing/market';
+import { TEST_MARKET, historyRow, priceRow } from '../../../testing/market';
 import { MARKET_URL, MarketService } from '../../core/market.service';
 import { BLACK_MARKET } from './market-logic';
 import { AUTOLOAD_MS } from './market-search';
@@ -11,6 +11,8 @@ import { MarketUpgrade } from './market-upgrade';
 const wait = (ms = 0) => new Promise((resolve) => setTimeout(resolve, ms));
 const isPrices = (r: { url: string }) => r.url.includes('albion-online-data.com');
 const n = (v: number) => Math.round(v).toLocaleString('fr-FR');
+/** Date « 2026-11-08 » d'il y a `ago` jours. */
+const day = (ago: number) => new Date(Date.now() - ago * 864e5).toISOString().slice(0, 10);
 
 describe('MarketUpgrade (upgradeur)', () => {
   async function render() {
@@ -55,6 +57,14 @@ describe('MarketUpgrade (upgradeur)', () => {
         priceRow('T6_2H_BOW@2', 'Martlock', 0, 200000),
       ]);
       await wait();
+      // Historique des ventes : l'objet à chaque niveau visé seulement
+      const hist = http.expectOne((r) => r.url.includes('/stats/history/'));
+      expect(hist.request.url.split('/').pop()!.replace('.json', '').split(',')).toEqual(['T6_2H_BOW@1', 'T6_2H_BOW@2', 'T6_2H_BOW@3']);
+      hist.flush([
+        historyRow('T6_2H_BOW@1', 'Lymhurst', [[day(1), 21, 100000], [day(2), 14, 100000]]),
+        historyRow('T6_2H_BOW@1', BLACK_MARKET, [[day(1), 700, 150000]]),
+      ]);
+      await wait();
       fixture.detectChanges();
     };
     return { fixture, http, el, all, typeIn, click, pickBow };
@@ -87,9 +97,14 @@ describe('MarketUpgrade (upgradeur)', () => {
     expect(to1.querySelector('.verdict')?.textContent?.trim()).toBe('Rentable');
     expect(to1.querySelector('.direct')?.textContent).toContain(`Déjà en 6.1 au marché : ${n(110000)} · Lymhurst`);
     expect(to1.querySelector('.saving')?.textContent).toBe(`Améliorer revient ${n(110000 - 88400)} moins cher par objet.`);
+    // écoulés par jour dans la ville de revente (35 ventes sur 7 jours à Lymhurst ; le Marché noir ne compte pas)
+    expect(to1.querySelector('.sold')?.textContent?.trim()).toBe('5');
+    expect(to1.querySelector('.sold-detail')?.textContent).toBe('Moyenne sur 7 jours à Lymhurst : compte 1 jour pour écouler 1 objet.');
     expect(to2.querySelector('.verdict')?.textContent?.trim()).toBe('À perte');
+    expect(to2.querySelector('.sold-detail')?.textContent).toBe('Aucune vente relevée ces 7 derniers jours à Martlock.');
     expect(to3.querySelector('.warn')?.textContent).toContain('Prix de vente inconnu');
     expect(to3.querySelector('.verdict')).toBeNull();
+    expect(to3.querySelector('.sold-detail')?.textContent).toBe('Aucune vente relevée ces 7 derniers jours dans les villes royales.');
   });
 
   it('ville donnée : matériaux achetés dans cette ville, prix manquant signalé', async () => {
@@ -110,6 +125,9 @@ describe('MarketUpgrade (upgradeur)', () => {
 
   it('quantité, prix saisis, départ en .2, réinitialisation', async () => {
     const { el, all, click, typeIn } = await pickBowReady();
+    typeIn(el.querySelector<HTMLInputElement>('#up-qty')!, '12');
+    expect(all('.c-need .num')).toEqual([n(4608), n(4608), n(4608)]);
+    expect(all('.sold-detail')[0]).toBe('Moyenne sur 7 jours à Lymhurst : compte 3 jours pour écouler 12 objets.');
     typeIn(el.querySelector<HTMLInputElement>('#up-qty')!, '3');
     expect(all('.c-need .num')).toEqual([n(1152), n(1152), n(1152)]);
     typeIn(el.querySelector<HTMLInputElement>('.c-price input')!, '50');

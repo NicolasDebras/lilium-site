@@ -304,6 +304,7 @@ describe('market-logic', () => {
     expect(activity(h, 'Martlock', NOW)).toEqual({ perDay: 2, avg: (10 * 1000 + 4 * 1350) / 14 });
     expect(activity(h, '', NOW)?.perDay).toBe(3);
     expect(activity(h, 'Lymhurst', NOW)).toEqual({ perDay: 0, avg: null });
+    expect(activity(h, ['Lymhurst', 'Martlock'], NOW)?.perDay).toBe(2);   // plusieurs villes : sans le Marché noir
     expect(activity(undefined, 'Martlock', NOW)).toBeNull();
     expect(busiestCity(h)).toBe('Martlock');
     expect(busiestCity({})).toBeNull();

@@ -560,6 +560,13 @@ export const en: typeof fr = {
       costDetail: (item: string, mats: string) => `items ${item} + materials ${mats}`,
       sell: 'Unit sale price',
       perItem: 'Margin per item',
+      sold: 'Sold per day',
+      soldDetail: (city: string, perDay: number, qty: number) => {
+        const where = city ? `in ${city}` : 'in the royal cities';
+        if (perDay <= 0) return `No sales recorded in the last 7 days ${where}.`;
+        const days = Math.ceil(qty / perDay);
+        return `7-day average ${where}: allow ${days} ${plural(days, 'day', 'days')} to sell ${qty} ${plural(qty, 'item', 'items')}.`;
+      },
       direct: (tier: string, price: string, city: string) => `Already ${tier} on the market: ${price} · ${city}`,
       saving: (v: string, cheaper: boolean) =>
         (cheaper ? `Upgrading is ${v} cheaper per item.` : `Buying it already enchanted is ${v} cheaper per item.`),
