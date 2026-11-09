@@ -23,6 +23,8 @@ jobs:
         with:
           repository: NicolasDebras/botDiscord
           path: botDiscord
+          # Dépôt du bot privé : token fine-grained (Contents : read) ; sinon le token par défaut
+          token: ${{ secrets.BOT_REPO_TOKEN || github.token }}
       - uses: actions/setup-python@v7
         with:
           python-version: "3.13"

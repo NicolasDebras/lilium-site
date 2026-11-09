@@ -21,9 +21,9 @@ export function botErrorsPage(total = 30): BotErrorsPage {
   return {
     items: [
       { id: 42, ts: '2026-10-08T09:12:44+00:00', command: 'acti', user_id: '123', error_type: 'KeyError',
-        error_message: "'slots'" },
+        error_message: "'slots'", is_fixed: false, github_issue: 12 },
       { id: 41, ts: '2026-10-07T20:00:00+00:00', command: 'finacti', user_id: null, error_type: 'TimeoutError',
-        error_message: '<script>alert(1)</script>' },
+        error_message: '<script>alert(1)</script>', is_fixed: true, github_issue: null },
     ],
     total, page: 1, page_size: 25, commands: ['acti', 'finacti'],
   };

@@ -3,6 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 
 import { botErrorsPage as errors } from '../../../testing/admin-data';
+import { ToastService } from '../../core/toast.service';
 import { BotErrors, errorWhen } from './bot-errors';
 
 async function settle(fixture: { whenStable(): Promise<unknown>; detectChanges(): void }) {
@@ -57,6 +58,50 @@ describe('BotErrors (page Admin)', () => {
     const req = http.expectOne((q) => q.url === '/api/guilds/111/admin/errors');
     expect(req.request.params.get('command')).toBe('finacti');
     expect(req.request.params.get('page')).toBe('1');
+  });
+
+  it('signale les erreurs corrigées', async () => {
+    const { el } = await loaded();
+    const [unfixed, fixed] = [...el.querySelectorAll('.list li')];
+    expect(fixed.classList).toContain('fixed');
+    expect(fixed.querySelector('.badge')?.textContent).toContain('Corrigée');
+    expect(unfixed.classList).not.toContain('fixed');
+    expect(unfixed.querySelector('.badge')).toBeNull();
+  });
+
+  it('« Masquer les corrigées » envoie hide_fixed et repart page 1', async () => {
+    const { fixture, http, el } = await loaded();
+    (el.querySelector('.hide-fixed') as HTMLInputElement).click();
+    fixture.detectChanges();
+    const req = http.expectOne((q) => q.url === '/api/guilds/111/admin/errors');
+    expect(req.request.params.get('hide_fixed')).toBe('true');
+    expect(req.request.params.get('page')).toBe('1');
+    req.flush({ ...errors(0), items: [] });
+    await settle(fixture);
+    expect(el.textContent).toContain('Aucune erreur à corriger.');
+  });
+
+  it('marque corrigées les erreurs similaires puis recharge la liste', async () => {
+    const { fixture, http, el } = await loaded();
+    const success = vi.spyOn(TestBed.inject(ToastService), 'success');
+    (el.querySelector('.row') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    http.expectOne('/api/guilds/111/admin/errors/42').flush({ ...errors().items[0], traceback: 'tb' });
+    await settle(fixture);
+    const mark = el.querySelector('.mark') as HTMLButtonElement;
+    expect(mark.textContent).toContain('Marquer corrigée (toutes les acti · KeyError)');
+    expect(el.querySelector<HTMLAnchorElement>('.issue')?.href).toBe('https://github.com/NicolasDebras/botDiscord/issues/12');
+
+    mark.click();
+    const req = http.expectOne('/api/guilds/111/admin/errors/42/fixed');
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({ fixed: true });
+    req.flush({ updated: 3 });
+    await new Promise((resolve) => setTimeout(resolve));
+    fixture.detectChanges();
+    http.expectOne((q) => q.url === '/api/guilds/111/admin/errors').flush(errors());
+    await settle(fixture);
+    expect(success).toHaveBeenCalledWith('3 erreurs marquées corrigées.');
   });
 
   it("affiche l'erreur de l'API (non admin)", async () => {

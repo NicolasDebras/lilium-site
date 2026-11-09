@@ -106,7 +106,7 @@ cd frontend
 npm test -- --watch=false
 ```
 
-**CI** (`.github/workflows/tests.yml`) : à chaque push et pull request, GitHub lance les tests de l'API (avec le repo du bot cloné à côté, pour vérifier les fichiers partagés), puis les tests et le build du front. `main` est protégée : on ne fusionne que si ces jobs passent.
+**CI** (`.github/workflows/tests.yml`) : à chaque push et pull request, GitHub lance les tests de l'API (avec le repo du bot cloné à côté, pour vérifier les fichiers partagés), puis les tests et le build du front. Si le dépôt du bot est privé, le clone utilise le secret `BOT_REPO_TOKEN` (token fine-grained limité au dépôt du bot, *Contents : read*) ; sans ce secret, le token par défaut suffit tant que le bot est public. `main` est protégée : on ne fusionne que si ces jobs passent.
 
 **Rendu des images (lib partagée)** : le dessin des images de build et de compo, la police et les icônes viennent de la lib **[AlbionCreateImageBuild](https://github.com/NicolasDebras/AlbionCreateImageBuild)** (`api/requirements.txt`, même tag que le bot). Pour modifier le rendu : changer la lib, publier un tag, puis monter ce tag dans `requirements.txt` du bot **et** du site. Pour tester une modif de la lib sans la publier (repos côte à côte) :
 
@@ -170,7 +170,7 @@ Toutes sous `/api`. `{gid}` = id du serveur Discord.
 
 L'original n'est jamais réécrit : la correction est une ligne `ajustbal` liée par `ref_id` (colonne créée par le bot). Les soldes `bal` sont mis à jour dans la même transaction, sans jamais passer sous 0. Chaque joueur affiche son rôle et ses **parts** d'origine (`×2`, `Scoot`). Pour les payouts antérieurs à leur enregistrement par le bot, les parts sont déduites du rapport au montant le plus fréquent et notées « ≈ ». Chaque joueur dont le montant change reçoit un **MP** (ancien → nouveau montant, nouveau solde), envoyé en série avec le token du bot (`discord_rest.send_dm`, un seul nouvel essai après un 429). Les MP impossibles sont signalés à l'admin. `ajustbal` compte avec son signe dans le crédité (pas comme activité ni comme caller). Le calcul est dans `api/app/payouts.py`, le front dans `pages/admin/payouts-editor.ts`.
 
-**Page Admin → Erreurs du bot** : équivalent web de `/errors` (table `error_log` du bot, 30 jours), filtre par commande, traceback chargé au clic et affiché en texte brut.
+**Page Admin → Erreurs du bot** : équivalent web de `/errors` (table `error_log` du bot, 30 jours), filtre par commande, traceback chargé au clic et affiché en texte brut. Une erreur dépliée peut être **marquée corrigée** (`POST /admin/errors/{id}/fixed`, colonne `is_fixed`) : toutes les erreurs du serveur de même commande et même type le sont d'un coup ; une nouvelle occurrence arrive non corrigée (le bug est revenu). Badge « Corrigée », case « Masquer les corrigées », et lien vers l'issue GitHub que le bot a ouverte pour ce bug (`github_issue`, dépôt privé du bot ; fermer l'issue marque aussi les erreurs corrigées).
 
 ### Sécurité
 

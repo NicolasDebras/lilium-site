@@ -193,13 +193,19 @@ export class ApiService {
   }
 
   // ── Admin : erreurs du bot ────────────────────────────────────────────────
-  botErrors(guildId: string, page: number, command: string | null): Observable<BotErrorsPage> {
+  botErrors(guildId: string, page: number, command: string | null, hideFixed = false): Observable<BotErrorsPage> {
     let params = new HttpParams().set('page', page);
     if (command) params = params.set('command', command);
+    if (hideFixed) params = params.set('hide_fixed', true);
     return this.http.get<BotErrorsPage>(`${this.g(guildId)}/admin/errors`, { params });
   }
 
   botError(guildId: string, id: number): Observable<BotErrorDetail> {
     return this.http.get<BotErrorDetail>(`${this.g(guildId)}/admin/errors/${id}`);
+  }
+
+  /** (Dé)marque corrigées cette erreur et toutes celles du serveur de même commande et même type. */
+  setBotErrorFixed(guildId: string, id: number, fixed: boolean): Observable<{ updated: number }> {
+    return this.http.post<{ updated: number }>(`${this.g(guildId)}/admin/errors/${id}/fixed`, { fixed });
   }
 }

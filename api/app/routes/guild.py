@@ -156,10 +156,11 @@ def _error_row(row: dict) -> dict:
 
 @router.get("/admin/errors")
 async def admin_errors(guild_id: int, request: Request, command: str | None = Query(None, max_length=100),
-                       page: int = Query(1, ge=1, le=MAX_PAGE), user: dict = Depends(require_admin)):
+                       page: int = Query(1, ge=1, le=MAX_PAGE), hide_fixed: bool = False,
+                       user: dict = Depends(require_admin)):
     """Erreurs du bot sur ce serveur (équivalent de /errors), sans traceback."""
     rows, total, commands = await request.app.state.db.get_error_logs(
-        guild_id, command, ERRORS_PAGE_SIZE, (page - 1) * ERRORS_PAGE_SIZE
+        guild_id, command, ERRORS_PAGE_SIZE, (page - 1) * ERRORS_PAGE_SIZE, hide_fixed
     )
     return {"items": [_error_row(r) for r in rows], "total": total, "page": page,
             "page_size": ERRORS_PAGE_SIZE, "commands": commands}
@@ -172,6 +173,20 @@ async def admin_error(guild_id: int, error_id: int, request: Request, user: dict
     if not row:
         raise HTTPException(404, tr("error_not_found"))
     return _error_row(row)
+
+
+class ErrorFixedIn(BaseModel):
+    fixed: bool
+
+
+@router.post("/admin/errors/{error_id}/fixed")
+async def admin_error_fixed(guild_id: int, error_id: int, body: ErrorFixedIn, request: Request,
+                            user: dict = Depends(require_admin)):
+    """(Dé)marque corrigées cette erreur et toutes celles du serveur de même commande et même type."""
+    updated = await request.app.state.db.set_error_fixed(guild_id, error_id, body.fixed)
+    if not updated:
+        raise HTTPException(404, tr("error_not_found"))
+    return {"updated": updated}
 
 
 # ── Admin → payouts de la semaine (correction, MP aux joueurs) ────────────────

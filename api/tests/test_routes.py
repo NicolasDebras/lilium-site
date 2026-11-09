@@ -402,6 +402,45 @@ def test_admin_error_detail_and_other_guild_is_404(login, fake_db):
     assert c.get(f"/api/guilds/{GUILD}/admin/errors/{other['id']}").status_code == 404
 
 
+def test_admin_error_fixed_forbidden_for_member_and_staff(login, fake_db):
+    for uid in (MEMBER_ID, STAFF_ID):
+        assert login(uid).post(f"/api/guilds/{GUILD}/admin/errors/1/fixed", json={"fixed": True}).status_code == 403
+    assert not any(e["is_fixed"] for e in fake_db.errors)
+
+
+def test_admin_error_fixed_marks_every_similar_error_of_this_guild(login, fake_db):
+    ref = next(e for e in fake_db.errors if e["guild_id"] == GUILD and e["error_type"] == "KeyError")
+    def similar(e):
+        return (e["command"], e["error_type"]) == (ref["command"], ref["error_type"])
+
+    r = login(ADMIN_ID).post(f"/api/guilds/{GUILD}/admin/errors/{ref['id']}/fixed", json={"fixed": True})
+    fixed = [e for e in fake_db.errors if e["is_fixed"]]
+    assert r.status_code == 200 and r.json() == {"updated": len(fixed)} and len(fixed) > 1
+    assert all(e["guild_id"] == GUILD and similar(e) for e in fixed)
+    assert all(e["is_fixed"] for e in fake_db.errors if e["guild_id"] == GUILD and similar(e))
+    assert not any(e["is_fixed"] for e in fake_db.errors if e["guild_id"] != GUILD and similar(e))
+
+    r = login(ADMIN_ID).post(f"/api/guilds/{GUILD}/admin/errors/{ref['id']}/fixed", json={"fixed": False})
+    assert r.status_code == 200 and not any(e["is_fixed"] for e in fake_db.errors)
+
+
+def test_admin_error_fixed_other_guild_is_404(login, fake_db):
+    other = next(e for e in fake_db.errors if e["guild_id"] != GUILD)
+    r = login(ADMIN_ID).post(f"/api/guilds/{GUILD}/admin/errors/{other['id']}/fixed", json={"fixed": True})
+    assert r.status_code == 404 and not other["is_fixed"]
+
+
+def test_admin_errors_hide_fixed(login, fake_db):
+    for e in fake_db.errors:
+        e["is_fixed"] = e["command"] == "acti"
+    c = login(ADMIN_ID)
+    assert {e["is_fixed"] for e in c.get(f"/api/guilds/{GUILD}/admin/errors").json()["items"]} == {True, False}
+    body = c.get(f"/api/guilds/{GUILD}/admin/errors?hide_fixed=true").json()
+    assert body["items"] and {e["command"] for e in body["items"]} == {"finacti"}
+    assert body["total"] == sum(1 for e in fake_db.errors if e["guild_id"] == GUILD and e["command"] == "finacti")
+    assert body["commands"] == ["acti", "finacti"]     # le filtre de commande garde toutes les commandes
+
+
 # ── Sorts et passifs ─────────────────────────────────────────────────────────
 
 def test_spells_endpoint(client, login):

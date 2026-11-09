@@ -321,18 +321,18 @@ class Database:
         return [dict(r) for r in rows], int(total)
 
     # ── Erreurs du bot (table error_log, écrite par le bot) ────────────────────
-    async def get_error_logs(self, guild_id: int, command: str | None, limit: int,
-                             offset: int) -> tuple[list[dict], int, list[str]]:
+    async def get_error_logs(self, guild_id: int, command: str | None, limit: int, offset: int,
+                             hide_fixed: bool = False) -> tuple[list[dict], int, list[str]]:
         """Erreurs du serveur (sans traceback), plus récentes d'abord + nombre total + commandes concernées."""
-        where = "WHERE guild_id = $1 AND ($2::text IS NULL OR command = $2)"
+        where = "WHERE guild_id = $1 AND ($2::text IS NULL OR command = $2) AND NOT ($3::bool AND is_fixed)"
         async with self._pool.acquire() as conn:
-            total = await conn.fetchval(f"SELECT COUNT(*) FROM error_log {where}", guild_id, command)
+            total = await conn.fetchval(f"SELECT COUNT(*) FROM error_log {where}", guild_id, command, hide_fixed)
             rows = await conn.fetch(f"""
-                SELECT id, ts, command, user_id, error_type, error_message
+                SELECT id, ts, command, user_id, error_type, error_message, is_fixed, github_issue
                 FROM error_log {where}
                 ORDER BY ts DESC, id DESC
-                LIMIT $3 OFFSET $4
-            """, guild_id, command, limit, offset)
+                LIMIT $4 OFFSET $5
+            """, guild_id, command, hide_fixed, limit, offset)
             commands = await conn.fetch(
                 "SELECT DISTINCT command FROM error_log WHERE guild_id = $1 ORDER BY command", guild_id
             )
@@ -342,10 +342,22 @@ class Database:
         """Une erreur avec son traceback — seulement si elle appartient à ce serveur."""
         async with self._pool.acquire() as conn:
             row = await conn.fetchrow(
-                "SELECT id, ts, command, user_id, error_type, error_message, traceback "
+                "SELECT id, ts, command, user_id, error_type, error_message, is_fixed, github_issue, traceback "
                 "FROM error_log WHERE id = $1 AND guild_id = $2", error_id, guild_id
             )
         return dict(row) if row else None
+
+    async def set_error_fixed(self, guild_id: int, error_id: int, fixed: bool) -> int:
+        """(Dé)marque corrigées toutes les erreurs du serveur de même commande et même type que
+        celle-ci. Renvoie le nombre de lignes (0 = erreur absente de ce serveur)."""
+        async with self._pool.acquire() as conn:
+            status = await conn.execute("""
+                UPDATE error_log e SET is_fixed = $3
+                FROM error_log ref
+                WHERE ref.id = $2 AND ref.guild_id = $1
+                  AND e.guild_id = $1 AND e.command = ref.command AND e.error_type = ref.error_type
+            """, guild_id, error_id, fixed)
+        return int(status.split()[-1])
 
     # ── Bibliothèque : modèles de compos publics (table public_compos, créée par le bot) ─
     def _public_row(self, row) -> dict:

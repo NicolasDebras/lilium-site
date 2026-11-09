@@ -188,7 +188,8 @@ export const COMMANDS: Command[] = [
   { group: 'serveur', name: 'webadmin list', usage: '/webadmin list', who: { fr: 'Admin serveur, Maitre de guilde', en: 'Server admin, Guild Master' }, text: {
     fr: 'Lister les admins du site de ce serveur.', en: 'List this server’s website admins.' } },
   { group: 'serveur', name: 'errors', usage: '/errors [page] [commande] [id_erreur]', who: { fr: 'Officier', en: 'Officer' }, text: {
-    fr: 'Erreurs des commandes (30 jours) — aussi dans Admin sur le site.', en: 'Command errors (30 days) — also in Admin on the website.' } },
+    fr: 'Erreurs des commandes (30 jours), ✅ = corrigée — aussi dans Admin sur le site, où on les marque corrigées.',
+    en: 'Command errors (30 days), ✅ = fixed — also in Admin on the website, where they are marked fixed.' } },
   { group: 'serveur', name: 'helpliliumbot', usage: '/helpliliumbot', who: { fr: 'Tous', en: 'Everyone' }, text: {
     fr: 'Liste de toutes les commandes.', en: 'List of every command.' } },
 ];

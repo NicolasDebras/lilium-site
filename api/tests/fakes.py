@@ -51,8 +51,9 @@ class FakeDB:
         ]
         self.errors = [
             {"id": i, "guild_id": GUILD if i % 3 else OTHER_GUILD, "ts": t0 + timedelta(minutes=i),
-             "command": "acti" if i % 2 else "finacti", "user_id": "1", "error_type": "KeyError",
-             "error_message": f"boom {i}", "traceback": f"Traceback {i}"}
+             "command": "acti" if i % 2 else "finacti", "user_id": "1",
+             "error_type": "TimeoutError" if i % 5 == 0 else "KeyError",
+             "error_message": f"boom {i}", "is_fixed": False, "github_issue": None, "traceback": f"Traceback {i}"}
             for i in range(1, 61)
         ]
 
@@ -212,9 +213,10 @@ class FakeDB:
         page = rows[offset:] if limit is None else rows[offset:offset + limit]
         return page, len(rows)
 
-    async def get_error_logs(self, guild_id, command, limit, offset):
+    async def get_error_logs(self, guild_id, command, limit, offset, hide_fixed=False):
         rows = [{k: v for k, v in e.items() if k not in ("traceback", "guild_id")} for e in self.errors
-                if e["guild_id"] == guild_id and (command is None or e["command"] == command)]
+                if e["guild_id"] == guild_id and (command is None or e["command"] == command)
+                and not (hide_fixed and e["is_fixed"])]
         rows.sort(key=lambda e: e["ts"], reverse=True)
         commands = sorted({e["command"] for e in self.errors if e["guild_id"] == guild_id})
         return rows[offset:offset + limit], len(rows), commands
@@ -222,6 +224,16 @@ class FakeDB:
     async def get_error_log(self, guild_id, error_id):
         e = next((e for e in self.errors if e["id"] == error_id and e["guild_id"] == guild_id), None)
         return {k: v for k, v in e.items() if k != "guild_id"} if e else None
+
+    async def set_error_fixed(self, guild_id, error_id, fixed):
+        ref = next((e for e in self.errors if e["id"] == error_id and e["guild_id"] == guild_id), None)
+        if not ref:
+            return 0
+        same = [e for e in self.errors if e["guild_id"] == guild_id
+                and (e["command"], e["error_type"]) == (ref["command"], ref["error_type"])]
+        for e in same:
+            e["is_fixed"] = fixed
+        return len(same)
 
 
 class FakeDiscord:

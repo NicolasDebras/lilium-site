@@ -319,9 +319,13 @@ export interface BotError {
   user_id: string | null;
   error_type: string;
   error_message: string;
+  /** Marquée corrigée (site, ou issue GitHub fermée) ; une nouvelle occurrence repart à false. */
+  is_fixed: boolean;
+  /** Issue GitHub ouverte par le bot pour ce bug (dépôt privé du bot). */
+  github_issue: number | null;
 }
 
-/** GET /admin/errors?command=&page= */
+/** GET /admin/errors?command=&page=&hide_fixed= */
 export interface BotErrorsPage {
   items: BotError[];
   total: number;
