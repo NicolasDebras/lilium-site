@@ -154,6 +154,8 @@ export const COMMANDS: Command[] = [
   // Recrutement & joueurs
   { group: 'recrutement', name: 'register', usage: '/register pseudo', who: { fr: 'Tous', en: 'Everyone' }, text: {
     fr: 'Enregistrer son pseudo Albion : indispensable pour accéder au site.', en: 'Register your Albion name: required to access the website.' } },
+  { group: 'recrutement', name: 'registeradmin', usage: '/registeradmin @joueur pseudo', who: { fr: 'Recruteur, Officier', en: 'Recruiter, Officer' }, text: {
+    fr: 'Enregistrer ou corriger le pseudo Albion d’un joueur.', en: 'Register or fix a player’s Albion name.' } },
   { group: 'recrutement', name: 'recrutement', usage: '/recrutement @joueur', who: { fr: 'Recruteur, Officier', en: 'Recruiter, Officer' }, text: {
     fr: 'Enregistrer une candidature.', en: 'Record an application.' } },
   { group: 'recrutement', name: 'setup-recrutement', usage: '/setup-recrutement', who: { fr: 'Admin', en: 'Admin' }, text: {
