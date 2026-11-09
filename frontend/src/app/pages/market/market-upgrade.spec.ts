@@ -51,7 +51,7 @@ describe('MarketUpgrade (upgradeur)', () => {
         priceRow('T6_2H_BOW', 'Martlock', 50000, 0),
         priceRow('T6_RUNE', 'Lymhurst', 100, 0), priceRow('T6_RUNE', 'Martlock', 120, 0),
         priceRow('T6_SOUL', 'Martlock', 380, 0), priceRow('T6_RELIC', 'Martlock', 1500, 0),
-        priceRow('T6_2H_BOW@1', BLACK_MARKET, 0, 120000), priceRow('T6_2H_BOW@1', 'Lymhurst', 110000, 0),
+        priceRow('T6_2H_BOW@1', BLACK_MARKET, 0, 150000), priceRow('T6_2H_BOW@1', 'Lymhurst', 110000, 100000),
         priceRow('T6_2H_BOW@2', 'Martlock', 0, 200000),
       ]);
       await wait();
@@ -81,7 +81,9 @@ describe('MarketUpgrade (upgradeur)', () => {
     expect(to1.classList).toContain('best');
     expect(to1.querySelector('.best-badge')?.textContent).toContain('Le plus rentable');
     expect(to1.querySelector('.cost')?.textContent?.trim()).toBe(n(50000 + 38400));
-    expect(to1.querySelector('.per-item')?.textContent?.trim()).toBe(n(120000 * 0.96 - 88400));
+    // revente en ville royale (Lymhurst), pas au Marché noir
+    expect(to1.querySelector('#up-sell-1 + small')?.textContent?.trim()).toBe(`Marché : ${n(100000)} · Lymhurst`);
+    expect(to1.querySelector('.per-item')?.textContent?.trim()).toBe(n(100000 * 0.96 - 88400));
     expect(to1.querySelector('.verdict')?.textContent?.trim()).toBe('Rentable');
     expect(to1.querySelector('.direct')?.textContent).toContain(`Déjà en 6.1 au marché : ${n(110000)} · Lymhurst`);
     expect(to1.querySelector('.saving')?.textContent).toBe(`Améliorer revient ${n(110000 - 88400)} moins cher par objet.`);

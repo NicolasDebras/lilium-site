@@ -542,7 +542,7 @@ export const fr = {
       missingPrices: (names: string) => `Prix manquant : ${names}. Saisis-le ou actualise les prix.`,
       noSell: 'Prix de vente inconnu : saisis-le ou actualise les prix.',
       reset: 'Réinitialiser',
-      hint: 'Runes vers .1, âmes vers .2, reliques vers .3, du tier de l’objet : de 96 à 384 par niveau selon l’objet (données du jeu). La qualité des réglages s’applique à l’objet. Prix laissé vide = prix du marché : achat immédiat le moins cher, revente au meilleur prix selon ton mode de vente, taxe déduite. Ta saisie reste dans ce navigateur.',
+      hint: 'Runes vers .1, âmes vers .2, reliques vers .3, du tier de l’objet : de 96 à 384 par niveau selon l’objet (données du jeu). La qualité des réglages s’applique à l’objet. Prix laissé vide = prix du marché : achat immédiat le moins cher, revente au meilleur prix des villes royales (jamais au Marché noir) selon ton mode de vente, taxe déduite. Ta saisie reste dans ce navigateur.',
     },
     cats: {
       weapons: 'Armes', armors: 'Armures', offhands: 'Hors-main', bags: 'Sacs & capes', mounts: 'Montures',

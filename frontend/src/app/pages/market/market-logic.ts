@@ -9,6 +9,8 @@ export type City = (typeof CITIES)[number] | typeof BLACK_MARKET;
 /** Villes qu'on peut exclure de l'achat des matériaux du craft (réglage « noBuy ») : Caerleon (zone rouge
  *  autour) et Brecilien (dans les Brumes), peu pratiques pour acheter en gros. */
 export const NO_BUY_CITIES = ['Caerleon', 'Brecilien'] as const satisfies readonly City[];
+/** Villes royales (ni Caerleon, ni Brecilien, ni Marché noir) : lieux de revente de l'upgradeur. */
+export const ROYAL_CITIES = ['Bridgewatch', 'Fort Sterling', 'Lymhurst', 'Martlock', 'Thetford'] as const satisfies readonly City[];
 
 export type Server = 'europe' | 'west' | 'east';
 /** direct = vendre aux ordres d'achat ; order = mettre en vente. */
@@ -358,6 +360,8 @@ export interface TradeOptions {
   bm: boolean;
   buyCity?: City | '';
   sellCity?: City | '';
+  /** Seules villes de revente possibles (sans `sellCity`), à la place des villes + Marché noir selon `bm`. */
+  sellCities?: readonly City[];
   /** Villes où ne pas acheter (matériaux du craft). */
   noBuy?: readonly City[];
   /** Fraîcheur maximale des prix (heures), null = toutes. */
@@ -385,7 +389,7 @@ export function bestBuy(p: ItemPrices | undefined, o: Partial<TradeOptions> = {}
 /** Meilleure revente selon le mode : ordre d'achat le plus haut ou mise en vente la plus basse. */
 export function bestSell(p: ItemPrices | undefined, o: TradeOptions): Quote | null {
   let best: Quote | null = null;
-  const cities: City[] = o.sellCity ? [o.sellCity] : o.bm ? [...CITIES, BLACK_MARKET] : [...CITIES];
+  const cities: readonly City[] = o.sellCity ? [o.sellCity] : o.sellCities ?? (o.bm ? [...CITIES, BLACK_MARKET] : CITIES);
   for (const city of cities) {
     const e = p?.[city];
     if (!e) continue;
@@ -678,7 +682,8 @@ export interface UpgradeResult {
   best: number | null;
 }
 
-/** `counts` = runes, âmes, reliques par objet (`MarketData.up`) ; aucun niveau sans objet choisi. */
+/** `counts` = runes, âmes, reliques par objet (`MarketData.up`) ; aucun niveau sans objet choisi.
+ *  Revente dans les villes royales seulement, selon le mode de vente (jamais au Marché noir). */
 export function upgradeCalc(plan: UpgradePlan, counts: readonly number[], prices: PriceMap, o: TradeOptions): UpgradeResult {
   const qty = Math.max(1, Math.floor(positive(plan.qty)));
   const tier = classify(plan.id)?.tier ?? 0;
@@ -707,7 +712,7 @@ export function upgradeCalc(plan: UpgradePlan, counts: readonly number[], prices
     const mats = steps.some((l) => l.cost == null) ? null : steps.reduce((sum, l) => sum + (l.cost ?? 0), 0);
     const cost = item.cost != null && mats != null ? item.cost + mats : null;
     const id = enchantedId(plan.id, level);
-    const market = bestSell(prices[id], { ...o, buyCity: '', sellCity: '', maxAge: null });
+    const market = bestSell(prices[id], { ...o, buyCity: '', sellCity: '', sellCities: ROYAL_CITIES, maxAge: null });
     const typedSell = plan.sell?.[level - 1];
     const unit = typed(typedSell) ? typedSell : (market?.value ?? null);
     const revenue = unit != null ? unit * keepSale * qty : null;

@@ -566,7 +566,7 @@ export const en: typeof fr = {
       missingPrices: (names: string) => `Missing price: ${names}. Enter it or refresh prices.`,
       noSell: 'Unknown sale price: enter it or refresh prices.',
       reset: 'Reset',
-      hint: 'Runes to .1, souls to .2, relics to .3, of the item’s tier: 96 to 384 per level depending on the item (game data). The quality from the settings applies to the item. Empty price = market price: cheapest instant buy, best sale for your selling mode, tax deducted. Your input stays in this browser.',
+      hint: 'Runes to .1, souls to .2, relics to .3, of the item’s tier: 96 to 384 per level depending on the item (game data). The quality from the settings applies to the item. Empty price = market price: cheapest instant buy, best sale in the royal cities (never the Black Market) for your selling mode, tax deducted. Your input stays in this browser.',
     },
     cats: {
       weapons: 'Weapons', armors: 'Armor', offhands: 'Off-hands', bags: 'Bags & capes', mounts: 'Mounts',

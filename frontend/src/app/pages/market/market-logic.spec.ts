@@ -202,9 +202,10 @@ describe('market-logic', () => {
       priceRow('T6_2H_BOW', 'Martlock', 50000, 0), priceRow('T6_2H_BOW', 'Caerleon', 45000, 0),
       priceRow('T6_RUNE', 'Lymhurst', 100, 0), priceRow('T6_RUNE', 'Martlock', 120, 0), priceRow('T6_RUNE', 'Caerleon', 90, 0),
       priceRow('T6_SOUL', 'Lymhurst', 400, 0), priceRow('T6_SOUL', 'Martlock', 380, 0), priceRow('T6_RELIC', 'Martlock', 1500, 0),
-      priceRow('T6_2H_BOW@1', BLACK_MARKET, 0, 120000), priceRow('T6_2H_BOW@1', 'Lymhurst', 110000, 0),
-      priceRow('T6_2H_BOW@2', 'Martlock', 300000, 200000),
+      priceRow('T6_2H_BOW@1', BLACK_MARKET, 0, 150000), priceRow('T6_2H_BOW@1', 'Caerleon', 0, 130000),
+      priceRow('T6_2H_BOW@1', 'Lymhurst', 110000, 100000), priceRow('T6_2H_BOW@2', 'Martlock', 300000, 200000),
     ], 1);
+    // Marché noir coché dans les réglages : l'upgradeur revend quand même en ville royale
     const o = { mode: 'direct' as const, tax: 4, bm: true, noBuy: ['Caerleon' as const] };
     const counts = [384, 384, 384];
     const plan: UpgradePlan = {
@@ -217,11 +218,12 @@ describe('market-logic', () => {
       ['T6_RUNE', 768, 100, 'Lymhurst'], ['T6_SOUL', 768, 380, 'Martlock'], ['T6_RELIC', 768, 1500, 'Martlock'],
     ]);
     const [to1, to2, to3] = res.targets;
-    expect([to1.mats, to1.cost, to1.unit, to1.market?.city]).toEqual([76800, 176800, 120000, BLACK_MARKET]);
-    expect(to1.revenue).toBeCloseTo(120000 * 0.96 * 2);
-    expect(to1.profit).toBeCloseTo(120000 * 0.96 * 2 - 176800);
-    expect(to1.perItem).toBeCloseTo((120000 * 0.96 * 2 - 176800) / 2);
-    expect(to1.roi).toBeCloseTo(((120000 * 0.96 * 2 - 176800) / 176800) * 100);
+    // revente en ville royale seulement : ni Marché noir ni Caerleon
+    expect([to1.mats, to1.cost, to1.unit, to1.market?.city]).toEqual([76800, 176800, 100000, 'Lymhurst']);
+    expect(to1.revenue).toBeCloseTo(100000 * 0.96 * 2);
+    expect(to1.profit).toBeCloseTo(100000 * 0.96 * 2 - 176800);
+    expect(to1.perItem).toBeCloseTo((100000 * 0.96 * 2 - 176800) / 2);
+    expect(to1.roi).toBeCloseTo(((100000 * 0.96 * 2 - 176800) / 176800) * 100);
     // déjà enchanté à 110 000 au marché, amélioration à 88 400 l'objet
     expect([to1.direct?.value, to1.saving]).toEqual([110000, 110000 - 88400]);
     expect([to2.mats, to2.cost, to2.unit]).toEqual([76800 + 768 * 380, 100000 + 76800 + 768 * 380, 200000]);
