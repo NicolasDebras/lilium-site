@@ -44,6 +44,20 @@ describe('MarketPage (onglet Marché)', () => {
     expect(JSON.parse(localStorage.getItem('lilium.market.view')!)).toEqual({ view: 'craft' });
   });
 
+  it('onglet Mon craft', async () => {
+    const { fixture, http, el } = render();
+    http.expectOne('/api/market').flush(TEST_MARKET);
+    await wait();
+    fixture.detectChanges();
+    const mine = el.querySelectorAll<HTMLButtonElement>('.segmented button')[2];
+    expect(mine.textContent).toContain('Mon craft');
+    mine.click();
+    fixture.detectChanges();
+    expect(mine.getAttribute('aria-pressed')).toBe('true');
+    expect(el.querySelector('app-market-mycraft')).not.toBeNull();
+    expect(el.querySelector('app-market-craft')).toBeNull();
+  });
+
   it('réglages repliés par défaut ; mode de vente et Premium → taxe et résumé', async () => {
     const { fixture, http, el } = render();
     http.expectOne('/api/market').flush(TEST_MARKET);

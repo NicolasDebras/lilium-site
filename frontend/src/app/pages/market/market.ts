@@ -5,15 +5,17 @@ import { MarketService, storedSignal } from '../../core/market.service';
 import { Icon } from '../../shared/icon';
 import { MarketCraft } from './market-craft';
 import { NO_BUY_CITIES, SALES_TAX, SETUP_FEE, SellMode, Server } from './market-logic';
+import { MarketMyCraft } from './market-mycraft';
 import { MarketSearch } from './market-search';
 
-type View = 'search' | 'craft';
+type View = 'search' | 'craft' | 'mine';
 
 /** Onglet Marché (membres de la guilde) : recherche d'objets, marges ville par ville et volume des ventes,
- *  rentabilité de la fabrication (cuisine, potions, raffinage, équipement). Outil imaginé par Aria le papi. */
+ *  rentabilité de la fabrication (cuisine, potions, raffinage, équipement) et d'un craft saisi par le joueur.
+ *  Outil imaginé par Aria le papi. */
 @Component({
   selector: 'app-market',
-  imports: [Icon, MarketSearch, MarketCraft],
+  imports: [Icon, MarketSearch, MarketCraft, MarketMyCraft],
   template: `
     <div class="page-head fade-up">
       <div>
@@ -26,6 +28,9 @@ type View = 'search' | 'craft';
         </button>
         <button type="button" [class.on]="view() === 'craft'" [attr.aria-pressed]="view() === 'craft'" (click)="setView('craft')">
           <app-icon name="sparkles" [size]="14" /> {{ t().market.views.craft }}
+        </button>
+        <button type="button" [class.on]="view() === 'mine'" [attr.aria-pressed]="view() === 'mine'" (click)="setView('mine')">
+          <app-icon name="edit" [size]="14" /> {{ t().market.views.mine }}
         </button>
       </div>
     </div>
@@ -102,8 +107,10 @@ type View = 'search' | 'craft';
       @for (s of [1, 2, 3, 4, 5]; track s) { <div class="skeleton line" [style.animation-delay.ms]="s * 80"></div> }
     } @else if (view() === 'search') {
       <app-market-search class="slide-in" />
-    } @else {
+    } @else if (view() === 'craft') {
       <app-market-craft class="slide-in" />
+    } @else {
+      <app-market-mycraft class="slide-in" />
     }
 
     <p class="credit faint">{{ t().market.credit[0] }}<strong class="gradient-text">Aria le papi</strong>{{ t().market.credit[1] }}</p>

@@ -498,6 +498,95 @@ export function rawCost(lines: readonly RecipeLine[], refines: ReadonlyMap<strin
   return { lines: raw, cost };
 }
 
+// ── Mon craft (saisie libre) ─────────────────────────────────────────────────
+
+/** Ressource saisie : id du catalogue (vide = saisie libre, sans prix du marché), nombre par
+ *  fabrication, prix unitaire saisi (null = prix du marché, hors villes `noBuy`), jamais rendue par le retour. */
+export interface CustomLine {
+  id: string;
+  name: string;
+  count: number | null;
+  price: number | null;
+  noReturn: boolean;
+}
+
+/** Craft saisi : objet fabriqué, unités par fabrication, quantité visée, retour de ressources (%),
+ *  frais d'atelier par fabrication, prix de vente unitaire (null = prix du marché). */
+export interface CustomCraft {
+  id: string;
+  name: string;
+  units: number | null;
+  qty: number | null;
+  rrr: number | null;
+  fee: number | null;
+  sell: number | null;
+  lines: CustomLine[];
+}
+
+export interface CustomLineResult {
+  /** À acheter pour toute la quantité, retour de ressources déduit (0 = ligne ignorée). */
+  need: number;
+  /** Meilleur achat immédiat relevé (affiché même si un prix est saisi). */
+  market: Quote | null;
+  /** Prix retenu : saisi, sinon celui du marché. */
+  unit: number | null;
+  own: boolean;
+  cost: number | null;
+}
+
+export interface CustomResult {
+  crafts: number;
+  made: number;
+  /** Une par ligne saisie, dans le même ordre. */
+  lines: CustomLineResult[];
+  resources: number | null;
+  fees: number;
+  /** Ressources + frais (null s'il manque un prix). */
+  cost: number | null;
+  market: Quote | null;
+  unit: number | null;
+  own: boolean;
+  /** Revente après taxe de toute la production. */
+  revenue: number | null;
+  profit: number | null;
+  roi: number | null;
+  perUnit: number | null;
+  /** Prix de vente unitaire (avant taxe) à partir duquel le craft ne perd rien. */
+  breakEven: number | null;
+}
+
+const positive = (n: number | null | undefined) => (n != null && Number.isFinite(n) && n > 0 ? n : 0);
+
+export function customCraftCalc(c: CustomCraft, prices: PriceMap, o: TradeOptions): CustomResult {
+  const units = Math.max(1, Math.floor(positive(c.units)));
+  const crafts = Math.max(1, Math.ceil(Math.max(1, Math.floor(positive(c.qty))) / units));
+  const made = crafts * units;
+  const keep = 1 - Math.min(100, positive(c.rrr)) / 100;
+  const lines = c.lines.map((l): CustomLineResult => {
+    const count = positive(l.count);
+    const need = count ? Math.ceil(crafts * count * (l.noReturn ? 1 : keep) - 1e-9) : 0;
+    const market = l.id ? bestBuy(prices[l.id], { noBuy: o.noBuy }) : null;
+    const own = l.price != null && l.price >= 0;
+    const unit = own ? l.price : (market?.value ?? null);
+    return { need, market, unit, own, cost: !need ? 0 : unit != null ? unit * need : null };
+  });
+  const resources = lines.some((l) => l.cost == null) ? null : lines.reduce((sum, l) => sum + (l.cost ?? 0), 0);
+  const fees = positive(c.fee) * crafts;
+  const cost = resources != null ? resources + fees : null;
+  const market = c.id ? bestSell(prices[c.id], { ...o, buyCity: '', sellCity: '', maxAge: null }) : null;
+  const own = c.sell != null && c.sell >= 0;
+  const unit = own ? c.sell : (market?.value ?? null);
+  const keepSale = 1 - Math.min(100, Math.max(0, o.tax)) / 100;
+  const revenue = unit != null ? unit * keepSale * made : null;
+  const profit = cost != null && revenue != null ? revenue - cost : null;
+  return {
+    crafts, made, lines, resources, fees, cost, market, unit, own, revenue, profit,
+    roi: profit != null && cost ? (profit / cost) * 100 : null,
+    perUnit: profit != null ? profit / made : null,
+    breakEven: cost != null && keepSale > 0 ? cost / made / keepSale : null,
+  };
+}
+
 /** Famille d'une recette : « T6_POTION_HEAL@1 » → « HEAL », « T8_MEAL_STEW_AVALON » → « STEW » ;
  *  raffinage et équipement : type du marché (« T4_LEATHER_LEVEL1@1 » → « leather », « T4_MAIN_SWORD » → « swords »). */
 export function familyOf(recipe: Pick<Recipe, 'id' | 'cat'>): string {

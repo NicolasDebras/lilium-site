@@ -2,8 +2,9 @@ import { historyRow, priceRow } from '../../../testing/market';
 import { en } from '../../core/i18n/en';
 import { fr } from '../../core/i18n/fr';
 import {
-  BLACK_MARKET, CATEGORIES, Recipe, activity, busiestCity, calcTrade, classify, deviation, expandItems, familyOf, filterItems,
-  filterRecipes, hoursSince, matchTokens, mergeHistory, mergePrices, rawCost, recipeCalc, sortRows, suspect, taxRate,
+  BLACK_MARKET, CATEGORIES, CustomCraft, Recipe, activity, busiestCity, calcTrade, classify, customCraftCalc, deviation, expandItems,
+  familyOf, filterItems, filterRecipes, hoursSince, matchTokens, mergeHistory, mergePrices, rawCost, recipeCalc, sortRows, suspect,
+  taxRate,
 } from './market-logic';
 
 const NOW = Date.parse('2026-10-23T12:00:00Z');
@@ -144,6 +145,45 @@ describe('market-logic', () => {
     const avalon: Recipe = { ...recipe, r: [['T6_FOXGLOVE', 72], ['QUESTITEM_TOKEN_AVALON', 4, 0]] };
     const lines = recipeCalc(avalon, {}, 12, 53.9, { mode: 'direct', tax: 4, bm: true }).lines;
     expect(lines.map((l) => [l.need, l.noReturn])).toEqual([[Math.ceil(3 * 72 * 0.461), false], [12, true]]);
+  });
+
+  it('mon craft : prix saisis ou du marché, frais d’atelier, revente, marge et seuil de rentabilité', () => {
+    const prices = mergePrices({}, ['T6_2H_BOW', 'T6_PLANKS'], [
+      priceRow('T6_PLANKS', 'Lymhurst', 300, 0), priceRow('T6_PLANKS', 'Martlock', 280, 0), priceRow('T6_2H_BOW', 'Caerleon', 0, 30000),
+    ], 1);
+    const o = { mode: 'direct' as const, tax: 4, bm: true };
+    const craft: CustomCraft = {
+      id: 'T6_2H_BOW', name: 'Arc', units: 1, qty: 10, rrr: 15.2, fee: 500, sell: null,
+      lines: [
+        { id: 'T6_PLANKS', name: 'Planches', count: 32, price: null, noReturn: false },
+        { id: '', name: 'Cuir maison', count: 4, price: 0, noReturn: true },
+        { id: '', name: '', count: null, price: null, noReturn: false },   // ligne vide : ignorée
+      ],
+    };
+    const res = customCraftCalc(craft, prices, o);
+    expect([res.crafts, res.made]).toEqual([10, 10]);
+    expect(res.lines.map((l) => l.need)).toEqual([Math.ceil(10 * 32 * 0.848), 40, 0]);
+    expect(res.lines[0]).toMatchObject({ unit: 280, own: false, market: { city: 'Martlock' } });
+    expect(res.lines[1]).toMatchObject({ unit: 0, own: true, cost: 0 });
+    const cost = Math.ceil(10 * 32 * 0.848) * 280 + 500 * 10;
+    expect([res.resources, res.fees, res.cost]).toEqual([cost - 5000, 5000, cost]);
+    expect(res.market?.city).toBe('Caerleon');
+    expect(res.revenue).toBeCloseTo(30000 * 0.96 * 10);
+    expect(res.profit).toBeCloseTo(30000 * 0.96 * 10 - cost);
+    expect(res.perUnit).toBeCloseTo((30000 * 0.96 * 10 - cost) / 10);
+    expect(res.breakEven).toBeCloseTo(cost / 10 / 0.96);
+    // ville exclue de l'achat des matériaux : prix du marché pris ailleurs
+    expect(customCraftCalc(craft, prices, { ...o, noBuy: ['Martlock'] }).lines[0]).toMatchObject({ unit: 300, market: { city: 'Lymhurst' } });
+    // prix de vente saisi, plusieurs unités par fabrication (quantité arrondie à la fabrication supérieure)
+    const own = customCraftCalc({ ...craft, units: 5, qty: 12, sell: 1000 }, prices, o);
+    expect([own.crafts, own.made, own.unit, own.own]).toEqual([3, 15, 1000, true]);
+    // prix manquant : pas de coût ni de marge, la revente reste connue
+    const missing = customCraftCalc({ ...craft, lines: [{ id: '', name: 'Rien', count: 2, price: null, noReturn: false }] }, prices, o);
+    expect([missing.cost, missing.profit, missing.breakEven]).toEqual([null, null, null]);
+    expect(missing.revenue).not.toBeNull();
+    // saisies vides ou négatives : 1 fabrication, ni retour ni frais
+    const empty = customCraftCalc({ ...craft, units: null, qty: -3, rrr: null, fee: -10, lines: [] }, {}, o);
+    expect([empty.crafts, empty.made, empty.fees, empty.cost, empty.unit]).toEqual([1, 1, 0, 0, null]);
   });
 
   it('familles et filtre des recettes (nom, ingrédients, exclusion)', () => {
