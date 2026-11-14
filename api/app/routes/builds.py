@@ -5,7 +5,7 @@ from fastapi.responses import Response
 from pydantic import BaseModel, Field, field_validator
 
 from app.catalog import InvalidItems, normalize_items, normalize_spells, validate_build_items, validate_build_spells
-from app.compos import compos_using_build, rename_build
+from app.compos import compos_using_build, rename_build, usage_by_build
 from app.i18n import tr
 from app.images import build_png
 from app.permissions import require_member, require_staff
@@ -75,8 +75,10 @@ def _out(build: dict) -> dict:
 @router.get("")
 async def list_builds(guild_id: int, request: Request, role: str = "", type_acti: str = "",
                       user: dict = Depends(require_member)):
-    builds = await request.app.state.db.get_builds(guild_id, role=role or None, type_acti=type_acti or None)
-    return [_out(b) for b in builds]
+    db = request.app.state.db
+    builds = await db.get_builds(guild_id, role=role or None, type_acti=type_acti or None)
+    usage = usage_by_build(await db.get_custom_templates(guild_id))
+    return [{**_out(b), "used_by": usage.get(b["id"], [])} for b in builds]
 
 
 async def _build_or_404(db, guild_id: int, build_id: int) -> dict:

@@ -240,6 +240,15 @@ def compos_using_build(templates: dict[str, dict], build_id: int) -> list[str]:
     return sorted(name for name, data in templates.items() if build_id in build_ids_of(data))
 
 
+def usage_by_build(templates: dict[str, dict]) -> dict[int, list[str]]:
+    """{id de build: compos qui l'utilisent (triées)} en un seul passage (liste des builds)."""
+    usage: dict[int, list[str]] = {}
+    for name in sorted(templates):
+        for build_id in build_ids_of(templates[name]):
+            usage.setdefault(build_id, []).append(name)
+    return usage
+
+
 def rename_build(data: dict, build_id: int, new_name: str, names: dict[int, str] | None = None) -> dict:
     """Le hint affiché dans l'embed de /acti = nom du build (« Ardent / Aria » pour une ligne à
     plusieurs builds, `names` = {id: nom} des builds du serveur) : on le suit quand le build est renommé.

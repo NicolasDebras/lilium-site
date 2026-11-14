@@ -79,7 +79,9 @@ import { roleColor } from '../../shared/roles';
             <h3>{{ t().builds.usedIn }}</h3>
             @if (b.used_by.length) {
               <ul>
-                @for (c of b.used_by; track c) { <li><span class="badge">{{ c }}</span></li> }
+                @for (c of b.used_by; track c) {
+                  <li><a class="badge compo-link" [routerLink]="['/g', guildId(), 'compos']" [queryParams]="{ open: c }">{{ c }}</a></li>
+                }
               </ul>
             } @else {
               <p class="muted">{{ t().builds.noCompo }}</p>

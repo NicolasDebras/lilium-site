@@ -10,15 +10,15 @@ import { CompoForm } from './compo-form';
 
 const BUILDS: Build[] = [
   { id: 12, name: 'Tank Masse', role: 'TANK', type_acti: 'PVP', weapon: '', spells: {},
-    items: { mainhand: ['MAIN_SWORD'] }, created_by_name: 'Lily' },
+    items: { mainhand: ['MAIN_SWORD'] }, created_by_name: 'Lily', used_by: [] },
   { id: 13, name: 'Tank Bouclier', role: 'TANK', type_acti: 'PVP', weapon: '', spells: {},
-    items: {}, created_by_name: 'Lily' },
+    items: {}, created_by_name: 'Lily', used_by: [] },
   { id: 15, name: 'Heal Sacré', role: 'HEAL', type_acti: 'PVP', weapon: '', spells: {},
-    items: { mainhand: ['2H_HOLYSTAFF'] }, created_by_name: 'Lily' },
+    items: { mainhand: ['2H_HOLYSTAFF'] }, created_by_name: 'Lily', used_by: [] },
 ];
 
-/** `edited` : réponse de l'API pour la compo ouverte en édition (avec `name`). */
-async function render(name?: string, edited?: object) {
+/** `edited` : réponse de l'API pour la compo ouverte en édition (avec `name`) ou dupliquée (`from`). */
+async function render(name?: string, edited?: object, from?: string) {
   TestBed.configureTestingModule({
     imports: [CompoForm],
     providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting(), fakeAuth({ levels: { '111': 'staff' } })],
@@ -26,12 +26,14 @@ async function render(name?: string, edited?: object) {
   const fixture = TestBed.createComponent(CompoForm);
   fixture.componentRef.setInput('guildId', '111');
   if (name) fixture.componentRef.setInput('name', name);
+  if (from) fixture.componentRef.setInput('from', from);
   fixture.detectChanges();
   const http = TestBed.inject(HttpTestingController);
   http.expectOne('/api/guilds/111/roles').flush([{ name: 'TANK', emoji: '🛡️' }, { name: 'HEAL', emoji: '💚' }]);
   http.expectOne((r) => r.url === '/api/guilds/111/builds').flush(BUILDS);
   http.expectOne('/api/items').flush(TEST_ITEMS);
-  if (name) http.expectOne(`/api/guilds/111/compos/${name}`).flush(edited ?? {});
+  const loaded = name ?? from;
+  if (loaded) http.expectOne(`/api/guilds/111/compos/${loaded}`).flush(edited ?? {});
   const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
   await fixture.whenStable();
   return { fixture, http, navigate, cmp: fixture.componentInstance, el: fixture.nativeElement as HTMLElement };
@@ -44,11 +46,27 @@ describe('CompoForm', () => {
     expect(el.querySelectorAll('.slot[data-party="pf2"]').length).toBe(0);
   });
 
-  it('le sélecteur propose les builds groupés par rôle + « sans build »', async () => {
-    const { el } = await render();
-    const groups = [...el.querySelectorAll('select.source optgroup')].map((g) => g.getAttribute('label'));
-    expect(groups).toEqual(['TANK', 'HEAL']);
-    expect(el.querySelector('select.source')?.textContent).toContain('Sans build');
+  it('le sélecteur (avec recherche) propose les builds rangés par rôle + « sans build »', async () => {
+    const { fixture, cmp, el } = await render();
+    el.querySelector<HTMLButtonElement>('app-build-picker.source .trigger')!.click();
+    fixture.detectChanges();
+    const names = [...el.querySelectorAll('.panel .opt-name')].map((n) => n.textContent);
+    expect(names).toEqual(['Tank Masse', 'Tank Bouclier', 'Heal Sacré']);
+    const free = [...el.querySelectorAll<HTMLButtonElement>('.panel button')].find((b) => b.textContent?.includes('Sans build'))!;
+    free.click();
+    fixture.detectChanges();
+    expect(cmp['model']().pf1[0].free).toBe(true);
+    expect(el.querySelector('.panel')).toBeNull();
+  });
+
+  it('choisir dans le sélecteur fixe le build de la ligne', async () => {
+    const { fixture, cmp, el } = await render();
+    el.querySelector<HTMLButtonElement>('app-build-picker.source .trigger')!.click();
+    fixture.detectChanges();
+    [...el.querySelectorAll<HTMLButtonElement>('.panel .option')].find((b) => b.textContent?.includes('Heal Sacré'))!.click();
+    fixture.detectChanges();
+    expect(cmp['model']().pf1[0]).toMatchObject({ build_id: 15, role: 'HEAL' });
+    expect(el.querySelector('app-build-picker.source .trigger-name')?.textContent).toBe('Heal Sacré');
   });
 
   it('choisir un build fixe le rôle et affiche son équipement', async () => {
@@ -68,9 +86,11 @@ describe('CompoForm', () => {
     expect(cmp.isBuildTaken('pf1', 12, 1)).toBe(true);
     expect(cmp.isBuildTaken('pf1', 12, 0)).toBe(false);
     expect(cmp.isBuildTaken('pf2', 12, 0)).toBe(false);
-    const options = [...el.querySelectorAll('select.source')[1].querySelectorAll<HTMLOptionElement>('option')];
-    expect(options.find((o) => o.value === '12')?.disabled).toBe(true);    // Tank Masse déjà là
-    expect(options.find((o) => o.value === '13')?.disabled).toBe(false);   // l'autre tank : OK
+    el.querySelectorAll<HTMLButtonElement>('app-build-picker.source .trigger')[1].click();
+    fixture.detectChanges();
+    const options = [...el.querySelectorAll<HTMLButtonElement>('.panel .option')];
+    expect(options.find((o) => o.textContent?.includes('Tank Masse'))?.disabled).toBe(true);      // déjà là
+    expect(options.find((o) => o.textContent?.includes('Tank Bouclier'))?.disabled).toBe(false);  // l'autre tank : OK
   });
 
   it('les lignes se trient toutes seules par rôle (TANK, HEAL, DPS…)', async () => {
@@ -264,6 +284,24 @@ describe('CompoForm', () => {
     expect(req.request.body.total).toBeUndefined();
     req.flush({ name: 'ZvZ Soir' });
     await done;
+  });
+
+  it('duplication (?from=ZvZ) : préremplie sous « ZvZ (copie) », enregistrée en nouvelle compo (POST)', async () => {
+    const { fixture, cmp, http, el, navigate } = await render(undefined, {
+      name: 'ZvZ', description: 'Soir', type_acti: 'PVP', image: '',
+      pf1: [{ build_id: 12, alt_build_ids: [13], role: 'TANK', count: 2, weapon: '' }], pf2: [], total: 2, custom: true,
+    }, 'ZvZ');
+    fixture.detectChanges();
+    expect(el.querySelector('h1')?.textContent).toBe('Copie de « ZvZ »');
+    expect(el.querySelector<HTMLInputElement>('#name')!.value).toBe('ZvZ (copie)');
+    const done = cmp.save();
+    const req = http.expectOne('/api/guilds/111/compos');
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toMatchObject({ name: 'ZvZ (copie)', description: 'Soir' });
+    expect(req.request.body.pf1[0]).toMatchObject({ build_id: 12, alt_build_ids: [13], count: 2 });
+    req.flush({ name: 'ZvZ (copie)' });
+    await done;
+    expect(navigate).toHaveBeenCalledWith(['/g', '111', 'compos']);
   });
 
   it('affiche le message d’erreur de l’API', async () => {

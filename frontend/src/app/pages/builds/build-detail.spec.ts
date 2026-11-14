@@ -4,7 +4,7 @@ import { TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 
 import { AuthService } from '../../core/auth.service';
-import { BuildDetail, Level } from '../../core/models';
+import { Build, Level } from '../../core/models';
 import { TEST_ITEMS, TEST_SPELLS } from '../../../testing/items';
 import { BuildDetailPage } from './build-detail';
 
@@ -14,13 +14,13 @@ async function settle(fixture: { whenStable(): Promise<unknown>; detectChanges()
   await fixture.whenStable();
 }
 
-const BUILD: BuildDetail = {
+const BUILD: Build = {
   id: 7, name: 'Tank Masse', role: 'TANK', type_acti: 'PVP', weapon: '1H Masse', spells: {},
   items: { mainhand: ['MAIN_MACE'] }, created_by_name: 'Coskko', used_by: ['ZvZ', 'Statik'],
 };
 
 describe('BuildDetailPage (build partageable)', () => {
-  async function render(level: Level, build: BuildDetail = BUILD) {
+  async function render(level: Level, build: Build = BUILD) {
     TestBed.configureTestingModule({
       imports: [BuildDetailPage],
       providers: [
@@ -62,7 +62,10 @@ describe('BuildDetailPage (build partageable)', () => {
     const { el } = await render('member');
     expect(el.querySelector('h1')?.textContent).toBe('Tank Masse');
     expect(el.querySelector('.sk')).toBeNull();
-    expect([...el.querySelectorAll('.used .badge')].map((b) => b.textContent)).toEqual(['ZvZ', 'Statik']);
+    const used = [...el.querySelectorAll<HTMLAnchorElement>('.used a.badge')];
+    expect(used.map((b) => b.textContent)).toEqual(['ZvZ', 'Statik']);
+    // Chaque compo ouvre la liste des compos, dépliée sur elle
+    expect(used[0].getAttribute('href')).toBe('/g/111/compos?open=ZvZ');
     expect(el.querySelector('.preview img')?.getAttribute('src')).toBe('/api/guilds/111/builds/7/image.png');
     expect(el.querySelector('a[download]')?.getAttribute('download')).toBe('build-Tank-Masse.png');
   });

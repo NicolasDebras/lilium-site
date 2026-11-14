@@ -89,14 +89,11 @@ export interface Build {
   items: BuildItems;
   spells: BuildSpells;
   created_by_name: string;
-}
-
-export type BuildInput = Omit<Build, 'id' | 'created_by_name'>;
-
-/** GET /builds/{id} — le build + les compos du serveur qui l'utilisent. */
-export interface BuildDetail extends Build {
+  /** Compos (personnalisées) du serveur qui utilisent ce build, triées. Lecture seule. */
   used_by: string[];
 }
+
+export type BuildInput = Omit<Build, 'id' | 'created_by_name' | 'used_by'>;
 
 export interface SlotRow {
   /** Ligne liée à un build : le rôle et l'arme viennent du build. null = ligne libre. */

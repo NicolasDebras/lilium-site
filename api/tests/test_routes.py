@@ -309,6 +309,14 @@ def test_delete_build_used_by_compo_is_409(login):
     assert "ZvZ" in r.json()["detail"]
 
 
+def test_build_list_says_which_compos_use_each_build(login):
+    c = login(STAFF_ID)
+    tank, free = _make_build(c, "Tank Masse", "TANK"), _make_build(c, "Libre", "HEAL")
+    c.post(f"/api/guilds/{GUILD}/compos", json={**COMPO, "pf1": [{"build_id": tank, "count": 1}]})
+    used = {b["id"]: b["used_by"] for b in c.get(f"/api/guilds/{GUILD}/builds").json()}
+    assert used == {tank: ["ZvZ"], free: []}
+
+
 def test_renaming_build_updates_compo_hint(login, fake_db):
     c = login(STAFF_ID)
     tank = _make_build(c, "Tank Masse", "TANK")

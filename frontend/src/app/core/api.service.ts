@@ -3,7 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import {
-  ActivityStats, AdminOverview, Bal, BalAction, BalOperationsPage, BalPeriod, BalPlayer, BalStats, BotErrorDetail, BotErrorsPage, Build, BuildDetail, BuildInput,
+  ActivityStats, AdminOverview, Bal, BalAction, BalOperationsPage, BalPeriod, BalPlayer, BalStats, BotErrorDetail, BotErrorsPage, Build, BuildInput,
   Compo, CompoInput, CompoList, MyBalHistory, PayoutAdjustBody, PayoutAdjustResult, PayoutsWeek, PublicComposPage, RoleInfo,
 } from './models';
 import { dict } from './i18n/i18n';
@@ -41,8 +41,8 @@ export class ApiService {
     return this.http.get<Build>(`${this.g(guildId)}/builds/${id}`);
   }
 
-  buildDetail(guildId: string, id: number): Observable<BuildDetail> {
-    return this.http.get<BuildDetail>(`${this.g(guildId)}/builds/${id}`);
+  buildDetail(guildId: string, id: number): Observable<Build> {
+    return this.http.get<Build>(`${this.g(guildId)}/builds/${id}`);
   }
 
   /** Image PNG du build (cookie de session, même domaine) : utilisable directement en <img src>. */

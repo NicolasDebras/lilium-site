@@ -32,7 +32,7 @@ function emptyBuild(): BuildInput {
 }
 
 /** Build de l'API → valeurs du formulaire (sans id ni auteur, équipement normalisé). */
-function toInput({ id: _id, created_by_name: _by, ...rest }: Build): BuildInput {
+function toInput({ id: _id, created_by_name: _by, used_by: _used, ...rest }: Build): BuildInput {
   return { ...rest, items: normalizeItems(rest.items), spells: withoutFixedSpells(rest.spells ?? {}) };
 }
 

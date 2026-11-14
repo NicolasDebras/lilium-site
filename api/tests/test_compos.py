@@ -2,6 +2,7 @@ import pytest
 
 from app.compos import (
     InvalidCompo, build_ids_of, build_template_entry, compos_using_build, rename_build, template_to_compo,
+    usage_by_build,
 )
 
 BUILDS = {
@@ -144,6 +145,8 @@ def test_compos_using_build():
     assert compos_using_build(templates, 12) == ["Donjon", "ZvZ"]
     assert build_ids_of(templates["Autre"]) == {15}
     assert compos_using_build(templates, 999) == []
+    assert usage_by_build(templates) == {12: ["Donjon", "ZvZ"], 15: ["Autre"]}
+    assert usage_by_build({}) == {}
 
 
 def test_rename_build_updates_hint_in_both_parties():

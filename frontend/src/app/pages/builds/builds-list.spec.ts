@@ -9,15 +9,15 @@ import { Build, Level } from '../../core/models';
 import { BuildsList } from './builds-list';
 
 const BUILDS: Build[] = [
+  { id: 2, name: 'Heal Sancti', role: 'HEAL', type_acti: 'PVE', weapon: '', spells: {},
+    items: {}, created_by_name: 'Lily', used_by: [] },
   { id: 1, name: 'Tank Masse', role: 'TANK', type_acti: 'PVP', weapon: '1H Masse', spells: {},
     items: { mainhand: ['T8_MAIN_SWORD@1'], offhand: ['OFF_SHIELD'], head: ['HEAD_PLATE_SET1', 'HEAD_CLOTH_SET2'], cape: ['*'],
              swaps: ['MEAL_STEW'] },
-    created_by_name: 'Lily' },
-  { id: 2, name: 'Heal Sancti', role: 'HEAL', type_acti: 'PVE', weapon: '', spells: {},
-    items: {}, created_by_name: 'Lily' },
+    created_by_name: 'Lily', used_by: ['Statik', 'ZvZ'] },
 ];
 
-async function render(level: Level) {
+async function render(level: Level, builds: Build[] = BUILDS) {
   TestBed.configureTestingModule({
     imports: [BuildsList],
     providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting(), fakeAuth({ levels: { '111': level } })],
@@ -29,66 +29,79 @@ async function render(level: Level) {
   const http = TestBed.inject(HttpTestingController);
   http.expectOne('/api/items').flush(TEST_ITEMS);
   http.expectOne('/api/guilds/111/roles').flush([{ name: 'TANK', emoji: '🛡️' }, { name: 'HEAL', emoji: '💚' }]);
-  http.expectOne((r) => r.url === '/api/guilds/111/builds').flush(BUILDS);
+  http.expectOne((r) => r.url === '/api/guilds/111/builds').flush(builds);
   await fixture.whenStable();
   return { fixture, http, el: fixture.nativeElement as HTMLElement };
 }
 
+function names(el: HTMLElement) {
+  return [...el.querySelectorAll('li.build .name')].map((n) => n.textContent?.trim());
+}
+
 describe('BuildsList', () => {
-  it('affiche les builds avec leur rôle', async () => {
+  it('une ligne par build, rangées par rôle (TANK avant HEAL) sous un titre avec le nombre', async () => {
     const { el } = await render('member');
-    const cards = el.querySelectorAll('article.build');
-    expect(cards.length).toBe(2);
-    expect(cards[0].textContent).toContain('Tank Masse');
-    expect(cards[0].textContent).toContain('🛡️ TANK');
+    const groups = [...el.querySelectorAll('section.group')];
+    expect(groups.map((g) => [g.querySelector('.group-head .role-tag')?.textContent?.trim(), g.querySelector('.group-count')?.textContent]))
+      .toEqual([['🛡️ TANK', '1'], ['💚 HEAL', '1']]);
+    expect(names(el)).toEqual(['Tank Masse', 'Heal Sancti']);
+    expect(el.querySelector('li.build .name')?.getAttribute('href')).toBe('/g/111/builds/1');
+    expect(el.querySelector('li.build .weapon')?.textContent).toContain('1H Masse');
   });
 
-  it('affiche l’équipement en mini-inventaire 3×3, disposé comme en jeu', async () => {
+  it('équipement en rangée compacte (pas de poupée), sans les swaps', async () => {
     const { el } = await render('member');
-    const [first, second] = el.querySelectorAll('article.build');
-    const cells = first.querySelectorAll('.doll .cell');
-    expect(cells.length).toBe(9);
-    // ligne 1 : (vide) tête cape · ligne 2 : arme armure main gauche
-    const icons = [...first.querySelectorAll<HTMLImageElement>('.doll img')].map((i) => i.alt);
-    expect(icons).toEqual(['Casque de soldat', 'Épée large', 'Bouclier']);
-    expect(first.querySelector('.doll img')?.getAttribute('src')).toContain('render.albiononline.com');
-    expect(first.querySelectorAll('.doll .unset').length).toBe(4);   // armure, potion, bottes, bouffe
-    expect(first.querySelector('.doll .empty')).toBeNull();          // classe globale : étirerait la grille
-    expect(first.querySelector('.more')?.textContent).toContain('+1');
-    expect(first.querySelector('.free')).not.toBeNull();
-    expect(first.querySelector('.gear-names')?.textContent).toContain("Casque de soldat ou Capuchon d'ecclésiastique");
-    expect(first.querySelector('.gear-names')?.textContent).toContain('Cape au choix');
-    expect(first.querySelector('.gear-names')?.textContent).toContain('Épée large 8.1');   // tier imposé
-    expect(first.querySelector('.doll app-tier-badge:not(.hidden)')?.textContent?.trim()).toBe('8.1');
-    expect(second.querySelector('.doll')).toBeNull();   // build sans équipement : pas d'inventaire
+    const [tank, heal] = el.querySelectorAll('li.build');
+    expect(tank.querySelector('.doll')).toBeNull();
+    const icons = [...tank.querySelectorAll<HTMLImageElement>('app-gear .gear img')].map((i) => i.alt);
+    expect(icons).toEqual(['Épée large', 'Bouclier', 'Casque de soldat']);
+    expect(tank.querySelector('app-gear-swaps')).toBeNull();
+    expect(heal.querySelector('app-gear .gear')).toBeNull();   // build sans équipement
   });
 
-  it('swaps : rangée d’icônes sous l’inventaire, hors du texte, mais trouvés par la recherche', async () => {
+  it('dit dans quelles compos chaque build est utilisé, avec un lien vers chacune', async () => {
+    const { el } = await render('member');
+    const [tank, heal] = el.querySelectorAll('li.build');
+    expect(tank.querySelector('.used summary')?.textContent).toContain('2 compos');
+    const links = [...tank.querySelectorAll<HTMLAnchorElement>('.used-list a')];
+    expect(links.map((a) => a.textContent)).toEqual(['Statik', 'ZvZ']);
+    expect(links[1].getAttribute('href')).toBe('/g/111/compos?open=ZvZ');
+    expect(heal.querySelector('.unused')?.textContent).toContain('Aucune compo');
+  });
+
+  it('filtre « Inutilisés » : seulement les builds sans compo', async () => {
     const { fixture, el } = await render('member');
-    const [first, second] = el.querySelectorAll('article.build');
-    expect([...first.querySelectorAll<HTMLImageElement>('app-gear-swaps img')].map((i) => i.alt)).toEqual(['Ragoût de bœuf']);
-    expect(first.querySelector('.doll app-gear-swaps, .doll ~ app-gear-swaps')).toBeNull();   // pas collés à l'inventaire
-    expect(first.querySelector('.gear-names')?.textContent).not.toContain('Ragoût');
-    expect(second.querySelector('app-gear-swaps img')).toBeNull();
+    el.querySelector<HTMLButtonElement>('.unused-chip')!.click();
+    fixture.detectChanges();
+    expect(names(el)).toEqual(['Heal Sancti']);
+    expect(el.querySelector('.unused-chip')?.getAttribute('aria-pressed')).toBe('true');
+  });
 
-    const input = el.querySelector<HTMLInputElement>('input.search')!;
-    input.value = 'ragout';
-    input.dispatchEvent(new Event('input'));
-    await fixture.whenStable();
-    expect([...el.querySelectorAll('article.build h2')].map((h) => h.textContent?.trim())).toEqual(['Tank Masse']);
+  it('replier un rôle masque ses builds', async () => {
+    const { fixture, el } = await render('member');
+    const toggle = el.querySelector<HTMLButtonElement>('.group-toggle')!;
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+    toggle.click();
+    fixture.detectChanges();
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    expect(names(el)).toEqual(['Heal Sancti']);
   });
 
   it('un membre ne voit pas les boutons d’édition', async () => {
     const { el } = await render('member');
     expect(el.textContent).not.toContain('Nouveau build');
-    expect(el.textContent).not.toContain('Modifier');
-    expect(el.textContent).not.toContain('Supprimer');
+    expect(el.querySelector('li.build .actions')).toBeNull();
   });
 
-  it('le staff voit les boutons d’édition', async () => {
+  it('le staff modifie ; supprimer est désactivé tant que le build est dans une compo', async () => {
     const { el } = await render('staff');
     expect(el.textContent).toContain('Nouveau build');
-    expect(el.querySelectorAll('article.build .btn-danger').length).toBe(2);
+    const [tank, heal] = el.querySelectorAll('li.build');
+    expect(tank.querySelector('a.btn-icon')?.getAttribute('href')).toBe('/g/111/builds/1/edit');
+    const usedDelete = tank.querySelector<HTMLButtonElement>('.btn-danger')!;
+    expect(usedDelete.disabled).toBe(true);
+    expect(usedDelete.title).toContain('Statik, ZvZ');
+    expect(heal.querySelector<HTMLButtonElement>('.btn-danger')!.disabled).toBe(false);
   });
 
   it('un admin a aussi les droits staff', async () => {
@@ -105,9 +118,10 @@ describe('BuildsList', () => {
     fixture.detectChanges();
     let req = http.expectOne((r) => r.url === '/api/guilds/111/builds');
     expect(req.request.params.get('role')).toBe('HEAL');
-    req.flush([BUILDS[1]]);
+    req.flush([BUILDS[0]]);
     await fixture.whenStable();
     expect(el.querySelector('.chips .chip.on')?.textContent?.trim()).toBe('💚 HEAL');
+    expect(names(el)).toEqual(['Heal Sancti']);
 
     el.querySelectorAll<HTMLButtonElement>('.segmented button')[2].click();   // PVE
     fixture.detectChanges();
@@ -116,15 +130,14 @@ describe('BuildsList', () => {
     req.flush([]);
   });
 
-  it('changer le filtre de rôle recharge automatiquement avec le paramètre', async () => {
-    const { fixture, http } = await render('member');
-    fixture.componentInstance['role'].set('HEAL');
-    fixture.detectChanges();   // le filtre suffit : la ressource se recharge seule
-    const req = http.expectOne((r) => r.url === '/api/guilds/111/builds');
-    expect(req.request.params.get('role')).toBe('HEAL');
-    req.flush([BUILDS[1]]);
-    await fixture.whenStable();
-    expect((fixture.nativeElement as HTMLElement).querySelectorAll('article.build').length).toBe(1);
+  it('beaucoup de builds : tous affichés, sans pagination', async () => {
+    const many: Build[] = Array.from({ length: 30 }, (_, i) => ({
+      ...BUILDS[0], id: 100 + i, name: `Build ${i + 1}`, role: i % 2 ? 'HEAL' : 'TANK',
+    }));
+    const { el } = await render('member', many);
+    expect(names(el)).toHaveLength(30);
+    expect(el.querySelector('app-pager')).toBeNull();
+    expect(el.querySelector('.count')?.textContent).toContain('30 builds');
   });
 
   describe('recherche', () => {
@@ -141,10 +154,6 @@ describe('BuildsList', () => {
       };
     }
 
-    function names(el: HTMLElement) {
-      return [...el.querySelectorAll('article.build h2')].map((h) => h.textContent?.trim());
-    }
-
     it('filtre par nom, sans tenir compte des majuscules ni des accents', async () => {
       const search = await searcher();
       expect(await search('sancti')).toEqual(['Heal Sancti']);
@@ -152,10 +161,11 @@ describe('BuildsList', () => {
       expect(await search('')).toEqual(['Tank Masse', 'Heal Sancti']);
     });
 
-    it('trouve un build par un objet de son équipement ou son rôle', async () => {
+    it('trouve un build par un objet de son équipement, ses swaps ou son rôle', async () => {
       const search = await searcher();
       expect(await search('bouclier')).toEqual(['Tank Masse']);
       expect(await search('ecclesiastique')).toEqual(['Tank Masse']);
+      expect(await search('ragout')).toEqual(['Tank Masse']);
       expect(await search('heal')).toEqual(['Heal Sancti']);
     });
 
@@ -174,67 +184,15 @@ describe('BuildsList', () => {
     });
   });
 
-  describe('pagination', () => {
-    const MANY: Build[] = Array.from({ length: 30 }, (_, i) => ({
-      ...BUILDS[1], id: 100 + i, name: `Build ${i + 1}`, role: i % 2 ? 'HEAL' : 'TANK',
-    }));
-
-    async function renderMany() {
-      TestBed.configureTestingModule({
-        imports: [BuildsList],
-        providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting(), fakeAuth({ levels: { '111': 'member' } })],
-      });
-      const fixture = TestBed.createComponent(BuildsList);
-      fixture.componentRef.setInput('guildId', '111');
-      fixture.detectChanges();
-      const http = TestBed.inject(HttpTestingController);
-      http.expectOne('/api/items').flush(TEST_ITEMS);
-      http.expectOne('/api/guilds/111/roles').flush([]);
-      http.expectOne((r) => r.url === '/api/guilds/111/builds').flush(MANY);
-      await fixture.whenStable();
-      const el = fixture.nativeElement as HTMLElement;
-      const shown = () => [...el.querySelectorAll('article.build h2')].map((h) => h.textContent?.trim());
-      return { fixture, el, shown };
-    }
-
-    it('12 builds par page, avec le pager', async () => {
-      const { el, shown } = await renderMany();
-      expect(shown().length).toBe(12);
-      expect(shown()[0]).toBe('Build 1');
-      expect(el.querySelector('app-pager .range')?.textContent?.trim()).toBe('1–12 sur 30 builds');
-    });
-
-    it('changer de page affiche la suite', async () => {
-      const { fixture, el, shown } = await renderMany();
-      el.querySelectorAll<HTMLButtonElement>('app-pager .num')[2].click();
-      fixture.detectChanges();
-      expect(shown()).toEqual(['Build 25', 'Build 26', 'Build 27', 'Build 28', 'Build 29', 'Build 30']);
-    });
-
-    it('une recherche revient à la page 1 et le pager suit le nombre de résultats', async () => {
-      const { fixture, el, shown } = await renderMany();
-      el.querySelectorAll<HTMLButtonElement>('app-pager .num')[1].click();
-      fixture.detectChanges();
-      expect(shown()[0]).toBe('Build 13');
-
-      const input = el.querySelector<HTMLInputElement>('input.search')!;
-      input.value = 'build 2';
-      input.dispatchEvent(new Event('input'));
-      fixture.detectChanges();
-      expect(shown()[0]).toBe('Build 2');
-      expect(el.querySelector('app-pager .pager')).toBeNull();   // 11 résultats → une seule page
-    });
-  });
-
   it('supprimer retire le build après confirmation', async () => {
     const { fixture, http, el } = await render('staff');
     vi.spyOn(window, 'confirm').mockReturnValue(true);
     const done = fixture.componentInstance.remove(BUILDS[0]);
-    const req = http.expectOne('/api/guilds/111/builds/1');
+    const req = http.expectOne('/api/guilds/111/builds/2');
     expect(req.request.method).toBe('DELETE');
     req.flush(null, { status: 204, statusText: 'No Content' });
     await done;
     await fixture.whenStable();
-    expect(el.querySelectorAll('article.build').length).toBe(1);
+    expect(names(el)).toEqual(['Tank Masse']);
   });
 });

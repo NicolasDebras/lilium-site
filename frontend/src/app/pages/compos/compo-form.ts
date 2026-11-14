@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, DestroyRef, computed, inject, input, linkedSignal, signal } from '@angular/core';
+import { Component, DestroyRef, computed, inject, input, linkedSignal, signal, untracked } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { FormField, applyEach, form, max, maxLength, min, required, requiredError, validate } from '@angular/forms/signals';
 import { Router, RouterLink } from '@angular/router';
@@ -10,6 +10,7 @@ import { I18nService, dict } from '../../core/i18n/i18n';
 import { ItemsService } from '../../core/items.service';
 import { Build, Compo, CompoInput, SlotRow } from '../../core/models';
 import { ToastService } from '../../core/toast.service';
+import { BuildChoice, BuildPicker } from '../../shared/build-picker';
 import { Gear } from '../../shared/gear';
 import { sortByRole } from '../../shared/roles';
 import { Icon } from '../../shared/icon';
@@ -24,6 +25,17 @@ const FREE = 'free';
 
 /** Ligne du formulaire : `free` (côté écran seulement) = l'utilisateur a choisi « sans build ». */
 type Row = SlotRow & { free?: boolean; share: number | null };
+
+/** Ce que le template affiche d'une ligne, précalculé (pas de méthode qui recrée un tableau au rendu). */
+interface RowView {
+  choice: BuildChoice | null;
+  /** Builds grisés dans le sélecteur principal (déjà dans la party). */
+  taken: ReadonlySet<number>;
+  /** Idem pour « + ou un autre build » : le build principal en plus. */
+  altTaken: ReadonlySet<number>;
+  alts: Build[];
+  canAddAlt: boolean;
+}
 
 type CompoModel = Omit<CompoInput, 'custom_shares' | 'accept_leachers' | 'leacher_count' | 'pf1' | 'pf2'> & {
   custom_shares: boolean; accept_leachers: boolean; leacher_count: number | null; pf1: Row[]; pf2: Row[];
@@ -59,11 +71,11 @@ function toModel({ total: _t, custom: _c, ...compo }: Compo): CompoModel {
 
 @Component({
   selector: 'app-compo-form',
-  imports: [FormField, RouterLink, Gear, Icon, ImageShare, RoleBar],
+  imports: [FormField, RouterLink, BuildPicker, Gear, Icon, ImageShare, RoleBar],
   template: `
     <div class="page-head">
       <div>
-        <h1>{{ name() ? t().compos.editTitle(name()!) : t().compos.new }}</h1>
+        <h1>{{ name() ? t().compos.editTitle(name()!) : from() ? t().compos.duplicateTitle(from()!) : t().compos.new }}</h1>
         <p class="subtitle">{{ t().compos.formSubtitle }}</p>
       </div>
     </div>
@@ -135,22 +147,10 @@ function toModel({ total: _t, custom: _c, ...compo }: Compo): CompoModel {
           }
           @for (field of form[pf.key]; track $index; let i = $index) {
             @let row = field().value();
-            @let source = sourceOf(row);
+            @let view = rowViews()[pf.key][i];
             <div class="slot" [class.with-shares]="model().custom_shares" [attr.data-party]="pf.key">
-              <select class="select source" [attr.aria-label]="t().compos.colBuild" (change)="setSource(pf.key, i, $any($event.target).value)">
-                <option [value]="pick" disabled [selected]="source === pick">{{ t().compos.pickBuild }}</option>
-                @for (group of buildGroups(); track group.role) {
-                  <optgroup [label]="group.role">
-                    @for (b of group.builds; track b.id) {
-                      @let taken = isBuildTaken(pf.key, b.id, i);
-                      <option [value]="'' + b.id" [disabled]="taken" [selected]="source === '' + b.id">
-                        {{ b.name }}{{ taken ? t().compos.taken : '' }}
-                      </option>
-                    }
-                  </optgroup>
-                }
-                <option [value]="free" [selected]="source === free">{{ t().compos.noBuild }}</option>
-              </select>
+              <app-build-picker class="source" [builds]="builds()" [value]="view.choice" [taken]="view.taken"
+                                [role]="row.role" (pick)="setSource(pf.key, i, '' + $event)" />
               <input class="input count" type="number" [attr.aria-label]="t().compos.count" [formField]="field.count" />
               @if (model().custom_shares) {
                 <input class="input share" type="number" step="0.01" [attr.aria-label]="t().compos.sharesAria" [formField]="field.share" />
@@ -164,7 +164,7 @@ function toModel({ total: _t, custom: _c, ...compo }: Compo): CompoModel {
                   <app-gear [items]="b.items" [spells]="b.spells" size="small" />
                 </div>
                 <div class="detail alts">
-                  @for (alt of altsOf(row); track alt.id) {
+                  @for (alt of view.alts; track alt.id) {
                     <span class="alt">
                       <span class="muted">{{ t().compos.or }}</span> <strong>{{ alt.name }}</strong>
                       <app-gear [items]="alt.items" [spells]="alt.spells" size="small" />
@@ -172,14 +172,9 @@ function toModel({ total: _t, custom: _c, ...compo }: Compo): CompoModel {
                               (click)="removeAlt(pf.key, i, alt.id)">✕</button>
                     </span>
                   }
-                  @if ((row.alt_build_ids?.length ?? 0) < maxAlt) {
-                    @let options = altOptions(pf.key, i);
-                    @if (options.length) {
-                      <select class="select alt-add" [attr.aria-label]="t().compos.addAlt" (change)="addAlt(pf.key, i, $any($event.target).value)">
-                        <option value="" selected>{{ t().compos.addAlt }}</option>
-                        @for (o of options; track o.id) { <option [value]="'' + o.id">{{ o.name }}</option> }
-                      </select>
-                    }
+                  @if (view.canAddAlt) {
+                    <app-build-picker class="alt-add" [builds]="builds()" [taken]="view.altTaken" [role]="b.role" [lockRole]="true"
+                                      [allowFree]="false" [placeholder]="t().compos.addAlt" (pick)="addAlt(pf.key, i, '' + $event)" />
                   }
                   @if (row.alt_build_ids?.length) { <p class="faint alt-hint">{{ t().compos.altHint }}</p> }
                 </div>
@@ -270,7 +265,7 @@ function toModel({ total: _t, custom: _c, ...compo }: Compo): CompoModel {
     .detail { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
     .alts { padding-left: 10px; border-left: 2px solid var(--lilac-soft); }
     .alt { display: inline-flex; align-items: center; gap: 6px; font-size: .85rem; }
-    .alt-add { width: auto; padding-block: 4px; font-size: .82rem; }
+    .alt-add { flex: 0 1 240px; font-size: .82rem; }
     .alt-hint { flex-basis: 100%; margin: 0; font-size: .75rem; }
     .free-row .select { width: auto; min-width: 150px; }
     .free-row .input { flex: 1 1 200px; }
@@ -290,17 +285,17 @@ export class CompoForm {
   readonly guildId = input.required<string>();
   /** Présent en édition (/compos/:name/edit), absent en création. */
   readonly name = input<string>();
+  /** Duplication (/compos/new?from=Nom) : formulaire de création prérempli avec cette compo. */
+  readonly from = input<string>();
 
   protected readonly parties: { key: Party }[] = [{ key: 'pf1' }, { key: 'pf2' }];
-  protected readonly pick = PICK;
-  protected readonly free = FREE;
 
   private readonly rolesRes = rxResource({ params: () => this.guildId(), stream: ({ params }) => this.api.roles(params) });
   private readonly buildsRes = rxResource({ params: () => this.guildId(), stream: ({ params }) => this.api.builds(params) });
-  /** Compo éditée (rien à charger en création : la ressource reste inactive). */
+  /** Compo éditée ou dupliquée (rien à charger en création : la ressource reste inactive). */
   private readonly existing = rxResource({
     params: () => {
-      const name = this.name();
+      const name = this.name() ?? this.from();
       return name ? { guildId: this.guildId(), name } : undefined;
     },
     stream: ({ params }) => this.api.compo(params.guildId, params.name),
@@ -309,8 +304,15 @@ export class CompoForm {
   protected readonly roles = computed(() => (this.rolesRes.hasValue() ? this.rolesRes.value() : []));
   protected readonly builds = computed(() => (this.buildsRes.hasValue() ? this.buildsRes.value() : []));
 
-  /** Valeurs du formulaire : une ligne vide en création, la compo une fois chargée en édition. */
-  protected readonly model = linkedSignal<CompoModel>(() => (this.existing.hasValue() ? toModel(this.existing.value()) : emptyCompo()));
+  /** Valeurs du formulaire : une ligne vide en création, la compo une fois chargée en édition,
+   *  sa copie « Nom (copie) » en duplication (enregistrée comme une nouvelle compo). */
+  protected readonly model = linkedSignal<CompoModel>(() => {
+    if (!this.existing.hasValue()) return emptyCompo();
+    const model = toModel(this.existing.value());
+    if (this.name()) return model;
+    // untracked : changer de langue ne doit pas effacer la saisie en cours
+    return { ...model, name: untracked(this.t).compos.copyName(model.name).slice(0, 100) };
+  });
   protected readonly form = form(this.model, (p) => {
     required(p.name);
     validate(p.name, ({ value }) => (value().trim() ? undefined : requiredError()));
@@ -354,11 +356,17 @@ export class CompoForm {
   /** Joueurs par party, en ignorant les lignes sans rôle. */
   protected readonly totals = computed((): Record<Party, number> => ({ pf1: this.total('pf1'), pf2: this.total('pf2') }));
   protected readonly emojiMap = computed(() => Object.fromEntries(this.roles().map((r) => [r.name, r.emoji])));
-  /** Builds regroupés par rôle pour le sélecteur. */
-  protected readonly buildGroups = computed(() => {
-    const groups = new Map<string, Build[]>();
-    for (const b of this.builds()) groups.set(b.role, [...(groups.get(b.role) ?? []), b]);
-    return [...groups].map(([role, builds]) => ({ role, builds }));
+  /** Par ligne : choix du sélecteur, builds grisés (déjà dans la party), builds au choix résolus et si on peut en ajouter. */
+  protected readonly rowViews = computed((): Record<Party, RowView[]> => {
+    const views = (party: Party): RowView[] => this.model()[party].map((row, i) => {
+      const taken = new Set(this.builds().filter((b) => this.isBuildTaken(party, b.id, i)).map((b) => b.id));
+      const source = this.sourceOf(row);
+      const choice: BuildChoice | null = source === FREE ? 'free' : source === PICK ? null : Number(source);
+      const canAddAlt = (row.alt_build_ids?.length ?? 0) < MAX_ALT_BUILDS && this.altOptions(party, i).length > 0;
+      const altTaken = row.build_id != null ? new Set([...taken, row.build_id]) : taken;
+      return { choice, taken, altTaken, alts: this.altsOf(row), canAddAlt };
+    });
+    return { pf1: views('pf1'), pf2: views('pf2') };
   });
 
   buildOf(row: Row): Build | undefined {
