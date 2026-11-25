@@ -533,6 +533,8 @@ export interface CustomCraft {
   rrr: number | null;
   fee: number | null;
   sell: number | null;
+  /** Revente nette totale saisie (remplace le calcul prix × quantité − taxe). */
+  revenue: number | null;
   lines: CustomLine[];
 }
 
@@ -559,8 +561,11 @@ export interface CustomResult {
   market: Quote | null;
   unit: number | null;
   own: boolean;
-  /** Revente après taxe de toute la production. */
+  /** Revente après taxe de toute la production : saisie, sinon calculée. */
   revenue: number | null;
+  /** Revente calculée (prix de vente × quantité − taxe), affichée en indice quand une revente est saisie. */
+  autoRevenue: number | null;
+  ownRevenue: boolean;
   profit: number | null;
   roi: number | null;
   perUnit: number | null;
@@ -590,10 +595,12 @@ export function customCraftCalc(c: CustomCraft, prices: PriceMap, o: TradeOption
   const own = c.sell != null && c.sell >= 0;
   const unit = own ? c.sell : (market?.value ?? null);
   const keepSale = 1 - Math.min(100, Math.max(0, o.tax)) / 100;
-  const revenue = unit != null ? unit * keepSale * made : null;
+  const autoRevenue = unit != null ? unit * keepSale * made : null;
+  const ownRevenue = c.revenue != null && Number.isFinite(c.revenue) && c.revenue >= 0;
+  const revenue = ownRevenue ? c.revenue : autoRevenue;
   const profit = cost != null && revenue != null ? revenue - cost : null;
   return {
-    crafts, made, lines, resources, fees, cost, market, unit, own, revenue, profit,
+    crafts, made, lines, resources, fees, cost, market, unit, own, revenue, autoRevenue, ownRevenue, profit,
     roi: profit != null && cost ? (profit / cost) * 100 : null,
     perUnit: profit != null ? profit / made : null,
     breakEven: cost != null && keepSale > 0 ? cost / made / keepSale : null,

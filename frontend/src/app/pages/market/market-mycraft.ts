@@ -11,7 +11,7 @@ import { CustomCraft, CustomLine, PriceMap, Quote, RRR_OPTIONS, customCraftCalc 
 import { AUTOLOAD_MS } from './market-search';
 
 const emptyLine = (): CustomLine => ({ id: '', name: '', count: null, price: null, noReturn: false });
-const emptyCraft = (): CustomCraft => ({ id: '', name: '', units: 1, qty: 10, rrr: 15.2, fee: null, sell: null, lines: [emptyLine()] });
+const emptyCraft = (): CustomCraft => ({ id: '', name: '', units: 1, qty: 10, rrr: 15.2, fee: null, sell: null, revenue: null, lines: [emptyLine()] });
 
 /** Mon craft : le joueur saisit sa recette (ressources, quantités, prix ou prix du marché, retour de
  *  ressources, frais d'atelier, prix de vente) et voit coût, revente, marge et seuil de rentabilité. */
@@ -137,9 +137,10 @@ const emptyCraft = (): CustomCraft => ({ id: '', name: '', units: 1, qty: 10, rr
           <small class="faint">{{ t().market.mine.costDetail(silver(calc().resources), silver(calc().fees)) }}</small>
         </div>
         <div class="tile">
-          <span class="lbl">{{ t().market.mine.revenue }}</span>
-          <strong class="revenue" [appCountUp]="calc().revenue" [countUpFormat]="silver"></strong>
-          <small class="faint">{{ t().market.mine.revenueDetail(silver(calc().unit), market.tax()) }}</small>
+          <label class="lbl" for="mc-revenue">{{ t().market.mine.revenue }}</label>
+          <input id="mc-revenue" class="input revenue" type="number" step="1" inputmode="numeric"
+                 [placeholder]="revenueView().placeholder" [formField]="craft.revenue" />
+          <small class="faint">{{ revenueView().hint }}</small>
         </div>
         <div class="tile">
           <span class="lbl">{{ t().market.mine.perUnit }}</span>
@@ -152,7 +153,7 @@ const emptyCraft = (): CustomCraft => ({ id: '', name: '', units: 1, qty: 10, rr
           <small class="faint">{{ t().market.mine.breakEvenDetail }}</small>
         </div>
         @if (missing()) { <p class="warn">{{ t().market.mine.missingPrices(missing()) }}</p> }
-        @if (calc().unit == null) { <p class="warn">{{ t().market.mine.noSell }}</p> }
+        @if (calc().revenue == null) { <p class="warn">{{ t().market.mine.noSell }}</p> }
         <div class="actions">
           <button type="button" class="btn btn-sm" [disabled]="market.busy() || !ids()" (click)="refresh()">
             <app-icon name="clock" [size]="14" /> {{ t().market.mine.refresh }}
@@ -210,6 +211,7 @@ const emptyCraft = (): CustomCraft => ({ id: '', name: '', units: 1, qty: 10, rr
     .verdict.ok { background: var(--success-soft); color: var(--success); }
     .tile { display: grid; gap: 2px; padding: 10px 12px; border-radius: var(--radius-sm); background: var(--surface-2); }
     .tile strong { font-size: 1.15rem; font-variant-numeric: tabular-nums; }
+    .tile .revenue { font-size: 1.05rem; font-weight: 700; font-variant-numeric: tabular-nums; }
     .tile.main { background: var(--lilac-soft); }
     .tile.main strong { font-size: 1.6rem; }
     .pos { color: var(--success); }
@@ -239,6 +241,7 @@ export class MarketMyCraft {
     max(p.rrr, 100);
     min(p.fee, 0);
     min(p.sell, 0);
+    min(p.revenue, 0);
     applyEach(p.lines, (line) => {
       min(line.count, 0);
       min(line.price, 0);
@@ -268,6 +271,17 @@ export class MarketMyCraft {
     return {
       hint: this.quoteHint(this.model().id, quote, this.market.prices()),
       placeholder: quote ? silver(quote.value) : this.t().market.mine.pricePh,
+    };
+  });
+
+  /** Revente nette : calcul en indice, ou rappel du calcul quand une revente est saisie. */
+  protected readonly revenueView = computed(() => {
+    const c = this.calc();
+    const m = this.t().market.mine;
+    const detail = m.revenueDetail(silver(c.unit), this.market.tax());
+    return {
+      placeholder: c.autoRevenue != null ? silver(c.autoRevenue) : m.pricePh,
+      hint: c.ownRevenue ? m.revenueOwn(silver(c.autoRevenue)) : detail,
     };
   });
 

@@ -48,12 +48,25 @@ describe('MarketMyCraft (mon craft)', () => {
     const revenue = 4 * 2000 * 0.96;
     expect(text('.c-need')).toContain('12');
     expect(text('.cost')).toBe(cost.toLocaleString('fr-FR'));
-    expect(text('.revenue')).toBe(revenue.toLocaleString('fr-FR'));
+    const revenueInput = el.querySelector<HTMLInputElement>('#mc-revenue')!;
+    expect(revenueInput.placeholder).toBe(revenue.toLocaleString('fr-FR'));
+    expect(text('#mc-revenue + small')).toContain('taxe 4 % déduite');
     expect(text('.profit')).toBe((revenue - cost).toLocaleString('fr-FR'));
     expect(el.querySelector('.profit')?.classList).toContain('pos');
     expect(text('.verdict')).toBe('Rentable');
     expect(text('.break-even')).toBe(Math.round(cost / 4 / 0.96).toLocaleString('fr-FR'));
     expect(el.querySelector('.warn')).toBeNull();
+    // revente nette saisie : remplace le calcul dans la marge, le calcul reste en indice
+    typeIn(revenueInput, '3000');
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(text('.profit')).toBe((3000 - cost).toLocaleString('fr-FR'));
+    expect(text('.verdict')).toBe('À perte');
+    expect(text('#mc-revenue + small')).toContain(`calcul : ${revenue.toLocaleString('fr-FR')}`);
+    typeIn(revenueInput, '');
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(text('.profit')).toBe((revenue - cost).toLocaleString('fr-FR'));
     TestBed.tick();
     expect(JSON.parse(localStorage.getItem('lilium.market.mycraft')!).lines[0]).toMatchObject({ name: 'Planches maison', count: 3, price: 250 });
   });

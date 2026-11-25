@@ -153,7 +153,7 @@ describe('market-logic', () => {
     ], 1);
     const o = { mode: 'direct' as const, tax: 4, bm: true };
     const craft: CustomCraft = {
-      id: 'T6_2H_BOW', name: 'Arc', units: 1, qty: 10, rrr: 15.2, fee: 500, sell: null,
+      id: 'T6_2H_BOW', name: 'Arc', units: 1, qty: 10, rrr: 15.2, fee: 500, sell: null, revenue: null,
       lines: [
         { id: 'T6_PLANKS', name: 'Planches', count: 32, price: null, noReturn: false },
         { id: '', name: 'Cuir maison', count: 4, price: 0, noReturn: true },
@@ -177,6 +177,11 @@ describe('market-logic', () => {
     // prix de vente saisi, plusieurs unités par fabrication (quantité arrondie à la fabrication supérieure)
     const own = customCraftCalc({ ...craft, units: 5, qty: 12, sell: 1000 }, prices, o);
     expect([own.crafts, own.made, own.unit, own.own]).toEqual([3, 15, 1000, true]);
+    // revente nette saisie : remplace le calcul pour la marge, le seuil de rentabilité ne bouge pas
+    const sold = customCraftCalc({ ...craft, revenue: 250000 }, prices, o);
+    expect([sold.revenue, sold.ownRevenue, sold.profit, sold.breakEven]).toEqual([250000, true, 250000 - cost, res.breakEven]);
+    expect(sold.autoRevenue).toBeCloseTo(30000 * 0.96 * 10);
+    expect(customCraftCalc({ ...craft, revenue: -5 }, prices, o)).toMatchObject({ ownRevenue: false, revenue: res.revenue });
     // prix manquant : pas de coût ni de marge, la revente reste connue
     const missing = customCraftCalc({ ...craft, lines: [{ id: '', name: 'Rien', count: 2, price: null, noReturn: false }] }, prices, o);
     expect([missing.cost, missing.profit, missing.breakEven]).toEqual([null, null, null]);

@@ -522,6 +522,7 @@ export const fr = {
       costDetail: (res: string, fees: string) => `ressources ${res} + frais ${fees}`,
       revenue: 'Revente nette',
       revenueDetail: (unit: string, tax: number) => `${unit} / u., taxe ${tax.toLocaleString('fr-FR')} % déduite`,
+      revenueOwn: (auto: string) => `montant saisi (calcul : ${auto}), vide = calcul`,
       perUnit: 'Marge par unité',
       breakEven: 'Prix de vente minimum',
       breakEvenDetail: 'par unité, pour ne rien perdre',

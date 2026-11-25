@@ -546,6 +546,7 @@ export const en: typeof fr = {
       costDetail: (res: string, fees: string) => `resources ${res} + fees ${fees}`,
       revenue: 'Net sale',
       revenueDetail: (unit: string, tax: number) => `${unit} / unit, ${tax.toLocaleString('en-US')}% tax deducted`,
+      revenueOwn: (auto: string) => `amount entered (calculated: ${auto}), empty = calculated`,
       perUnit: 'Margin per unit',
       breakEven: 'Minimum sale price',
       breakEvenDetail: 'per unit, to break even',
