@@ -49,20 +49,20 @@ describe('MarketMyCraft (mon craft)', () => {
     expect(text('.c-need')).toContain('12');
     expect(text('.cost')).toBe(cost.toLocaleString('fr-FR'));
     const revenueInput = el.querySelector<HTMLInputElement>('#mc-revenue')!;
-    expect(revenueInput.placeholder).toBe(revenue.toLocaleString('fr-FR'));
-    expect(text('#mc-revenue + small')).toContain('taxe 4 % déduite');
+    expect(revenueInput.placeholder).toBe((2000 * 0.96).toLocaleString('fr-FR'));
+    expect(text('#mc-revenue + small')).toBe(`total ${revenue.toLocaleString('fr-FR')} (4 u.) · ${(2000).toLocaleString('fr-FR')} − taxe 4 %`);
     expect(text('.profit')).toBe((revenue - cost).toLocaleString('fr-FR'));
     expect(el.querySelector('.profit')?.classList).toContain('pos');
     expect(text('.verdict')).toBe('Rentable');
     expect(text('.break-even')).toBe(Math.round(cost / 4 / 0.96).toLocaleString('fr-FR'));
     expect(el.querySelector('.warn')).toBeNull();
-    // revente nette saisie : remplace le calcul dans la marge, le calcul reste en indice
-    typeIn(revenueInput, '3000');
+    // revente nette par unité saisie : × 4 unités dans la marge, le calcul reste en indice
+    typeIn(revenueInput, '750');
     await fixture.whenStable();
     fixture.detectChanges();
     expect(text('.profit')).toBe((3000 - cost).toLocaleString('fr-FR'));
     expect(text('.verdict')).toBe('À perte');
-    expect(text('#mc-revenue + small')).toContain(`calcul : ${revenue.toLocaleString('fr-FR')}`);
+    expect(text('#mc-revenue + small')).toBe(`total ${(3000).toLocaleString('fr-FR')} (4 u.) · saisie (calcul : ${(1920).toLocaleString('fr-FR')}), vide = calcul`);
     typeIn(revenueInput, '');
     await fixture.whenStable();
     fixture.detectChanges();

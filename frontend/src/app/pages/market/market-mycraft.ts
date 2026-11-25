@@ -11,7 +11,7 @@ import { CustomCraft, CustomLine, PriceMap, Quote, RRR_OPTIONS, customCraftCalc 
 import { AUTOLOAD_MS } from './market-search';
 
 const emptyLine = (): CustomLine => ({ id: '', name: '', count: null, price: null, noReturn: false });
-const emptyCraft = (): CustomCraft => ({ id: '', name: '', units: 1, qty: 10, rrr: 15.2, fee: null, sell: null, revenue: null, lines: [emptyLine()] });
+const emptyCraft = (): CustomCraft => ({ id: '', name: '', units: 1, qty: 10, rrr: 15.2, fee: null, sell: null, netUnit: null, lines: [emptyLine()] });
 
 /** Mon craft : le joueur saisit sa recette (ressources, quantités, prix ou prix du marché, retour de
  *  ressources, frais d'atelier, prix de vente) et voit coût, revente, marge et seuil de rentabilité. */
@@ -137,9 +137,9 @@ const emptyCraft = (): CustomCraft => ({ id: '', name: '', units: 1, qty: 10, rr
           <small class="faint">{{ t().market.mine.costDetail(silver(calc().resources), silver(calc().fees)) }}</small>
         </div>
         <div class="tile">
-          <label class="lbl" for="mc-revenue">{{ t().market.mine.revenue }}</label>
+          <label class="lbl" for="mc-revenue">{{ t().market.mine.revenueUnit }}</label>
           <input id="mc-revenue" class="input revenue" type="number" step="1" inputmode="numeric"
-                 [placeholder]="revenueView().placeholder" [formField]="craft.revenue" />
+                 [placeholder]="revenueView().placeholder" [formField]="craft.netUnit" />
           <small class="faint">{{ revenueView().hint }}</small>
         </div>
         <div class="tile">
@@ -241,7 +241,7 @@ export class MarketMyCraft {
     max(p.rrr, 100);
     min(p.fee, 0);
     min(p.sell, 0);
-    min(p.revenue, 0);
+    min(p.netUnit, 0);
     applyEach(p.lines, (line) => {
       min(line.count, 0);
       min(line.price, 0);
@@ -274,14 +274,14 @@ export class MarketMyCraft {
     };
   });
 
-  /** Revente nette : calcul en indice, ou rappel du calcul quand une revente est saisie. */
+  /** Revente nette par unité : calcul en indice (ou rappelé quand elle est saisie) et total de la production. */
   protected readonly revenueView = computed(() => {
     const c = this.calc();
     const m = this.t().market.mine;
-    const detail = m.revenueDetail(silver(c.unit), this.market.tax());
+    const detail = c.ownNet ? m.revenueOwn(silver(c.autoNetUnit)) : m.revenueTax(silver(c.unit), this.market.tax());
     return {
-      placeholder: c.autoRevenue != null ? silver(c.autoRevenue) : m.pricePh,
-      hint: c.ownRevenue ? m.revenueOwn(silver(c.autoRevenue)) : detail,
+      placeholder: c.autoNetUnit != null ? silver(c.autoNetUnit) : m.pricePh,
+      hint: c.revenue != null ? `${m.revenueTotal(silver(c.revenue), c.made)} · ${detail}` : detail,
     };
   });
 
