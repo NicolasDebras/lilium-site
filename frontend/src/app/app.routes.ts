@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 
 import { authGuard, levelGuard } from './core/guards';
+import { unsavedChangesGuard } from './core/unsaved-changes';
 
 export const routes: Routes = [
   { path: 'accueil', loadComponent: () => import('./pages/landing/landing').then((m) => m.LandingPage) },
@@ -22,6 +23,7 @@ export const routes: Routes = [
             path: 'builds/new',
             canActivate: [levelGuard('staff')],
             loadComponent: () => import('./pages/builds/build-form').then((m) => m.BuildForm),
+            canDeactivate: [unsavedChangesGuard],
           },
           {
             path: 'builds/:buildId',
@@ -31,17 +33,20 @@ export const routes: Routes = [
             path: 'builds/:buildId/edit',
             canActivate: [levelGuard('staff')],
             loadComponent: () => import('./pages/builds/build-form').then((m) => m.BuildForm),
+            canDeactivate: [unsavedChangesGuard],
           },
           { path: 'compos', loadComponent: () => import('./pages/compos/compos-list').then((m) => m.ComposList) },
           {
             path: 'compos/new',
             canActivate: [levelGuard('staff')],
             loadComponent: () => import('./pages/compos/compo-form').then((m) => m.CompoForm),
+            canDeactivate: [unsavedChangesGuard],
           },
           {
             path: 'compos/:name/edit',
             canActivate: [levelGuard('staff')],
             loadComponent: () => import('./pages/compos/compo-form').then((m) => m.CompoForm),
+            canDeactivate: [unsavedChangesGuard],
           },
           { path: 'modeles', loadComponent: () => import('./pages/library/library').then((m) => m.LibraryPage) },
           { path: 'bal', loadComponent: () => import('./pages/bal/bal').then((m) => m.BalPage) },

@@ -7,6 +7,7 @@ import { firstValueFrom } from 'rxjs';
 import { ApiService, errorMessage } from '../../core/api.service';
 import { I18nService } from '../../core/i18n/i18n';
 import { ToastService } from '../../core/toast.service';
+import { HasUnsavedChanges, warnBeforeUnload } from '../../core/unsaved-changes';
 import { ItemsService, itemIconUrl, itemName, useFallbackIcon } from '../../core/items.service';
 import {
   Build, BuildInput, BuildItems, BuildSpells, FREE_CHOICE, Item, SHOES_ANY, SPELL_KEYS, SPELL_SLOTS, SWAPS_MAX, Slot, SpellKey,
@@ -79,6 +80,7 @@ export function allTwoHanded(mainhand: string[], get: (id: string) => Item | und
 
 @Component({
   selector: 'app-build-form',
+  host: { '(window:beforeunload)': 'beforeUnload($event)' },
   imports: [FormField, RouterLink, ItemPicker, SpellPicker, Icon],
   template: `
     <div class="page-head">
@@ -224,7 +226,7 @@ export function allTwoHanded(mainhand: string[], get: (id: string) => Item | und
     }
   `,
 })
-export class BuildForm {
+export class BuildForm implements HasUnsavedChanges {
   private readonly api = inject(ApiService);
   private readonly router = inject(Router);
   private readonly items = inject(ItemsService);
@@ -252,7 +254,10 @@ export class BuildForm {
   });
 
   /** Valeurs du formulaire : vides en création, celles du build une fois chargé en édition. */
-  protected readonly model = linkedSignal<BuildInput>(() => (this.existing.hasValue() ? toInput(this.existing.value()) : emptyBuild()));
+  private readonly initial = computed(() => (this.existing.hasValue() ? toInput(this.existing.value()) : emptyBuild()));
+  protected readonly model = linkedSignal<BuildInput>(() => this.initial());
+  /** Enregistré : on peut quitter la page sans confirmation. */
+  private readonly saved = signal(false);
   protected readonly form = form(this.model, (p) => {
     required(p.name);
     validate(p.name, ({ value }) => (value().trim() ? undefined : requiredError()));
@@ -366,6 +371,14 @@ export class BuildForm {
     this.items.loadSpells().catch(() => this.itemsError.set(this.t().builds.catalogFailed));
   }
 
+  protected beforeUnload(event: BeforeUnloadEvent): void {
+    warnBeforeUnload(event, this);
+  }
+
+  hasUnsavedChanges(): boolean {
+    return !this.saved() && JSON.stringify(this.model()) !== JSON.stringify(this.initial());
+  }
+
   async save(): Promise<void> {
     if (this.form().invalid()) return;
     this.saving.set(true);
@@ -375,6 +388,7 @@ export class BuildForm {
       await firstValueFrom(
         id ? this.api.updateBuild(this.guildId(), +id, this.model()) : this.api.createBuild(this.guildId(), this.model()),
       );
+      this.saved.set(true);
       this.toast.success(id ? this.t().builds.saved : this.t().builds.created(this.model().name));
       await this.router.navigate(['/g', this.guildId(), 'builds']);
     } catch (err) {

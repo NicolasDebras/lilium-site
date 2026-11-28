@@ -170,7 +170,9 @@ describe('BuildForm — équipement', () => {
 
   it('envoie les choix multiples, « au choix » et la bouffe dans le POST', async () => {
     const { cmp, http, navigate } = await render();
+    expect(cmp.hasUnsavedChanges()).toBe(false);
     cmp['model'].update((m) => ({ ...m, name: 'Heal', role: 'HEAL' }));
+    expect(cmp.hasUnsavedChanges()).toBe(true);
     cmp.setItem('mainhand', ['2H_HOLYSTAFF', 'MAIN_HOLYSTAFF']);
     cmp.setItem('cape', ['*']);
     cmp.setItem('food', ['MEAL_STEW']);
@@ -181,6 +183,8 @@ describe('BuildForm — équipement', () => {
     req.flush({ id: 1 });
     await done;
     expect(navigate).toHaveBeenCalledWith(['/g', '111', 'builds']);
+    // Enregistré : quitter la page ne demande plus rien
+    expect(cmp.hasUnsavedChanges()).toBe(false);
   });
 
   it('formulaire (signal forms) : nom et rôle obligatoires, limites de longueur, saisie dans le modèle', async () => {
@@ -214,5 +218,7 @@ describe('BuildForm — équipement', () => {
       items: { mainhand: 'MAIN_SWORD', head: ['HEAD_PLATE_SET1', 'HEAD_CLOTH_SET2'] }, created_by_name: 'Lily',
     });
     expect(cmp['model']().items).toEqual({ mainhand: ['MAIN_SWORD'], head: ['HEAD_PLATE_SET1', 'HEAD_CLOTH_SET2'] });
+    // Le build chargé n'est pas une modification
+    expect(cmp.hasUnsavedChanges()).toBe(false);
   });
 });

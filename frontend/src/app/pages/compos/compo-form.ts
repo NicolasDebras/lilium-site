@@ -10,6 +10,7 @@ import { I18nService, dict } from '../../core/i18n/i18n';
 import { ItemsService } from '../../core/items.service';
 import { Build, Compo, CompoInput, SlotRow } from '../../core/models';
 import { ToastService } from '../../core/toast.service';
+import { HasUnsavedChanges, warnBeforeUnload } from '../../core/unsaved-changes';
 import { BuildChoice, BuildPicker } from '../../shared/build-picker';
 import { Gear } from '../../shared/gear';
 import { sortByRole } from '../../shared/roles';
@@ -71,6 +72,7 @@ function toModel({ total: _t, custom: _c, ...compo }: Compo): CompoModel {
 
 @Component({
   selector: 'app-compo-form',
+  host: { '(window:beforeunload)': 'beforeUnload($event)' },
   imports: [FormField, RouterLink, BuildPicker, Gear, Icon, ImageShare, RoleBar],
   template: `
     <div class="page-head">
@@ -275,7 +277,7 @@ function toModel({ total: _t, custom: _c, ...compo }: Compo): CompoModel {
     .image-preview h3 .muted { font-weight: 400; font-size: .85rem; }
   `,
 })
-export class CompoForm {
+export class CompoForm implements HasUnsavedChanges {
   private readonly api = inject(ApiService);
   private readonly router = inject(Router);
   private readonly items = inject(ItemsService);
@@ -306,13 +308,16 @@ export class CompoForm {
 
   /** Valeurs du formulaire : une ligne vide en création, la compo une fois chargée en édition,
    *  sa copie « Nom (copie) » en duplication (enregistrée comme une nouvelle compo). */
-  protected readonly model = linkedSignal<CompoModel>(() => {
+  private readonly initial = computed<CompoModel>(() => {
     if (!this.existing.hasValue()) return emptyCompo();
     const model = toModel(this.existing.value());
     if (this.name()) return model;
     // untracked : changer de langue ne doit pas effacer la saisie en cours
     return { ...model, name: untracked(this.t).compos.copyName(model.name).slice(0, 100) };
   });
+  protected readonly model = linkedSignal<CompoModel>(() => this.initial());
+  /** Enregistrée : on peut quitter la page sans confirmation. */
+  private readonly saved = signal(false);
   protected readonly form = form(this.model, (p) => {
     required(p.name);
     validate(p.name, ({ value }) => (value().trim() ? undefined : requiredError()));
@@ -477,6 +482,14 @@ export class CompoForm {
     this.previewUrl.set(url);
   }
 
+  protected beforeUnload(event: BeforeUnloadEvent): void {
+    warnBeforeUnload(event, this);
+  }
+
+  hasUnsavedChanges(): boolean {
+    return !this.saved() && JSON.stringify(this.model()) !== JSON.stringify(this.initial());
+  }
+
   async save(): Promise<void> {
     if (this.form().invalid()) return;
     this.saving.set(true);
@@ -487,6 +500,7 @@ export class CompoForm {
       await firstValueFrom(
         name ? this.api.updateCompo(this.guildId(), name, body) : this.api.createCompo(this.guildId(), body),
       );
+      this.saved.set(true);
       this.toast.success(name ? this.t().compos.saved : this.t().compos.created(body.name));
       await this.router.navigate(['/g', this.guildId(), 'compos']);
     } catch (err) {

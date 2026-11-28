@@ -7,6 +7,7 @@ export const en: typeof fr = {
   common: {
     close: 'Close',
     cancel: 'Cancel',
+    unsavedLeave: 'You have unsaved changes. Leave anyway?',
     save: 'Save',
     delete: 'Delete',
     edit: 'Edit',

@@ -182,7 +182,9 @@ describe('CompoForm', () => {
 
   it('crée la compo : lignes avec build_id, sans le champ interne « free »', async () => {
     const { cmp, http, navigate } = await render();
+    expect(cmp.hasUnsavedChanges()).toBe(false);
     cmp['model'].update((m) => ({ ...m, name: 'ZvZ' }));
+    expect(cmp.hasUnsavedChanges()).toBe(true);
     cmp.setSource('pf1', 0, '12');
     cmp.addRow('pf1');
     cmp.setSource('pf1', 1, 'free');
@@ -198,6 +200,7 @@ describe('CompoForm', () => {
     req.flush({ name: 'ZvZ' });
     await done;
     expect(navigate).toHaveBeenCalledWith(['/g', '111', 'compos']);
+    expect(cmp.hasUnsavedChanges()).toBe(false);
   });
 
   it('parts de paie : la case affiche la colonne « Parts » (1 par défaut) et les envoie', async () => {

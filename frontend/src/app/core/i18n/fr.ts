@@ -7,6 +7,7 @@ export const fr = {
   common: {
     close: 'Fermer',
     cancel: 'Annuler',
+    unsavedLeave: 'Tu as des modifications non enregistrées. Quitter quand même ?',
     save: 'Enregistrer',
     delete: 'Supprimer',
     edit: 'Modifier',
