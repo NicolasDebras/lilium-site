@@ -266,6 +266,12 @@ a {
   color: var(--danger);
   &:hover { background: var(--danger-soft); border-color: var(--danger); }
 }
+/* Bouton-icône de suppression répété dans une liste : discret, rouge seulement au survol/focus. */
+.btn-danger.btn-icon {
+  border-color: transparent;
+  color: var(--text-faint);
+  &:hover:not(:disabled), &:focus-visible { color: var(--danger); background: var(--danger-soft); border-color: transparent; }
+}
 
 .btn-ghost {
   background: transparent;

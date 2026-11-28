@@ -21,6 +21,9 @@ describe('formatage', () => {
     expect(niceStep(100, 4)).toBe(25);
     expect(niceStep(174_873_783, 4)).toBe(50_000_000);
     expect(niceStep(0)).toBe(1);
+    // Jamais de pas fractionnaire (sinon « 1 1 1 0 0 » sur un graphique plat)
+    expect(niceStep(1, 4)).toBe(1);
+    expect(niceStep(6, 4)).toBe(2);
   });
 });
 

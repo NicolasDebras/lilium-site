@@ -50,11 +50,11 @@ export function ordinal(n: number): string {
           <div class="tiles" [class.stale]="loading()">
             <div class="card tile">
               <span class="muted"><app-icon name="trend" [size]="14" /> {{ t().bal.earned }}</span>
-              <strong class="plus" [title]="full(h.totals.credited) + ' silver'">+{{ compact(h.totals.credited) }}</strong>
+              <strong [class.plus]="h.totals.credited > 0" [title]="full(h.totals.credited) + ' silver'">{{ h.totals.credited ? '+' : '' }}{{ compact(h.totals.credited) }}</strong>
             </div>
             <div class="card tile">
               <span class="muted"><app-icon name="coins" [size]="14" /> {{ t().bal.withdrawn }}</span>
-              <strong [title]="full(h.totals.withdrawn) + ' silver'">−{{ compact(h.totals.withdrawn) }}</strong>
+              <strong [title]="full(h.totals.withdrawn) + ' silver'">{{ h.totals.withdrawn ? '−' : '' }}{{ compact(h.totals.withdrawn) }}</strong>
             </div>
             <div class="card tile">
               <span class="muted"><app-icon name="flag" [size]="14" /> {{ t().bal.paidActivities }}</span>

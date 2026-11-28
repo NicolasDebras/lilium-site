@@ -37,13 +37,13 @@ export function longDate(iso: string): string {
   return new Date(y, m - 1, d).toLocaleDateString(locale(), { weekday: 'short', day: 'numeric', month: 'short' });
 }
 
-/** Pas « rond » (1, 2, 2,5, 5 × 10ⁿ) pour ~`count` graduations jusqu'à `max`. */
+/** Pas « rond » (1, 2, 2,5, 5 × 10ⁿ) pour ~`count` graduations jusqu'à `max` ; au moins 1 (valeurs entières). */
 export function niceStep(max: number, count = 4): number {
   if (max <= 0) return 1;
   const raw = max / count;
   const pow = 10 ** Math.floor(Math.log10(raw));
   const f = raw / pow;
-  return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10) * pow;
+  return Math.max(1, (f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10) * pow);
 }
 
 /** Colonne au bout arrondi (rayon r) et carrée sur la ligne de base. `up` = vers le haut. */

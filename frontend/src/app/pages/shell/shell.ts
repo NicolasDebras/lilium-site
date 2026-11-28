@@ -64,14 +64,22 @@ export const NAV_LINKS: NavLink[] = [
             <div class="account">
               <button type="button" class="avatar-btn" (click)="toggleAccount($event)"
                       [attr.aria-expanded]="accountOpen()" aria-haspopup="menu" [attr.aria-label]="t().shell.account">
-                <img [src]="u.avatar_url" alt="" class="avatar" />
+                @if (avatarOk()) {
+                  <img [src]="u.avatar_url" alt="" class="avatar" (error)="avatarOk.set(false)" />
+                } @else {
+                  <span class="avatar initial" aria-hidden="true">{{ u.username.charAt(0).toUpperCase() }}</span>
+                }
                 <span class="username">{{ u.username }}</span>
                 <app-icon name="chevron" [size]="14" />
               </button>
               @if (accountOpen()) {
                 <div class="menu" role="menu" (click)="$event.stopPropagation()">
                   <div class="menu-head">
-                    <img [src]="u.avatar_url" alt="" class="avatar big" />
+                    @if (avatarOk()) {
+                      <img [src]="u.avatar_url" alt="" class="avatar big" (error)="avatarOk.set(false)" />
+                    } @else {
+                      <span class="avatar big initial" aria-hidden="true">{{ u.username.charAt(0).toUpperCase() }}</span>
+                    }
                     <div>
                       <strong>{{ u.username }}</strong>
                       @if (guild(); as g) { <span class="muted level">{{ t().levels[g.level] }} · {{ g.name }}</span> }
@@ -147,6 +155,8 @@ export const NAV_LINKS: NavLink[] = [
     .avatar-btn:hover, .avatar-btn[aria-expanded='true'] { background: var(--surface-2); border-color: var(--border); }
     .avatar { width: 30px; height: 30px; border-radius: 50%; box-shadow: 0 0 0 2px var(--lilac-soft); }
     .avatar.big { width: 40px; height: 40px; }
+    .avatar.initial { display: grid; place-items: center; flex: none; background: var(--surface-3); color: var(--lilac); font-weight: 700; font-size: .85rem; }
+    .avatar.big.initial { font-size: 1rem; }
     .username { font-weight: 600; font-size: .9rem; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .menu { position: absolute; right: 0; top: calc(100% + 8px); min-width: 240px; padding: 6px; border-radius: 14px;
             background: var(--surface-2); border: 1px solid var(--border); box-shadow: var(--shadow-lg);
@@ -182,6 +192,8 @@ export class Shell {
   private readonly router = inject(Router);
   protected readonly menuOpen = signal(false);
   protected readonly accountOpen = signal(false);
+  /** false si l'avatar Discord ne charge pas → initiale du pseudo à la place. */
+  protected readonly avatarOk = signal(true);
 
   private readonly url = toSignal(
     this.router.events.pipe(
